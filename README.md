@@ -1,3 +1,5 @@
+# WARNING - THE DEVELOP BRANCH MAY RAPIDLY CHANGE UNTIL WE ENTER THE BETA STAGES
+# MAKE SURE YOU'RE PULLING AND LOCALLY MERGING DAILY
 # Getting Started 
 [![Build Status](https://travis-ci.org/csirtgadgets/massive-octo-spice.png?branch=master)](https://travis-ci.org/csirtgadgets/bearded-avenger)
  * [the Wiki](https://github.com/csirtgadgets/bearded-avenger/wiki)
