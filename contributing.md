@@ -29,9 +29,7 @@ Commit messages become the public record of your changes, as such it's important
 
 Give Yourself Credit
 ===
-Add yourself to the AUTHORS file or other lists of contributors for the project, with your commit. The maintainers won't do this, it's your choice whether you consider your patch worth a mention, or not.
-
-You must make contributions under your real name, associated with your github account. Anonymous contributions may be made via proxies, ask on IRC if someone will help you.
+Instead of a traditional 'AUTHORS' file, contributors are automatically tracked [here](https://github.com/csirtgadgets/bearded-avenger/graphs/contributors).
 
 Copyrights and Licenses
 ===

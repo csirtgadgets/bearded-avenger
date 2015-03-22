@@ -1,4 +1,6 @@
-from flask import Flask, session, redirect, url_for, escape, request
+#!/usr/bin/env python
+
+from flask import Flask, session, redirect, url_for, escape, request, jsonify, abort
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 import logging
@@ -7,9 +9,11 @@ import time
 import ujson as json
 
 from pprint import pprint
+import zmq
 
 
-from cif import LOG_FORMAT
+from cif.constants import LOG_FORMAT
+from cif.client import ZMQClient as zClient
 
 # https://github.com/mitsuhiko/flask/blob/master/examples/minitwit/minitwit.py
 
@@ -20,24 +24,39 @@ logger = logging.getLogger(__name__)
 # def before_request():
 #     return 'true'
 
+token = str(1234)
+
 @app.route("/")
 def help():
     pprint(request)
-    return "Hello World!"
+    return jsonify({
+        "message": "hello world!",
+    })
+
+@app.route("/ping", methods=['GET', 'POST'])
+def ping():
+    r = zClient(token=token).ping()
+    return jsonify({
+        "message": "success",
+        "data": r
+    })
 
 @app.route("/search")
 def search():
-    pprint(request.headers['User-Agent'])
     q = request.args.get('q')
-    return q
+    limit = request.args.get('limit')
+
+    r = zClient(token=token).search(str(q), limit=limit)
+
+    return jsonify({
+        "message": "success",
+        "data": r
+    })
 
 @app.route("/observables", methods=['GET', 'POST'])
 def observables():
     return "Observables"
 
-@app.route("/ping", methods=['GET', 'POST'])
-def ping():
-    return str(time.time())
 
 def main():
     parser = ArgumentParser(

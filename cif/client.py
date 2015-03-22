@@ -1,15 +1,43 @@
+#!/usr/bin/env python
+
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 import logging
 import textwrap
 import requests
 import time
-import ujson as json
 import select
+import sys
+import os.path
+import ujson as json
+from zmq.eventloop import ioloop
 
 from pprint import pprint
 
-from cif import LOG_FORMAT, REMOTE
+from cif.constants import LOG_FORMAT, REMOTE, DEFAULT_CONFIG, ROUTER_FRONTEND
+import cif.generic
+import zmq
+
+
+class ZMQClient(cif.generic.Generic):
+    def __init__(self, remote=ROUTER_FRONTEND, token=None, **kwargs):
+        super(ZMQClient, self).__init__(socket=zmq.REQ, **kwargs)
+
+        self.remote = remote
+        self.token = token
+
+    def ping(self):
+        self.logger.debug('connecting to {0}'.format(self.remote))
+        self.socket.connect(self.remote)
+        self.socket.send_multipart([self.token, 'ping', str(time.time())])
+        rv = self.socket.recv()
+        return rv
+
+    def search(self, q, limit=100):
+        self.socket.connect(self.remote)
+        self.socket.send_multipart([self.token, 'search', q])
+        rv = self.socket.recv_json()
+        return rv
 
 
 class Client(object):
@@ -78,10 +106,14 @@ class Client(object):
         return body
 
     def search(self):
-        pass
+        return []
 
-    def submit(self):
-        pass
+    def submit(self, data=[]):
+        """
+        :param data:
+        :return: list
+        """
+        return []
 
     def ping(self, write=False):
         t0 = time.time()
@@ -112,6 +144,9 @@ def main():
     parser.add_argument('--token', dest='token', help='specify api token')
     parser.add_argument('-p', '--ping', dest='ping', action="store_true") #meg
 
+    parser.add_argument("--config", dest="config", help="specify a configuration file [default: %(default)s]",
+                        default=os.path.join(os.path.expanduser("~"), DEFAULT_CONFIG))
+
     args = parser.parse_args()
 
     loglevel = logging.WARNING
@@ -130,9 +165,13 @@ def main():
 
     logger.info('running ping')
     for num in range(0,4):
-        ret = Client(**options).ping()
-        print "roundtrip: %s ms" % ret
-        select.select([],[],[],1)
+        ret = ZMQClient().ping()
+        if ret != 0:
+            logger.info("roundtrip: %s ms" % ret)
+            select.select([],[],[],1)
+        else:
+            logger.error('ping failed')
+            sys.exit()
 
 if __name__ == "__main__":
     main()

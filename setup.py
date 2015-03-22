@@ -28,9 +28,11 @@ setup(
               'cif=cif.client:main',
               'cif-smrt=cif.smrt:main',
               'cif-router=cif.router:main',
-              'cif-worker=cif.worker:main',
+              'cif-hunter=cif.hunter:main',
+              'cif-gatherer=cif.gatherer:main',
               'cif-api=cif.api:main',
+              'cif-storage=cif.storage:main'
               ]
       },
-      test_suite="test"
+      test_suite="cif.test"
 )
