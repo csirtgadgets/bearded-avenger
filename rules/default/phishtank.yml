@@ -1,0 +1,29 @@
+parser: json
+defaults:
+  provider: phishtank.com
+  tlp: amber
+  application:
+    - http
+    - https
+  confidence: 85
+  tags: phishing
+  protocol: tcp
+  remote: http://data.phishtank.com/data/online-valid.json.gz
+  altid_tlp: green
+
+feeds:
+  urls:
+    otype: url
+    map:
+      - submission_time
+      - url
+      - target
+      - phish_detail_url
+      - details
+    values:
+      - lasttime
+      - observable
+      - description
+      - altid
+      - additional_data
+

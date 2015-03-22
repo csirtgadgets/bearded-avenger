@@ -1,3 +1,9 @@
+#!/usr/bin/env python
+
+
+class Hunter(object):
+    pass
+
 
 def main():
     pass

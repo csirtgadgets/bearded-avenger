@@ -1,0 +1,20 @@
+defaults:
+  tlp: amber
+  provider: 'anti-phishing-email-reply'
+  remote: http://aper.svn.sourceforge.net/svnroot/aper/phishing_reply_addresses
+  tags: phishing
+  pattern: '^(\S+),[C|D|E],(\S+)$'
+  values:
+    - observable
+    - lasttime
+
+feeds:
+  content:
+    confidence: 75
+    description: 'address contained in content'
+    pattern: '^(\S+),[C|D|E],(\S+)$'
+  header:
+    confidence: 85
+    description: 'address used in replyto/from header'
+    pattern: '^(\S+),[A|B],(\S+)$'
+
