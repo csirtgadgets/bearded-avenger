@@ -10,6 +10,7 @@ from cif.client import Client
 from cif.smrt.fetcher import Fetcher
 from cif.rule import Rule
 from cif.smrt.parser.pattern import Pattern
+from cif.smrt.parser.delim import Pipe
 import cif.color
 
 from pprint import pprint
@@ -26,29 +27,19 @@ class Smrt(Client):
 
         self.logger = logger
 
-    def fetch(self, feed, rule=None):
-        data = Fetcher(feed, rule=rule).process()
-        return data
-
-    def parse(self, rule, feed, data):
-        data = Pattern().process(rule, feed, data, limit=10)
-        return data
-
     def process(self, rule, feed=None, limit=None):
         rule = Rule(path=rule)
 
         self.logger.debug('fetching')
-        data = self.fetch(feed, rule=rule)
+        data = Fetcher(feed, rule=rule).process()
 
         self.logger.debug('parsing')
-        data = self.parse(rule, feed, data)
+        data = Pipe().process(rule, feed, data, limit=10)
+
+        pprint(data)
 
         self.logger.debug('submitting')
         data = self.submit(data)
-
-
-    def run(self):
-        pass
 
 
 def main():
