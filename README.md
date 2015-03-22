@@ -1,6 +1,13 @@
 # WARNING - THE DEVELOP BRANCH MAY RAPIDLY CHANGE UNTIL WE ENTER THE BETA STAGES
 # MAKE SURE YOU'RE PULLING AND LOCALLY MERGING DAILY
 # Getting Started 
+## Ubuntu
+```
+$ sudo apt-get install -y python-dev python-pip git
+$ pip install pyzmq --install-option="--zmq=bundled"
+$ pip install git+https://github.com/csirtgadgets/bearded-avenger.git
+```
+
 [![Build Status](https://travis-ci.org/csirtgadgets/massive-octo-spice.png?branch=master)](https://travis-ci.org/csirtgadgets/bearded-avenger)
  * [the Wiki](https://github.com/csirtgadgets/bearded-avenger/wiki)
  * [FAQ](https://github.com/csirtgadgets/bearded-avenger/wiki/FAQ)
