@@ -35,7 +35,7 @@ class Smrt(Client):
         data = Fetcher(feed, rule=rule).process()
 
         self.logger.debug('parsing')
-        data = Pipe().process(rule, feed, data, limit=2)
+        data = Pipe().process(rule, feed, data)
 
         l = []
         for d in range(0, len(data)):

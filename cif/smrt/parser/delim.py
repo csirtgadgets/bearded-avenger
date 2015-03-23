@@ -11,15 +11,22 @@ class Delim(Pattern):
     def process(self, rule, feed, data, limit=10000000):
         cols = rule.defaults['values']
 
+        defaults = rule.defaults
+
+        for d in rule.feeds[feed]['defaults']:
+            defaults[d] = rule.feeds[feed]['defaults'][d]
+
         max = 0
         rv = []
         for l in data:
-            if self.is_comment(l):
+            if l == '' or self.is_comment(l):
                 continue
 
             m = self.pattern.split(l)
+            pprint(m)
             if len(cols):
-                obs = rule.defaults
+                obs = defaults
+
                 for c in range(0, len(cols)):
                     if cols[c] is not None:
                         obs[cols[c]] = m[c]
