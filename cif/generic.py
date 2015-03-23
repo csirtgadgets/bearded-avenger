@@ -5,9 +5,7 @@ import zmq
 import sys
 from pprint import pprint
 
-# https://github.com/zeromq/pyzmq/wiki/Building-and-Installing-PyZMQ
-
-from zmq.eventloop import ioloop, zmqstream
+from zmq.eventloop import ioloop
 
 
 class Generic(object):

@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 import logging
 import textwrap
-from cif.constants import LOG_FORMAT, ROUTER_PORT, ROUTER_PUBLISHER_PORT, DEFAULT_CONFIG
+from cif.constants import LOG_FORMAT, DEFAULT_CONFIG
 import cif.generic
 import time
 import os.path
@@ -19,7 +19,7 @@ ROUTER_PUBLISH = 'tcp://0.0.0.0'
 
 class Router(cif.generic.Generic):
 
-    def __init__(self, listen='0.0.0.0', port=ROUTER_PORT, publisher_port=ROUTER_PUBLISHER_PORT, **kwargs):
+    def __init__(self, listen='0.0.0.0', port=None, publisher_port=None, **kwargs):
         super(Router, self).__init__(socket=zmq.REP, **kwargs)
 
         self.socket.bind('tcp://{0}:{1}'.format(listen, port))

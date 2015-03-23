@@ -8,16 +8,54 @@ from cif.constants import LOG_FORMAT, DEFAULT_CONFIG, ROUTER_BACKEND
 import os.path
 import cif.generic
 import zmq
+from zmq.eventloop import ioloop
 
 from pprint import pprint
 
 
-class Storage(cif.generic.Generic):
+class Storage(object):
 
-    def __init__(self, router=ROUTER_BACKEND, **kwargs):
-        super(Storage, self).__init__(socket=zmq.ROUTER, **kwargs)
+    def __init__(self, logger=logging.getLogger(__name__), **kwargs):
+        self.logger = logger
+        self.context = zmq.Context()
+        self.socket = self.context.socket(zmq.ROUTER)
 
-        self.router = self.context.socket(zmq.DEALER)
+    def auth(self, *args, **kwargs):
+        return True ##TODO
+
+    def handle_message(self, s, e):
+        self.logger.debug('message received')
+        msg = s.recv_multipart()
+
+        token = msg[0]
+        mtype = msg[1]
+        data = msg[2]
+
+        try:
+            handler = getattr(self, "handle_" + mtype)
+        except AttributeError:
+            self.logger.error('message type {0} unknown'.format(mtype))
+            rv = 0
+            self.socket.send(rv)
+            return
+
+        rv = handler(data)
+        self.socket.send_json(rv)
+
+    @auth
+    def handle_search(self, token, data):
+        self.logger.debug('searching')
+        return []
+
+    @auth
+    def handle_submission(self, token, data):
+        self.logger.debug('submitting')
+        return []
+
+    def run(self):
+        loop = ioloop.IOLoop.instance()
+        loop.add_handler(self.socket, self.handle_message, zmq.POLLIN)
+        loop.start()
 
 
 def main():
@@ -51,10 +89,13 @@ def main():
     logging.getLogger('').setLevel(loglevel)
     console.setFormatter(logging.Formatter(LOG_FORMAT))
     logging.getLogger('').addHandler(console)
+    logger = logging.getLogger(__name__)
 
     options = vars(args)
-    pprint(options)
+
     s = Storage(router=options['router'])
+
+    logger.info('running...')
     s.run()
 
 
