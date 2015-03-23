@@ -35,10 +35,14 @@ class Observable(object):
 
     def __init__(self, subject=None, obj=None, tlp=TLP,
                  reporttime=datetime.datetime.fromtimestamp(time.time()).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
-                 provider=None, group=GROUP, protocol='tcp', portlist=None, tags=None, asn=None,
-                 asn_desc=None, cc=None, logger=logging.getLogger(__name__), *args, **kwargs):
+                 provider=None, group=GROUP, protocol='tcp', portlist=None, tags=[], asn=None,
+                 asn_desc=None, cc=None, application=None, reference=None, reference_tlp=None, logger=logging.getLogger(
+                __name__), *args, **kwargs):
 
         self.logger = logger
+
+        if type(tags) == str:
+            tags = tags.split(",")
 
         self.subject = subject
         self.tlp = tlp
@@ -48,7 +52,10 @@ class Observable(object):
         self.object = obj
         self.protocol = protocol
         self.portlist = portlist
-        self.tags = tags.split(",")
+        self.tags = tags
+        self.application = application
+        self.reference = reference
+        self.reference_tlp = reference_tlp
 
         if asn and asn.lower() == 'na':
             asn = None
