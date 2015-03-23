@@ -4,51 +4,66 @@ from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 import logging
 import textwrap
-from cif.constants import LOG_FORMAT, DEFAULT_CONFIG
-import cif.generic
+from cif.constants import LOG_FORMAT, DEFAULT_CONFIG, ROUTER_FRONTEND, ROUTER_GATHERER, STORAGE_ADDR, \
+    ROUTER_PUBLISHER, CTRL_ADDR
 import time
 import os.path
 
 from pprint import pprint
 import zmq
+from zmq.eventloop import ioloop
 import sys
+import reloader
+reloader.enable()
 
-ROUTER_LISTEN = 'tcp://0.0.0.0'
-ROUTER_PUBLISH = 'tcp://0.0.0.0'
 
+class Router(object):
 
-class Router(cif.generic.Generic):
+    def __init__(self, frontend=ROUTER_FRONTEND, publisher=ROUTER_PUBLISHER, storage=STORAGE_ADDR,
+                 logger=logging.getLogger(__name__), **kwargs):
+        self.logger = logger
 
-    def __init__(self, listen='0.0.0.0', port=None, publisher_port=None, **kwargs):
-        super(Router, self).__init__(socket=zmq.REP, **kwargs)
+        self.context = zmq.Context.instance()
+        self.frontend = self.context.socket(zmq.ROUTER)
+        self.storage = self.context.socket(zmq.DEALER)
+        self.publisher = self.context.socket(zmq.PUB)
+        self.ctrl = self.context.socket(zmq.REP)
 
-        self.socket.bind('tcp://{0}:{1}'.format(listen, port))
-        # self.publisher.bind('tcp://{0}:{1}'.format(listen, publisher_port))
+        self.poller = zmq.Poller()
+
+        self.ctrl.bind(CTRL_ADDR)
+        self.frontend.bind(frontend)
+        self.publisher.bind(publisher)
+        self.storage.bind(storage)
+
+    def handle_ctrl(self, s, e):
+        self.logger.debug('ctrl msg recieved')
+        id, mtype, data = s.recv_multipart()
+
+        self.ctrl.send_multipart(['router', 'ack', str(time.time())])
 
     def handle_message(self, s, e):
         self.logger.debug('message received')
-        msg = s.recv_multipart()
+        m = s.recv_multipart()
 
-        token = msg[0]
-        mtype = msg[1]
-        data = msg[2]
+        self.logger.debug(pprint(m))
+        id, null, token, mtype, data = m
 
         if not self.auth(token):
-            self.socket.send_json({
-                "message": "failed",
-                "data": "unauthorized"
-            })
+            self.frontend.send_multipart([id, '', 'unauthorized', '0'])
         else:
             try:
                 handler = getattr(self, "handle_" + mtype)
             except AttributeError:
                 self.logger.error('message type {0} unknown'.format(mtype))
                 rv = 0
-                self.socket.send(rv)
+                self.frontend.send_multipart([id, '', 'failed', 0])
                 return
 
-            rv = handler(data)
-            self.socket.send_json(rv)
+            rv = handler(token, data)
+            pprint(rv)
+            self.frontend.send_multipart([id, '', 'success', rv])
+            self.publisher.send_json(rv)
 
     def auth(self, token):
         if not token:
@@ -61,10 +76,11 @@ class Router(cif.generic.Generic):
     def handle_write(self, msg):
         return str(time.time())
 
-    def handle_search(self, msg):
-        return [{
-            "observable": msg
-        }]
+    def handle_search(self, token, data):
+        self.storage.send_multipart(['search', token, data])
+        id, mtype, data = self.storage.recv_multipart()
+
+        return data
 
     def handle_submission(self, msg):
         pass
@@ -75,9 +91,16 @@ class Router(cif.generic.Generic):
     def publish(self, msg):
         pass
 
+    def run(self):
+        self.logger.debug('starting loop')
+        loop = ioloop.IOLoop.instance()
+        loop.add_handler(self.frontend, self.handle_message, zmq.POLLIN)
+        loop.add_handler(self.ctrl, self.handle_ctrl, zmq.POLLIN)
+        loop.start()
+
 
 def main():
-    parser = ArgumentParser(
+    p = ArgumentParser(
         description=textwrap.dedent('''\
         example usage:
             $ cif-router -d
@@ -86,24 +109,19 @@ def main():
         prog='cif-router'
     )
 
-    parser.add_argument("-v", "--verbose", dest="verbose", action="count",
+    p.add_argument("-v", "--verbose", dest="verbose", action="count",
                         help="set verbosity level [default: %(default)s]")
-    parser.add_argument('-d', '--debug', dest='debug', action="store_true")
+    p.add_argument('-d', '--debug', dest='debug', action="store_true")
 
-    parser.add_argument('--listen', dest='listen', help='address to listen on', default=ROUTER_LISTEN)
-    parser.add_argument('--listen-port', dest='listen_port', help='port to listen', default=ROUTER_PORT)
+    p.add_argument('--frontend', dest='listen', help='address to listen on', default=ROUTER_FRONTEND)
+    p.add_argument('--publish', dest='publish', help='address to publish on', default=ROUTER_PUBLISHER)
+    p.add_argument("--storage", dest="storage", help="specify a storage address", default=STORAGE_ADDR)
 
-    parser.add_argument('--publish', dest='publish', help='address to publish on', default=ROUTER_PUBLISH)
-    parser.add_argument('--publish-port', dest='publish_port', help='port to publish on', default=ROUTER_PUBLISHER_PORT)
-
-    parser.add_argument("--storage", dest="storage", default="elasticsearch")
-    parser.add_argument("--storage-host", dest="storage_host", default="127.0.0.0:9200")
-
-    parser.add_argument("--config", dest="config", help="specify a configuration file [default: %(default)s]",
+    p.add_argument("--config", dest="config", help="specify a configuration file [default: %(default)s]",
                         default=os.path.join(os.path.expanduser("~"), DEFAULT_CONFIG))
 
 
-    args = parser.parse_args()
+    args = p.parse_args()
 
     loglevel = logging.WARNING
     if args.verbose:
@@ -118,7 +136,6 @@ def main():
     logger = logging.getLogger(__name__)
 
     options = vars(args)
-    pprint(options)
 
     r = Router(logger=logger)
     logger.info('staring router...')

@@ -20,7 +20,7 @@ import zmq
 
 
 class ZMQClient(cif.generic.Generic):
-    def __init__(self, remote=ROUTER_FRONTEND, token=None, **kwargs):
+    def __init__(self, remote=ROUTER_FRONTEND, token='1234', **kwargs):
         super(ZMQClient, self).__init__(socket=zmq.REQ, **kwargs)
 
         self.remote = remote
@@ -30,14 +30,22 @@ class ZMQClient(cif.generic.Generic):
         self.logger.debug('connecting to {0}'.format(self.remote))
         self.socket.connect(self.remote)
         self.socket.send_multipart([self.token, 'ping', str(time.time())])
-        rv = self.socket.recv()
-        return rv
+        status, data = self.socket.recv_multipart()
+        if status == 'success':
+            return data
+        else:
+            self.logger.error(status)
+            raise RuntimeError
 
     def search(self, q, limit=100):
         self.socket.connect(self.remote)
         self.socket.send_multipart([self.token, 'search', q])
-        rv = self.socket.recv_json()
-        return rv
+        status, data = self.socket.recv_multipart()
+        if status == 'success':
+            return data
+        else:
+            self.logger.error(status)
+            raise RuntimeError
 
 
 class Client(object):
@@ -126,7 +134,7 @@ class Client(object):
 
 
 def main():
-    parser = ArgumentParser(
+    p = ArgumentParser(
         description=textwrap.dedent('''\
         example usage:
             $ cif -q example.org -d
@@ -137,17 +145,18 @@ def main():
         prog='cif'
     )
 
-    parser.add_argument("-v", "--verbose", dest="verbose", action="count",
-                        help="set verbosity level [default: %(default)s]")
-    parser.add_argument('-d', '--debug', dest='debug', action="store_true")
+    p.add_argument("-v", "--verbose", dest="verbose", action="count",
+                   help="set verbosity level [default: %(default)s]")
+    p.add_argument('-d', '--debug', dest='debug', action="store_true")
 
-    parser.add_argument('--token', dest='token', help='specify api token')
-    parser.add_argument('-p', '--ping', dest='ping', action="store_true") #meg
+    p.add_argument('--token', dest='token', help='specify api token')
+    p.add_argument('-p', '--ping', dest='ping', action="store_true") #meg
+    p.add_argument("--search", dest="search", help="search")
 
-    parser.add_argument("--config", dest="config", help="specify a configuration file [default: %(default)s]",
-                        default=os.path.join(os.path.expanduser("~"), DEFAULT_CONFIG))
+    p.add_argument("--config", dest="config", help="specify a configuration file [default: %(default)s]",
+                   default=os.path.join(os.path.expanduser("~"), DEFAULT_CONFIG))
 
-    args = parser.parse_args()
+    args = p.parse_args()
 
     loglevel = logging.WARNING
     if args.verbose:
@@ -163,15 +172,20 @@ def main():
 
     options = vars(args)
 
-    logger.info('running ping')
-    for num in range(0,4):
-        ret = ZMQClient().ping()
-        if ret != 0:
-            logger.info("roundtrip: %s ms" % ret)
-            select.select([],[],[],1)
-        else:
-            logger.error('ping failed')
-            sys.exit()
+    if options.get('ping'):
+        logger.info('running ping')
+        for num in range(0,4):
+            ret = ZMQClient().ping()
+            if ret != 0:
+                logger.info("roundtrip: %s ms" % ret)
+                select.select([],[],[],1)
+            else:
+                logger.error('ping failed')
+                raise RuntimeError
+    elif options.get('search'):
+        logger.info("searching for {0}".format(options.get("search")))
+        rv = ZMQClient().search(options.get("search"))
+        pprint(rv)
 
 if __name__ == "__main__":
     main()
