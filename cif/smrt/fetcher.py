@@ -8,6 +8,7 @@ from cif.constants import VERSION
 LIMIT = 10000000000
 import sys
 
+
 class Fetcher(object):
 
     def __init__(self, feed, cache='var/smrt/', rule=None, logger=logging.getLogger(__name__)):
@@ -25,7 +26,7 @@ class Fetcher(object):
                 os.makedirs(self.dir)
             except OSError:
                 self.logger.critical('failed to create {0}'.format(self.dir))
-                sys.exit()
+                raise
 
         self.cache = os.path.join(self.dir, self.feed)
 
