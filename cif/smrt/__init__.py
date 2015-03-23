@@ -11,6 +11,7 @@ from cif.smrt.fetcher import Fetcher
 from cif.rule import Rule
 from cif.smrt.parser.pattern import Pattern
 from cif.smrt.parser.delim import Pipe
+from cif.observable import Observable
 import cif.color
 
 from pprint import pprint
@@ -34,7 +35,14 @@ class Smrt(Client):
         data = Fetcher(feed, rule=rule).process()
 
         self.logger.debug('parsing')
-        data = Pipe().process(rule, feed, data, limit=10)
+        data = Pipe().process(rule, feed, data, limit=2)
+
+        l = []
+        for d in range(0, len(data)):
+            x = Observable(**data[d])
+            data.pop(d)
+            data.insert(d, x)
+
 
         pprint(data)
 

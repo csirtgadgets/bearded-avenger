@@ -4,6 +4,7 @@ import time
 import datetime
 import re
 import pytricia
+from pprint import pprint
 
 TLP = "amber"
 GROUP = "everyone"
@@ -32,10 +33,10 @@ for x in IPV4_PRIVATE_NETS:
 
 class Observable(object):
 
-    def __init__(self, subject, obj=None, tlp=TLP,
+    def __init__(self, subject=None, obj=None, tlp=TLP,
                  reporttime=datetime.datetime.fromtimestamp(time.time()).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
-                 provider=None, group=GROUP, protocol='tcp', portlist=None, logger=logging.getLogger(__name__),
-                 **kwargs):
+                 provider=None, group=GROUP, protocol='tcp', portlist=None, tags=None, asn=None,
+                 asn_desc=None, cc=None, logger=logging.getLogger(__name__), *args, **kwargs):
 
         self.logger = logger
 
@@ -47,6 +48,20 @@ class Observable(object):
         self.object = obj
         self.protocol = protocol
         self.portlist = portlist
+        self.tags = tags.split(",")
+
+        if asn and asn.lower() == 'na':
+            asn = None
+
+        self.asn = asn
+
+        if asn_desc and asn_desc.lower() == 'na':
+            asn_desc = None
+
+        self.asn_desc = asn_desc
+        self.cc = cc
+
+        pprint(self)
 
         if not obj:
             self.object = self.resolve_obj(subject)
@@ -77,14 +92,21 @@ class Observable(object):
         elif _url(subject):
             return 'url'
 
-
     def __repr__(self):
-        return json.dumps({
+        o = {
             "subject": self.subject,
             "object": self.object,
             "tlp": self.tlp,
             "reporttime": self.reporttime,
             "provider": self.provider,
             "portlist": self.portlist,
-            "protocol": self.protocol
-        })
+            "protocol": self.protocol,
+            "tags": ",".join(self.tags),
+            "asn": self.asn,
+            "asn_desc": self.asn_desc,
+            "cc": self.cc
+        }
+        if self.logger.getEffectiveLevel() == 10:
+            return json.dumps(o, indent=4, sort_keys=True)
+        else:
+            return json.dumps(o, sort_keys=True)
