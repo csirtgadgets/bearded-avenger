@@ -37,10 +37,7 @@ class Smrt(Client):
         self.logger.debug('parsing')
         data = Pipe().process(rule, feed, data)
 
-        for d in range(0, len(data)):
-            x = Observable(**data[d])
-            data.pop(d)
-            data.insert(d, x)
+        data = [Observable(**item) for item in data]
 
 
         self.logger.debug('submitting')
