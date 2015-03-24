@@ -27,9 +27,9 @@ class Delim(Pattern):
             if len(cols):
                 obs = defaults
 
-                for c in range(0, len(cols)):
-                    if cols[c] is not None:
-                        obs[cols[c]] = m[c]
+                for idx, col in enumerate(cols):
+                    if col is not None:
+                        obs[col] = m[idx]
                 obs.pop("values", None)
                 rv.append(obs)
 
