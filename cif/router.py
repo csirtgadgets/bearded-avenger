@@ -13,8 +13,6 @@ from pprint import pprint
 import zmq
 from zmq.eventloop import ioloop
 import sys
-import reloader
-reloader.enable()
 import json
 import time
 
