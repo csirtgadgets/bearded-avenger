@@ -10,42 +10,13 @@ import select
 import sys
 import os.path
 import ujson as json
-from zmq.eventloop import ioloop
 
 from pprint import pprint
 
 from cif.constants import LOG_FORMAT, REMOTE, DEFAULT_CONFIG, ROUTER_FRONTEND
 import cif.generic
 import zmq
-
-
-class ZMQClient(cif.generic.Generic):
-    def __init__(self, remote=ROUTER_FRONTEND, token='1234', **kwargs):
-        super(ZMQClient, self).__init__(socket=zmq.REQ, **kwargs)
-
-        self.remote = remote
-        self.token = token
-
-    def ping(self):
-        self.logger.debug('connecting to {0}'.format(self.remote))
-        self.socket.connect(self.remote)
-        self.socket.send_multipart([self.token, 'ping', str(time.time())])
-        status, data = self.socket.recv_multipart()
-        if status == 'success':
-            return data
-        else:
-            self.logger.error(status)
-            raise RuntimeError
-
-    def search(self, q, limit=100):
-        self.socket.connect(self.remote)
-        self.socket.send_multipart([self.token, 'search', q])
-        status, data = self.socket.recv_multipart()
-        if status == 'success':
-            return data
-        else:
-            self.logger.error(status)
-            raise RuntimeError
+from cif.observable import Observable
 
 
 class Client(object):
@@ -133,6 +104,59 @@ class Client(object):
         return t1
 
 
+class ZMQClient(object):
+    def __init__(self, logger=logging.getLogger(__name__), remote=ROUTER_FRONTEND, token='1234', **kwargs):
+        self.logger = logger
+        self.remote = remote
+        self.token = token
+
+        self.context = zmq.Context.instance()
+        self.socket = self.context.socket(zmq.REQ)
+
+    def send(self, mtype, data):
+        data = json.dumps(data)
+        self.logger.debug('connecting to {0}'.format(self.remote))
+        self.logger.debug("mtype {0}".format(mtype))
+        self.socket.connect(self.remote)
+        self.socket.send_multipart([self.token, mtype, data])
+
+    def recv(self):
+        mtype, data = self.socket.recv_multipart()
+        data = json.loads(data)
+
+        if data.get('status') == 'success':
+            return data.get('data')
+        else:
+            self.logger.error(data.get('status'))
+            self.logger.error(data.get('data'))
+            raise RuntimeError
+
+    def ping(self):
+        self.send('ping', str(time.time()))
+        return self.recv()
+
+    def search(self, q, limit=100, filters={}):
+        query = {
+            "observable": q,
+            "limit": limit
+        }
+        for k, v in filters:
+            query[k] = v
+
+        self.send('search', data=query)
+        rv = self.recv()
+        rv = json.loads(rv)
+        return rv
+
+    def submit(self, subject):
+        o = Observable(subject)
+        o = str(o)
+        self.send('submission', data=o)
+        rv = self.recv()
+        rv = json.loads(rv)
+        return rv
+
+
 def main():
     p = ArgumentParser(
         description=textwrap.dedent('''\
@@ -152,6 +176,7 @@ def main():
     p.add_argument('--token', dest='token', help='specify api token')
     p.add_argument('-p', '--ping', dest='ping', action="store_true") #meg
     p.add_argument("--search", dest="search", help="search")
+    p.add_argument("--submit", dest="submit", help="submit an observable")
 
     p.add_argument("--config", dest="config", help="specify a configuration file [default: %(default)s]",
                    default=os.path.join(os.path.expanduser("~"), DEFAULT_CONFIG))
@@ -185,6 +210,10 @@ def main():
     elif options.get('search'):
         logger.info("searching for {0}".format(options.get("search")))
         rv = ZMQClient().search(options.get("search"))
+        pprint(rv)
+    elif options.get("submit"):
+        logger.info("submitting {0}".format(options.get("submit")))
+        rv = ZMQClient().submit(options.get("submit"))
         pprint(rv)
 
 if __name__ == "__main__":

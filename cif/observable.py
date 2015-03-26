@@ -35,7 +35,7 @@ class Observable(object):
 
     def __init__(self, subject=None, obj=None, tlp=TLP,
                  reporttime=datetime.datetime.fromtimestamp(time.time()).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
-                 provider=None, group=GROUP, protocol='tcp', portlist=None, tags=[], asn=None,
+                 provider=None, group=GROUP, protocol=None, portlist=None, tags=[], asn=None,
                  asn_desc=None, cc=None, application=None, reference=None, reference_tlp=None, logger=logging.getLogger(
                 __name__), *args, **kwargs):
 
@@ -67,8 +67,6 @@ class Observable(object):
 
         self.asn_desc = asn_desc
         self.cc = cc
-
-        pprint(self)
 
         if not obj:
             self.object = self.resolve_obj(subject)

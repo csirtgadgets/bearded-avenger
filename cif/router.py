@@ -15,6 +15,8 @@ from zmq.eventloop import ioloop
 import sys
 import reloader
 reloader.enable()
+import json
+import time
 
 
 class Router(object):
@@ -36,6 +38,11 @@ class Router(object):
         self.publisher.bind(publisher)
         self.storage.bind(storage)
 
+    def auth(self, token):
+        if not token:
+            return 0
+        return 1
+
     def handle_ctrl(self, s, e):
         self.logger.debug('ctrl msg recieved')
         id, mtype, data = s.recv_multipart()
@@ -46,50 +53,51 @@ class Router(object):
         self.logger.debug('message received')
         m = s.recv_multipart()
 
-        self.logger.debug(pprint(m))
         id, null, token, mtype, data = m
+        self.logger.debug("mtype: {0}".format(mtype))
 
-        if not self.auth(token):
-            self.frontend.send_multipart([id, '', 'unauthorized', '0'])
-        else:
-            try:
-                handler = getattr(self, "handle_" + mtype)
-            except AttributeError:
-                self.logger.error('message type {0} unknown'.format(mtype))
-                rv = 0
-                self.frontend.send_multipart([id, '', 'failed', 0])
-                return
-
+        if self.auth(token):
+            handler = getattr(self, "handle_" + mtype)
             rv = handler(token, data)
-            pprint(rv)
-            self.frontend.send_multipart([id, '', 'success', rv])
-            self.publisher.send_json(rv)
+        else:
+            rv = json.dumps({
+                "status": "failed",
+                "data": "unauthorized"
+            })
 
-    def auth(self, token):
-        if not token:
-            return 0
-        return 1
+        self.frontend.send_multipart([id, '', mtype, rv])
 
-    def handle_ping(self, msg):
-        return str(time.time())
+    def handle_ping(self, data):
+        rv = {
+            "status": "success",
+            "data": str(time.time())
+        }
+        return json.dumps(rv)
 
-    def handle_write(self, msg):
-        return str(time.time())
+    def handle_write(self, data):
+        rv = {
+            "status": "failed",
+            "data": str(time.time())
+        }
+        return json.dumps(rv)
 
     def handle_search(self, token, data):
         self.storage.send_multipart(['search', token, data])
-        id, mtype, data = self.storage.recv_multipart()
+        m = self.storage.recv()
+        rv = {
+            "status": "success",
+            "data": m,
+        }
+        return json.dumps(rv)
 
-        return data
-
-    def handle_submission(self, msg):
-        pass
-
-    def handle_auth(self, msg):
-        pass
-
-    def publish(self, msg):
-        pass
+    def handle_submission(self, token, data):
+        self.storage.send_multipart(['submission', token, data])
+        m = self.storage.recv()
+        rv = {
+            "status": "success",
+            "data": m,
+        }
+        return json.dumps(rv)
 
     def run(self):
         self.logger.debug('starting loop')

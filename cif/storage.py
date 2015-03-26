@@ -16,7 +16,6 @@ import zmq
 from zmq.eventloop import ioloop
 import ujson as json
 from pprint import pprint
-from cif.observable import Observable
 
 STORE_PATH = os.path.join("cif", "stores")
 
@@ -55,13 +54,14 @@ class Storage(object):
         handler = getattr(self, "handle_" + mtype)
         if handler == None:
             self.logger.error('message type {0} unknown'.format(mtype))
-            self.router.send_multipart([id, '', 'ack', '0'])
+            self.router.send_multipart([id, '0'])
             return
 
-        print handler
+        self.logger.debug("mtype: {0}".format(mtype))
+
         rv = handler(token, data)
         rv = json.dumps(rv)
-        self.router.send_multipart([id, '', 'ack', rv])
+        self.router.send_multipart([id, rv])
 
     def auth(function):
         def wrapper(self, *args, **kwargs):
@@ -72,17 +72,19 @@ class Storage(object):
 
     def handle_search(self, token, data):
         self.logger.debug('searching')
+        data = json.loads(data)
         rv = self.store.search(data)
         return rv
 
     def handle_submission(self, token, data):
         self.logger.debug('submitting')
+        data = json.loads(data)
+        data = json.loads(data)
         return self.store.submit(data)
 
     def run(self):
         loop = ioloop.IOLoop.instance()
         loop.add_handler(self.router, self.handle_message, zmq.POLLIN)
-        #loop.add_handler(self.ctrl, self.handle_ctrl, zmq.POLLIN)
         loop.start()
 
 

@@ -1,4 +1,5 @@
 from cif.stores.base import Store
+from pprint import pprint
 
 
 class Plugin(Store):
@@ -15,7 +16,12 @@ class Plugin(Store):
         return True
 
     def search(self, data):
-        return [data]
+        return [{
+            "observable": data['observable']
+        }]
 
     def submit(self, data):
-        return [data]
+        pprint(data)
+        return [{
+            "subject": data['subject']
+        }]
