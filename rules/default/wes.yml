@@ -1,0 +1,11 @@
+fetcher: wf
+parser: json
+
+defaults:
+    tags: scanners
+    confidence: 85
+    tlp: green
+
+feeds:
+    - wes/scanners
+
