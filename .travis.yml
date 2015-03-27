@@ -4,6 +4,7 @@ python:
 
 before_install:
     - pip install pyzmq --install-option="--zmq=bundled"
+    - pip install git+https://github.com/csirtgadgets/py-whiteface-sdk.git
 
 script:
     - python setup.py build
