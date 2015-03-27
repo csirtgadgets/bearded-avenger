@@ -38,7 +38,7 @@ class Fetcher(object):
     def process(self, split="\n", limit=LIMIT):
 
         # using wget until we can find a better way to mirror files in python
-        subprocess.check_call(['wget', '--header', self.ua, '--quiet', '-c', self.remote, '-O', self.cache])
+        #subprocess.check_call(['wget', '--header', self.ua, '--quiet', '-c', self.remote, '-O', self.cache])
 
         with open(self.cache) as f:
             content = f.read().split(split)[0:limit]

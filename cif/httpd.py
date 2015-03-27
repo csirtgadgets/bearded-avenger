@@ -41,6 +41,7 @@ def ping():
         "data": r
     })
 
+# http://flask.pocoo.org/docs/0.10/api/#flask.Request
 @app.route("/search")
 def search():
     q = request.args.get('q')
@@ -55,17 +56,25 @@ def search():
 
 @app.route("/observables", methods=['GET', 'POST'])
 def observables():
-    return "Observables"
+
+    r = zClient(token=token).send('submission', request.data)
+    pprint(r)
+    x = jsonify({
+        "message": "success",
+        "data": []
+    })
+    pprint(x)
+    return x
 
 
 def main():
     parser = ArgumentParser(
         description=textwrap.dedent('''\
         example usage:
-            $ cif-api -d
+            $ cif-httpd -d
         '''),
         formatter_class=RawDescriptionHelpFormatter,
-        prog='wf'
+        prog='cif-httpd'
     )
 
     parser.add_argument("-v", "--verbose", dest="verbose", action="count",

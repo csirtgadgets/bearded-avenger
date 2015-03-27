@@ -23,7 +23,6 @@ class Delim(Pattern):
                 continue
 
             m = self.pattern.split(l)
-            pprint(m)
             if len(cols):
                 obs = defaults
 
@@ -38,18 +37,4 @@ class Delim(Pattern):
                 break
         return rv
 
-
-class Csv(Delim):
-
-    def __init__(self, *args, **kwargs):
-        super(Csv, self).__init__(*args, **kwargs)
-
-        self.pattern = re.compile(',')
-
-
-class Pipe(Delim):
-
-    def __init__(self, *args, **kwargs):
-        super(Pipe, self).__init__(*args, **kwargs)
-
-        self.pattern = re.compile('\||\s+\|\s+')
+Plugin = Delim

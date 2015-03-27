@@ -40,3 +40,5 @@ class Pattern(Parser):
             if max >= limit:
                 break
         return rv
+
+Plugin = Pattern
