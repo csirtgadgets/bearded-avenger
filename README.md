@@ -5,6 +5,7 @@
 ```
 $ sudo apt-get install -y python-dev python-pip git
 $ pip install pyzmq --install-option="--zmq=bundled"
+$ pip install git+https://github.com/csirtgadgets/py-whiteface-sdk.git
 $ pip install git+https://github.com/csirtgadgets/bearded-avenger.git
 ```
 
