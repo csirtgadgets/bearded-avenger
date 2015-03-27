@@ -30,7 +30,7 @@ class Client(object):
         self.timeout = timeout
         self.verify_ssl = verify_ssl
 
-        self.session = requests.session()
+        self.session = requests.Session()
         self.session.headers["Accept"] = 'application/vnd.cif.v3+json'
         self.session.headers['User-Agent'] = 'cif-sdk-python/0.0.0a'
         self.session.headers['Authorization'] = 'Token token=' + self.token
@@ -120,6 +120,7 @@ class ZMQClient(object):
 
         # zmq requires .encode
         self.socket.send_multipart([self.token.encode('utf-8'), mtype.encode('utf-8'), data.encode('utf-8')])
+        return self.recv()
 
 
     def recv(self):

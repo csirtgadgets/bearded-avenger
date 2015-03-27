@@ -46,8 +46,12 @@ class Storage(object):
     def handle_message(self, s, e):
         self.logger.debug('message received')
         m = s.recv_multipart()
-        pprint(m)
+
+        self.logger.debug(m)
         id, mtype, token, data = m
+
+        if isinstance(data, basestring):
+            data = json.loads(data)
 
         handler = getattr(self, "handle_" + mtype)
         if handler == None:
@@ -63,15 +67,20 @@ class Storage(object):
 
     def handle_search(self, token, data):
         self.logger.debug('searching')
-        data = json.loads(data)
         rv = self.store.search(data)
         return rv
 
     def handle_submission(self, token, data):
         self.logger.debug('submitting')
-        data = json.loads(data)
-        data = json.loads(data) # this is on purpose for now since it's a double encoded string when it gets here
-        return self.store.submit(data)
+
+        try:
+            x = self.store.submit(data)
+        except e:
+            self.logger.error("failed")
+            self.logger.exception(e)
+
+        self.logger.debug("success!")
+        return x
 
     def run(self):
         loop = ioloop.IOLoop.instance()

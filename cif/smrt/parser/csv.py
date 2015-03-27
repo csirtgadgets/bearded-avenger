@@ -7,6 +7,6 @@ class Csv(Delim):
     def __init__(self, *args, **kwargs):
         super(Csv, self).__init__(*args, **kwargs)
 
-        self.pattern = re.compile(',')
+        self.pattern = re.compile(",")
 
 Plugin = Csv

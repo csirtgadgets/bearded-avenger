@@ -13,8 +13,9 @@ class Delim(Pattern):
 
         defaults = rule.defaults
 
-        for d in rule.feeds[feed]['defaults']:
-            defaults[d] = rule.feeds[feed]['defaults'][d]
+        if rule.feeds[feed].get('defaults'):
+            for d in rule.feeds[feed].get('defaults'):
+                defaults[d] = rule.feeds[feed]['defaults'][d]
 
         max = 0
         rv = []

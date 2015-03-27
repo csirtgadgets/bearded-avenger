@@ -69,10 +69,10 @@ def observables():
         pass
     else:
         r = zClient(token=token).send('submission', request.data)
-    x = jsonify({
-        "message": "success",
-        "data": []
-    })
+        x = jsonify({
+            "message": "success",
+            "data": r
+        })
     return x
 
 

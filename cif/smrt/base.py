@@ -13,9 +13,11 @@ from cif.observable import Observable
 import cif.color
 import pkgutil
 
+
 from pprint import pprint
 
 PARSERS_PATH = os.path.join("cif", "smrt", "parser")
+LIMIT = 10000000
 
 import sys
 
@@ -31,7 +33,10 @@ class Smrt(Client):
         self.logger = logger
 
     def parse(self, rule, feed, data):
-        parser = rule.parser
+        if rule.parser:
+            parser = rule.parser
+        else:
+            parser = 'pattern'
 
         for loader, modname, is_pkg in pkgutil.iter_modules([PARSERS_PATH]):
             self.logger.debug('testing: {0}'.format(modname))
@@ -42,10 +47,10 @@ class Smrt(Client):
                 data = parser.process(rule, feed, data)
                 return data
 
+        self.logger.debug(rule)
         raise RuntimeError
 
     def process(self, rule, feed=None, limit=None):
-        rule = Rule(path=rule)
 
         self.logger.debug('fetching')
         data = Fetcher(feed, rule=rule).process()
@@ -56,12 +61,12 @@ class Smrt(Client):
             self.logger.error("unable to parse data")
             raise
 
-        data = [Observable(**item) for item in data]
+        if limit and len(data) > int(limit):
+            data = data[0:int(limit)]
 
-        self.logger.debug('submitting')
-        for d in range(0, (int(limit))):
-            self.submit(str(data[d])) # since __repr__ jsonify's it for us
-
+        self.logger.debug('submitting...')
+        for d in enumerate(data):
+            self.submit(str(Observable(*d)))
 
 def main():
     p = ArgumentParser(
@@ -81,14 +86,15 @@ def main():
     p.add_argument("--config", dest="config", help="specify a configuration file [default: %(default)s]",
                    default=os.path.join(os.path.expanduser("~"), DEFAULT_CONFIG))
 
-    p.add_argument("-r", "--rules", dest="rules", help="specify the rules directory [default: %(default)s",
-                   default="rules/default/drg.yml")
+    p.add_argument("-r", "--rule", dest="rule", help="specify the rules directory or specific rules file [default: %("
+                   "default)s", default="rules/default")
 
     p.add_argument("-f", "--feed", dest="feed", help="specify the feed to process")
 
     p.add_argument("--remote", dest="remote", help="specify the remote api url [default: %(default)s", default=REMOTE)
 
-    p.add_argument("--limit", dest="limit", help="limit the number of records processed")
+    p.add_argument("--limit", dest="limit", help="limit the number of records processed [default: %(default)s",
+                   default=LIMIT)
     p.add_argument("--token", dest="token", help="specify token")
 
 
@@ -107,10 +113,40 @@ def main():
     logger = logging.getLogger(__name__)
 
     options = vars(args)
+    rule = options['rule']
+
+    print rule
 
     s = Smrt(logger=logger, token=options.get('token'))
 
-    s.process(options.get('rules'), feed="ssh", limit=options.get('limit'))
+    if os.path.isdir(rule):
+        for file in os.listdir(rule):
+            logger.debug("processing {0}/{1}".format(rule, file))
+            r = Rule(path=os.path.join(rule, file))
+
+            if not r.feeds:
+                continue
+
+            for feed in r.feeds:
+                s.process(r, feed=feed, limit=options.get('limit'))
+    else:
+        logger.debug("processing {0}".format(rule))
+        r = Rule(path=rule)
+
+        if not r.feeds:
+            logger.error("rules file contains no feeds")
+            raise RuntimeError
+
+        if options.get('feed'):
+            s.process(r, feed=options['feed'], limit=options.get('limit'))
+        else:
+            for feed in rule.feeds:
+                s.process(r, feed=feed, limit=options.get('limit'))
+
+
+    sys.exit()
+
+
 
 if __name__ == "__main__":
     main()

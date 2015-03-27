@@ -16,12 +16,7 @@ class Plugin(Store):
         return True
 
     def search(self, data):
-        return [{
-            "observable": data['observable']
-        }]
+        return [data]
 
     def submit(self, data):
-        pprint(data)
-        return [{
-            "subject": data['subject']
-        }]
+        return [data]

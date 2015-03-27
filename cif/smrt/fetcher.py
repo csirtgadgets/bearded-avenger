@@ -7,7 +7,10 @@ from pprint import pprint
 from cif.constants import VERSION
 LIMIT = 10000000000
 import sys
-
+import magic
+import re
+from zipfile import ZipFile
+RE_SUPPORTED_DECODE = re.compile("zip|lzf|lzma|xz|lzop")
 
 class Fetcher(object):
 
@@ -17,7 +20,11 @@ class Fetcher(object):
         self.feed = feed
         self.rule = rule
         self.cache = cache
-        self.remote = self.rule.feeds[feed]['remote']
+
+        if self.rule.defaults.get('remote'):
+            self.remote = self.rule.defaults.get('remote')
+        else:
+            self.remote = self.rule.feeds[feed]['remote']
 
         self.dir = os.path.join(self.cache, self.rule.defaults.get('provider'))
 
@@ -38,10 +45,19 @@ class Fetcher(object):
     def process(self, split="\n", limit=LIMIT):
 
         # using wget until we can find a better way to mirror files in python
-        #subprocess.check_call(['wget', '--header', self.ua, '--quiet', '-c', self.remote, '-O', self.cache])
+        subprocess.check_call(['wget', '--header', self.ua, '--quiet', '-c', self.remote, '-O', self.cache])
 
-        with open(self.cache) as f:
-            content = f.read().split(split)[0:limit]
+        ftype = magic.from_file(self.cache, mime=True)
+        self.logger.debug(ftype)
+
+        if ftype == 'text/plain':
+            with open(self.cache) as f:
+                data = f.read().split(split)[0:limit]
+        if ftype == "application/zip":
+            with ZipFile(self.cache) as f:
+                for m in f.infolist():
+                    data = f.read(m.filename).split(split)[0:limit]
 
         f.close()
-        return content
+
+        return data
