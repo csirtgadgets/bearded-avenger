@@ -1,8 +1,8 @@
 from unittest import TestCase
 
-import cif.api as api
+import cif.httpd as httpd
 
 
-class TestClient(TestCase):
+class TestHttp(TestCase):
     def test_cli(self):
         pass
