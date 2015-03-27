@@ -9,7 +9,7 @@ import time
 import select
 import sys
 import os.path
-import ujson as json
+import json
 
 from pprint import pprint
 
@@ -56,9 +56,7 @@ class Client(object):
         return body
 
     def post(self, uri, data):
-        data = json.dumps(data)
-
-        body = self.session.post(uri, data=data, verify=self.verify_ssl)
+        body = self.session.post(uri, data=data)
 
         if body.status_code > 303:
             err = 'request failed: %s' % str(body.status_code)
@@ -87,12 +85,11 @@ class Client(object):
     def search(self):
         return []
 
-    def submit(self, data=[]):
-        """
-        :param data:
-        :return: list
-        """
-        return []
+    def submit(self, data):
+        uri = "{0}/observables".format(self.remote)
+        self.logger.debug(uri)
+        rv = self.post(uri, data)
+        return rv
 
     def ping(self, write=False):
         t0 = time.time()
@@ -114,11 +111,16 @@ class ZMQClient(object):
         self.socket = self.context.socket(zmq.REQ)
 
     def send(self, mtype, data):
-        data = json.dumps(data)
+
+        if type(data) is not str:
+            data = json.dumps(data)
         self.logger.debug('connecting to {0}'.format(self.remote))
         self.logger.debug("mtype {0}".format(mtype))
         self.socket.connect(self.remote)
-        self.socket.send_multipart([self.token, mtype, data])
+
+        # zmq requires .encode
+        self.socket.send_multipart([self.token.encode('utf-8'), mtype.encode('utf-8'), data.encode('utf-8')])
+
 
     def recv(self):
         mtype, data = self.socket.recv_multipart()

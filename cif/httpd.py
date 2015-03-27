@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 
-from flask import Flask, session, redirect, url_for, escape, request, jsonify, abort
+from flask import Flask, session, redirect, url_for, escape, request, jsonify, abort, g
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 import logging
 import textwrap
-import time
-import ujson as json
+import re
 
 from pprint import pprint
 import zmq
@@ -20,11 +19,17 @@ from cif.client import ZMQClient as zClient
 app = Flask(__name__)
 logger = logging.getLogger(__name__)
 
-# @app.before_request
-# def before_request():
-#     return 'true'
 
-token = str(1234)
+def pull_token():
+    pprint(request.headers)
+    token = re.match("^Token token=(\S+)$", request.headers.get("Authorization")).group(1)
+    return token
+
+@app.before_request
+def before_request():
+    t = pull_token()
+    if not t or t == 'None':
+        return '', 401
 
 @app.route("/")
 def help():
@@ -35,17 +40,18 @@ def help():
 
 @app.route("/ping", methods=['GET', 'POST'])
 def ping():
-    r = zClient(token=token).ping()
+    r = zClient(token=pull_token).ping()
     return jsonify({
         "message": "success",
         "data": r
     })
 
 # http://flask.pocoo.org/docs/0.10/api/#flask.Request
-@app.route("/search")
+@app.route("/search", methods=["GET"])
 def search():
     q = request.args.get('q')
     limit = request.args.get('limit')
+    token = pull_token()
 
     r = zClient(token=token).search(str(q), limit=limit)
 
@@ -54,16 +60,19 @@ def search():
         "data": r
     })
 
-@app.route("/observables", methods=['GET', 'POST'])
+@app.route("/observables", methods=["GET", "POST"])
 def observables():
+    token = pull_token()
+    pprint(request.data)
 
-    r = zClient(token=token).send('submission', request.data)
-    pprint(r)
+    if request.method == "GET":
+        pass
+    else:
+        r = zClient(token=token).send('submission', request.data)
     x = jsonify({
         "message": "success",
         "data": []
     })
-    pprint(x)
     return x
 
 
@@ -95,6 +104,7 @@ def main():
     logging.getLogger('').addHandler(console)
 
     options = vars(args)
+    app.config["SECRET_KEY"] = "ITSASECRET"
     app.run(debug=options.get('debug'))
 
 if __name__ == "__main__":

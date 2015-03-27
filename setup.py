@@ -26,11 +26,11 @@ setup(
       entry_points = {
           'console_scripts': [
               'cif=cif.client:main',
-              'cif-smrt=cif.smrt:main',
+              'cif-smrt=cif.smrt.base:main',
               'cif-router=cif.router:main',
               'cif-hunter=cif.hunter:main',
               'cif-gatherer=cif.gatherer:main',
-              'cif-api=cif.api:main',
+              'cif-httpd=cif.httpd:main',
               'cif-storage=cif.storage:main'
               ]
       },

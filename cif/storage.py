@@ -7,8 +7,6 @@ import textwrap
 from cif.constants import LOG_FORMAT, DEFAULT_CONFIG, STORAGE_ADDR, CTRL_ADDR
 import os.path
 import pkgutil
-import reloader
-reloader.enable()
 import os
 import time
 import cif.generic
@@ -63,13 +61,6 @@ class Storage(object):
         rv = json.dumps(rv)
         self.router.send_multipart([id, rv])
 
-    def auth(function):
-        def wrapper(self, *args, **kwargs):
-            if self.store.auth(self, args['token']):
-                return function(*args, **kwargs)
-            else:
-                return False
-
     def handle_search(self, token, data):
         self.logger.debug('searching')
         data = json.loads(data)
@@ -79,7 +70,7 @@ class Storage(object):
     def handle_submission(self, token, data):
         self.logger.debug('submitting')
         data = json.loads(data)
-        data = json.loads(data)
+        data = json.loads(data) # this is on purpose for now since it's a double encoded string when it gets here
         return self.store.submit(data)
 
     def run(self):
