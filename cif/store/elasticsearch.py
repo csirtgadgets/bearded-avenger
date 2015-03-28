@@ -1,4 +1,4 @@
-from cif.stores.base import Store
+from cif.store import Store
 
 
 class Plugin(Store):

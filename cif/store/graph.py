@@ -1,10 +1,9 @@
 from cif.store import Store
-from pprint import pprint
 
 
-class Plugin(Store):
+class Graph(Store):
 
-    name = 'dummy'
+    name = 'graph'
 
     def __init__(self, *args, **kwargs):
         super(Plugin, self).__init__(*args, **kwargs)
@@ -20,3 +19,5 @@ class Plugin(Store):
 
     def submit(self, data):
         return [data]
+
+Plugin = Graph
