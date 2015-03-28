@@ -1,4 +1,5 @@
 *.swp
+*.sqlite
 
 var/
 

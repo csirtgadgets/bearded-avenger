@@ -33,7 +33,7 @@ for x in IPV4_PRIVATE_NETS:
 
 class Observable(object):
 
-    def __init__(self, subject=None, obj=None, tlp=TLP,
+    def __init__(self, observable=None, otype=None, tlp=TLP,
                  reporttime=datetime.datetime.fromtimestamp(time.time()).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
                  provider=None, group=GROUP, protocol=None, portlist=None, tags=[], asn=None,
                  asn_desc=None, cc=None, application=None, reference=None, reference_tlp=None, logger=logging.getLogger(
@@ -44,12 +44,12 @@ class Observable(object):
         if type(tags) == str:
             tags = tags.split(",")
 
-        self.subject = subject
+        self.observable = observable
         self.tlp = tlp
         self.provider = provider
         self.reporttime = reporttime
         self.group = group
-        self.object = obj
+        self.otype = otype
         self.protocol = protocol
         self.portlist = portlist
         self.tags = tags
@@ -68,16 +68,16 @@ class Observable(object):
         self.asn_desc = asn_desc
         self.cc = cc
 
-        if not obj:
-            self.object = self.resolve_obj(subject)
+        if not otype:
+            self.otype = self.resolve_obj(self.observable)
 
     def is_private(self):
-        if self.object and self.object == 'ipv4':
-            if IPV4_PRIVATE.get(self.subject):
+        if self.otype and self.otype == 'ipv4':
+            if IPV4_PRIVATE.get(self.observable):
                 return True
         return False
 
-    def resolve_obj(self, subject):
+    def resolve_obj(self, observable):
         def _ipv4(s):
             if RE_IPV4.match(s):
                 return 1
@@ -90,17 +90,17 @@ class Observable(object):
             if RE_URL.match(s):
                 return 1
 
-        if _fqdn(subject):
+        if _fqdn(observable):
             return 'fqdn'
-        elif _ipv4(subject):
+        elif _ipv4(observable):
             return 'ipv4'
-        elif _url(subject):
+        elif _url(observable):
             return 'url'
 
     def __repr__(self):
         o = {
-            "subject": self.subject,
-            "object": self.object,
+            "observable": self.observable,
+            "otype": self.observable,
             "tlp": self.tlp,
             "reporttime": self.reporttime,
             "provider": self.provider,

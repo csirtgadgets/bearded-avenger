@@ -15,7 +15,7 @@ from zmq.eventloop import ioloop
 import ujson as json
 from pprint import pprint
 
-STORE_PATH = os.path.join("cif", "stores")
+STORE_PATH = os.path.join("cif", "store")
 
 
 class Storage(object):
@@ -75,9 +75,9 @@ class Storage(object):
 
         try:
             x = self.store.submit(data)
-        except e:
-            self.logger.error("failed")
-            self.logger.exception(e)
+        except Exception, err:
+            self.logger.exception(err)
+            return False
 
         self.logger.debug("success!")
         return x

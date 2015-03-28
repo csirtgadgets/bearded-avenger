@@ -53,7 +53,7 @@ class Smrt(Client):
         raise RuntimeError
 
     def process(self, rule, feed=None, limit=None):
-        handler = HTTPFetcher
+        handler = HTTPFetcher(feed, rule=rule)
         data = []
 
         if rule.fetcher:
@@ -64,7 +64,6 @@ class Smrt(Client):
                     handler = loader.find_module(modname).load_module(modname)
                     handler = handler.Plugin(feed, rule=rule)
 
-        pprint(handler)
         data = handler.process()
 
         try:
@@ -77,8 +76,9 @@ class Smrt(Client):
             data = data[0:int(limit)]
 
         self.logger.debug('submitting...')
-        for d in enumerate(data):
-            self.submit(str(Observable(*d)))
+        for idx, d in enumerate(data):
+            self.submit(str(Observable(**d)))
+
 
 def main():
     p = ArgumentParser(
