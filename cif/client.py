@@ -112,7 +112,7 @@ class ZMQClient(object):
 
     def send(self, mtype, data):
 
-        if type(data) is not str:
+        if not isinstance(data, basestring):
             data = json.dumps(data)
         self.logger.debug('connecting to {0}'.format(self.remote))
         self.logger.debug("mtype {0}".format(mtype))
