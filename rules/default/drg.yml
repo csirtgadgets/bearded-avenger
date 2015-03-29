@@ -16,8 +16,8 @@ feeds:
   ssh:
     remote: http://dragonresearchgroup.org/insight/sshpwauth.txt
     defaults:
-      application: ssh
-      portlist: 22
+      - application: ssh
+      - portlist: 22
   vnc:
     remote: http://dragonresearchgroup.org/insight/vncprobe.txt
     defaults:
