@@ -20,8 +20,6 @@ class Rule(dict):
             self.feeds = d.get('feeds')
             self.parser = d.get('parser')
             self.fetcher = d.get('fetcher')
-
-            f.close()
         else:
             self.defaults = rule.get('defaults')
             self.feeds = rule.get('feeds')
