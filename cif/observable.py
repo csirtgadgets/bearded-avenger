@@ -41,7 +41,7 @@ class Observable(object):
 
         self.logger = logger
 
-        if type(tags) == str:
+        if isinstance(tags, basestring):
             tags = tags.split(",")
 
         self.observable = observable
