@@ -69,7 +69,7 @@ class Storage(object):
         self.ctrl.connect(CTRL_ADDR)
         self.ctrl.send_multipart(['storage', 'ping', str(time.time())])
         id, mtype, data = self.ctrl.recv_multipart()
-        if mtype is not 'ack':
+        if mtype != 'ack':
             raise CIFConnectionError("connection rejected by router: {}".format(mtype))
 
     def handle_message(self, s, e):
