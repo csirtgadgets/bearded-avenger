@@ -17,6 +17,11 @@ from cif.constants import LOG_FORMAT, REMOTE, DEFAULT_CONFIG, ROUTER_FRONTEND
 import cif.generic
 import zmq
 from cif.observable import Observable
+from cif.format.table import Table
+
+SNDTIMEO = 2000
+RCVTIMEO = 30000
+LINGER = 3
 
 
 class Client(object):
@@ -109,6 +114,9 @@ class ZMQClient(object):
 
         self.context = zmq.Context.instance()
         self.socket = self.context.socket(zmq.REQ)
+        self.socket.RCVTIMEO = RCVTIMEO
+        self.socket.SNDTIMEO = SNDTIMEO
+        self.socket.setsockopt(zmq.LINGER, LINGER)
 
     def send(self, mtype, data):
 
@@ -121,7 +129,6 @@ class ZMQClient(object):
         # zmq requires .encode
         self.socket.send_multipart([self.token.encode('utf-8'), mtype.encode('utf-8'), data.encode('utf-8')])
         return self.recv()
-
 
     def recv(self):
         mtype, data = self.socket.recv_multipart()
@@ -146,9 +153,7 @@ class ZMQClient(object):
         for k, v in filters:
             query[k] = v
 
-        self.send('search', data=query)
-        rv = self.recv()
-        rv = json.loads(rv)
+        rv = self.send('search', data=query)
         return rv
 
     def submit(self, subject):
@@ -213,7 +218,7 @@ def main():
     elif options.get('search'):
         logger.info("searching for {0}".format(options.get("search")))
         rv = ZMQClient().search(options.get("search"))
-        pprint(rv)
+        print Table(data=rv)
     elif options.get("submit"):
         logger.info("submitting {0}".format(options.get("submit")))
         rv = ZMQClient().submit(options.get("submit"))
