@@ -23,7 +23,7 @@ setup(
       packages=find_packages(),
       install_requires=reqs,
       scripts=[],
-      entry_points = {
+      entry_points={
           'console_scripts': [
               'cif=cif.client:main',
               'cif-smrt=cif.smrt:main',
@@ -31,7 +31,7 @@ setup(
               'cif-hunter=cif.hunter:main',
               'cif-gatherer=cif.gatherer:main',
               'cif-httpd=cif.httpd:main',
-              'cif-storage=cif.storage:main'
+              'cif-storage=cif.storage:main',
               ]
       },
       test_suite="cif.test"

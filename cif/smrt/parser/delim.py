@@ -26,7 +26,6 @@ class Delim(Pattern):
             m = self.pattern.split(l)
             if len(cols):
                 obs = defaults
-
                 for idx, col in enumerate(cols):
                     if col is not None:
                         obs[col] = m[idx]

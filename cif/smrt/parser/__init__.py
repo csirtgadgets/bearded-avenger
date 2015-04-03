@@ -8,7 +8,7 @@ class Parser(object):
         self.logger = logger
 
     def understands(self, p):
-        pass
+        raise NotImplementedError()
 
     def process(self):
-        pass
+        raise NotImplementedError()

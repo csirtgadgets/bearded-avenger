@@ -56,6 +56,11 @@ class Smrt(Client):
         handler = HTTPFetcher(feed, rule=rule)
         data = []
 
+        # past the client to the parser
+        # pass the parser to the fetcher
+        # stream the results as it parses...
+        # page 237
+
         if rule.fetcher:
             for loader, modname, is_pkg in pkgutil.iter_modules([FETCHERS_PATH]):
                 self.logger.debug('testing: {0}'.format(modname))
@@ -64,6 +69,9 @@ class Smrt(Client):
                     handler = loader.find_module(modname).load_module(modname)
                     handler = handler.Plugin(feed, rule=rule)
 
+        # pass the parser to the fetcher
+        # that way we can iterate over the data w/o dragging the raw data in and out
+        # page 202
         data = handler.process()
 
         try:

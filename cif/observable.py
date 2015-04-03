@@ -100,7 +100,7 @@ class Observable(object):
     def __repr__(self):
         o = {
             "observable": self.observable,
-            "otype": self.observable,
+            "otype": self.otype,
             "tlp": self.tlp,
             "reporttime": self.reporttime,
             "provider": self.provider,

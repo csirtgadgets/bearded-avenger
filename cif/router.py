@@ -63,6 +63,7 @@ class Router(object):
                 "data": "unauthorized"
             })
 
+        self.logger.debug("replying {}".format(rv))
         self.frontend.send_multipart([id, '', mtype, rv])
 
     def handle_ping(self, data):
@@ -81,21 +82,13 @@ class Router(object):
 
     def handle_search(self, token, data):
         self.storage.send_multipart(['search', token, data])
-        m = self.storage.recv()
-        rv = {
-            "status": "success",
-            "data": m,
-        }
-        return json.dumps(rv)
+        #m = self.storage.recv()
+        return self.storage.recv()
 
     def handle_submission(self, token, data):
         self.storage.send_multipart(['submission', token, data])
         m = self.storage.recv()
-        rv = {
-            "status": "success",
-            "data": m,
-        }
-        return json.dumps(rv)
+        return m
 
     def run(self):
         self.logger.debug('starting loop')

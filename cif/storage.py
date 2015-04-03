@@ -13,7 +13,7 @@ import zmq
 from zmq.eventloop import ioloop
 import ujson as json
 from pprint import pprint
-from cif.errors import CIFConnectionError
+from cif.errors import CIFConnectionError, StorageSubmissionFailed
 
 STORE_PATH = os.path.join("cif", "store")
 RCVTIMEO = 5000
@@ -91,7 +91,13 @@ class Storage(object):
         self.logger.debug("mtype: {0}".format(mtype))
 
         rv = handler(token, data)
+        if rv:
+            rv = {"status": "success", "data": rv }
+        else:
+            rv = {"status": "failed" }
+
         rv = json.dumps(rv)
+        self.logger.debug(rv)
         self.router.send_multipart([id, rv])
 
     def handle_search(self, token, data):

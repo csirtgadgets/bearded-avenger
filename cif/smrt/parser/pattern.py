@@ -52,7 +52,6 @@ class Pattern(Parser):
                         obs[col] = m[idx]
                 obs.pop("values", None)
                 obs.pop("pattern", None)
-                pprint(obs)
                 rv.append(obs)
 
             max += 1
