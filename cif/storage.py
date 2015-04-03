@@ -9,13 +9,16 @@ import os.path
 import pkgutil
 import os
 import time
-import cif.generic
 import zmq
 from zmq.eventloop import ioloop
 import ujson as json
 from pprint import pprint
+from cif.errors import CIFConnectionError
 
 STORE_PATH = os.path.join("cif", "store")
+RCVTIMEO = 5000
+SNDTIMEO = 2000
+LINGER = 3
 
 
 class Storage(object):
@@ -24,7 +27,9 @@ class Storage(object):
         self.logger = logger
         self.context = zmq.Context()
         self.router = self.context.socket(zmq.ROUTER)
-        self.ctrl = self.context.socket(zmq.REQ)
+        self.router_addr = router
+        self.connected = False
+        self.ctrl = None
 
         for loader, modname, is_pkg in pkgutil.iter_modules([STORE_PATH]):
             if modname == store:
@@ -33,15 +38,39 @@ class Storage(object):
                 self.store = self.store.Plugin()
 
         self.router = self.context.socket(zmq.ROUTER)
-        self.logger.debug('connecting to router: {0}'.format(router))
+
+        while not self.connected:
+            try:
+                self.logger.debug('connecting to router: {0}'.format(router))
+                self._connect_ctrl()
+            except zmq.error.Again:
+                self.logger.error("problem connecting to router, retrying...")
+            except CIFConnectionError:
+                self.logger.error("unable to connect")
+                raise
+            except KeyboardInterrupt:
+                raise SystemExit
+            else:
+                self.connected = True
+
         self.router.connect(STORAGE_ADDR)
 
-        self.ctrl.connect(CTRL_ADDR)
+    def _connect_ctrl(self):
+        if self.ctrl:
+            self.connected = False
+            self.ctrl.close()
+            self.ctrl = None
 
+        self.ctrl = self.context.socket(zmq.REQ)
+        self.ctrl.RCVTIMEO = RCVTIMEO
+        self.ctrl.SNDTIMEO = SNDTIMEO
+        self.ctrl.setsockopt(zmq.LINGER, LINGER)
+
+        self.ctrl.connect(CTRL_ADDR)
         self.ctrl.send_multipart(['storage', 'ping', str(time.time())])
         id, mtype, data = self.ctrl.recv_multipart()
-        if mtype == 'ack':
-            self.logger.debug('storage online')
+        if mtype is not 'ack':
+            raise CIFConnectionError("connection rejected by router: {}".format(mtype))
 
     def handle_message(self, s, e):
         self.logger.debug('message received')
@@ -75,12 +104,13 @@ class Storage(object):
 
         try:
             x = self.store.submit(data)
-        except Exception, err:
+        except Exception as err:
             self.logger.exception(err)
-            return False
-
-        self.logger.debug("success!")
-        return x
+            x = False
+        else:
+            self.logger.debug("success!")
+        finally:
+            return x
 
     def run(self):
         loop = ioloop.IOLoop.instance()
@@ -129,7 +159,12 @@ def main():
     s = Storage(router=options['router'], store=options['store'], store_nodes=options.get('store_nodes'))
 
     logger.info('running...')
-    s.run()
+
+    try:
+        s.run()
+    except KeyboardInterrupt:
+        logger.info('shutting down...')
+        raise SystemExit
 
 
 if __name__ == "__main__":
