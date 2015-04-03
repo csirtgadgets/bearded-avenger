@@ -59,6 +59,4 @@ class Fetcher(object):
                 for m in f.infolist():
                     data = f.read(m.filename).split(split)[0:limit]
 
-        f.close()
-
         return data

@@ -13,7 +13,6 @@ class Config(dict):
             except:
                 self.logger.error('unable to parse {0}'.format(path))
                 raise RuntimeError
-        f.close()
 
         self.token = d.get('token')
         self.remote = d.get('remote')
