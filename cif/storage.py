@@ -14,8 +14,11 @@ from zmq.eventloop import ioloop
 import ujson as json
 from pprint import pprint
 from cif.errors import CIFConnectionError, StorageSubmissionFailed
+import inspect
 
-STORE_PATH = os.path.join("cif", "store")
+MOD_PATH = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+
+STORE_PATH = os.path.join(MOD_PATH, "store")
 RCVTIMEO = 5000
 SNDTIMEO = 2000
 LINGER = 3
@@ -33,7 +36,7 @@ class Storage(object):
 
         for loader, modname, is_pkg in pkgutil.iter_modules([STORE_PATH]):
             if modname == store:
-                self.logger.info('Loading plugin: {0}'.format(modname))
+                self.logger.debug('Loading plugin: {0}'.format(modname))
                 self.store = loader.find_module(modname).load_module(modname)
                 self.store = self.store.Plugin()
 
