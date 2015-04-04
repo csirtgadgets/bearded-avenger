@@ -127,7 +127,9 @@ class ZMQClient(object):
         self.socket.connect(self.remote)
 
         # zmq requires .encode
+        self.logger.debug("sending")
         self.socket.send_multipart([self.token.encode('utf-8'), mtype.encode('utf-8'), data.encode('utf-8')])
+        self.logger.debug("receving")
         return self.recv()
 
     def recv(self):
