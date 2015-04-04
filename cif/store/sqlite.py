@@ -90,7 +90,6 @@ class SQLite(Store):
 
         return results
 
-
     def submit(self, data):
         o = Observable(**data)
         tags = data.get("tags") or []
