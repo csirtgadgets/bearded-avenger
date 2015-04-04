@@ -8,9 +8,6 @@ $ pip install git+https://github.com/csirtgadgets/bearded-avenger.git
 ```
 
 [![Build Status](https://travis-ci.org/csirtgadgets/bearded-avenger.png?branch=master)](https://travis-ci.org/csirtgadgets/bearded-avenger)
- * [the Wiki](https://github.com/csirtgadgets/bearded-avenger/wiki)
- * [FAQ](https://github.com/csirtgadgets/bearded-avenger/wiki/FAQ)
- * [Known Issues](https://github.com/csirtgadgets/bearded-avenger/issues?labels=bug&state=open) 
 
 # Project Goals
 * Pythonic re-write
