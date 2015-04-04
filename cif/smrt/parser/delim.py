@@ -17,7 +17,7 @@ class Delim(Pattern):
             for d in rule.feeds[feed].get('defaults'):
                 defaults[d] = rule.feeds[feed]['defaults'][d]
 
-        max = 0
+        limit = int(limit)
         rv = []
         for l in data:
             if l == '' or self.is_comment(l):
@@ -25,16 +25,20 @@ class Delim(Pattern):
 
             m = self.pattern.split(l)
             if len(cols):
-                obs = defaults
+                obs = {}
+                for k, v in defaults.iteritems():
+                    obs[k] = v
+
                 for idx, col in enumerate(cols):
                     if col is not None:
                         obs[col] = m[idx]
                 obs.pop("values", None)
                 rv.append(obs)
 
-            max += 1
-            if max >= limit:
+            limit -= 1
+            if limit == 0:
                 break
+
         return rv
 
 Plugin = Delim

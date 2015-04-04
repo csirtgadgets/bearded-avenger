@@ -34,7 +34,7 @@ class Smrt(Client):
 
         self.logger = logger
 
-    def parse(self, rule, feed, data):
+    def parse(self, rule, feed, data, limit):
         if rule.parser:
             parser = rule.parser
         else:
@@ -46,14 +46,14 @@ class Smrt(Client):
                 self.logger.debug("using {0} to parse the data".format(modname))
                 parser = loader.find_module(modname).load_module(modname)
                 parser = parser.Plugin()
-                data = parser.process(rule, feed, data)
+                data = parser.process(rule, feed, data, limit=limit)
                 return data
 
         self.logger.debug(rule)
         raise RuntimeError
 
     def process(self, rule, feed=None, limit=None):
-        handler = HTTPFetcher(feed, rule=rule)
+        fetcher = HTTPFetcher(feed, rule=rule)
         data = []
 
         # past the client to the parser
@@ -66,16 +66,16 @@ class Smrt(Client):
                 self.logger.debug('testing: {0}'.format(modname))
                 if modname == rule.fetcher:
                     self.logger.debug("using {0} to fetch the data".format(modname))
-                    handler = loader.find_module(modname).load_module(modname)
-                    handler = handler.Plugin(feed, rule=rule)
+                    fetcher = loader.find_module(modname).load_module(modname)
+                    fetcher = fetcher.Plugin(feed, rule=rule)
 
         # pass the parser to the fetcher
         # that way we can iterate over the data w/o dragging the raw data in and out
         # page 202
-        data = handler.process()
+        data = fetcher.process()
 
         try:
-            data = self.parse(rule, feed, data)
+            data = self.parse(rule, feed, data, limit)
         except RuntimeError:
             self.logger.error("unable to parse data")
             raise

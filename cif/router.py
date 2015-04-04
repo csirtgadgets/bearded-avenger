@@ -86,6 +86,7 @@ class Router(object):
         return self.storage.recv()
 
     def handle_submission(self, token, data):
+        pprint(data)
         self.storage.send_multipart(['submission', token, data])
         m = self.storage.recv()
         return m
