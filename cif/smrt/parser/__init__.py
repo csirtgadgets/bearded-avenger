@@ -4,11 +4,13 @@ import re
 
 class Parser(object):
 
-    def __init__(self, logger=logging.getLogger(__name__), **kwargs):
+    def __init__(self, client, fetcher, rule, feed=None, limit=None, logger=logging.getLogger(__name__)):
         self.logger = logger
-
-    def understands(self, p):
-        raise NotImplementedError()
+        self.client = client
+        self.fetcher = fetcher
+        self.rule = rule
+        self.feed = feed
+        self.limit = limit
 
     def process(self):
-        raise NotImplementedError()
+        raise NotImplemented

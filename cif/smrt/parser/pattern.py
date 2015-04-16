@@ -19,21 +19,19 @@ class Pattern(Parser):
             return True
         return False
 
-    def process(self, rule, feed, data, limit=10000000):
+    def process(self, client, fetcher, rule, feed=None, limit=10000000):
         cols = rule.defaults['values']
 
-        if self.pattern:
-            pattern = self.pattern
-        elif rule.defaults.get('pattern'):
+        pattern = self.pattern
+
+        if rule.defaults.get('pattern'):
             pattern = rule.defaults.get('pattern')
         elif rule.feeds[feed].get('pattern'):
             pattern = rule.feeds[feed].get('pattern')
 
         pattern = re.compile(pattern)
 
-        max = 0
-        rv = []
-        for l in data:
+        for l in fetcher.process():
             if self.is_comment(l):
                 continue
 
@@ -52,11 +50,12 @@ class Pattern(Parser):
                         obs[col] = m[idx]
                 obs.pop("values", None)
                 obs.pop("pattern", None)
-                rv.append(obs)
+                pprint(obs)
+
+            sys.exit()
 
             max += 1
             if max >= limit:
                 break
-        return rv
 
 Plugin = Pattern

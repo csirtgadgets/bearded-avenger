@@ -83,7 +83,11 @@ class Storage(object):
         id, mtype, token, data = m
 
         if isinstance(data, basestring):
-            data = json.loads(data)
+            try:
+                data = json.loads(data)
+            except ValueError as e:
+                self.logger.error(e)
+                self.router.send_multipart(["", json.dumps({"status": "failed" })])
 
         handler = getattr(self, "handle_" + mtype)
         if handler == None:
@@ -95,9 +99,9 @@ class Storage(object):
 
         rv = handler(token, data)
         if rv:
-            rv = {"status": "success", "data": rv }
+            rv = {"status": "success", "data": str(rv) }
         else:
-            rv = {"status": "failed" }
+            rv = {"status": "failed"}
 
         rv = json.dumps(rv)
         self.logger.debug(rv)
@@ -146,7 +150,8 @@ def main():
     p.add_argument("--router", dest="router", help="specify the router backend [default: %(default)s]",
                    default=STORAGE_ADDR)
 
-    p.add_argument("--store", dest="store", help="specify a store type [default: %(default)s", default="dummy")
+    p.add_argument("--store", dest="store", help="specify a store type [dummy, sqlite, graph, default: %(default)s",
+                   default="dummy")
     p.add_argument("--store-nodes", dest="store_nodes", help="specify store node addresses")
 
     args = p.parse_args()

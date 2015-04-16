@@ -8,18 +8,17 @@ class Delim(Pattern):
     def __init__(self, *args, **kwargs):
         super(Delim, self).__init__(*args, **kwargs)
 
-    def process(self, rule, feed, data, limit=10000000):
-        cols = rule.defaults['values']
+    def process(self):
+        defaults = self.rule.defaults
+        cols = defaults['values']
 
-        defaults = rule.defaults
+        if self.rule.feeds[self.feed].get('defaults'):
+            for d in self.rule.feeds[self.feed].get('defaults'):
+                defaults[d] = self.rule.feeds[self.feed]['defaults'][d]
 
-        if rule.feeds[feed].get('defaults'):
-            for d in rule.feeds[feed].get('defaults'):
-                defaults[d] = rule.feeds[feed]['defaults'][d]
-
-        limit = int(limit)
+        limit = int(self.limit)
         rv = []
-        for l in data:
+        for l in self.fetcher.process():
             if l == '' or self.is_comment(l):
                 continue
 
@@ -33,8 +32,9 @@ class Delim(Pattern):
                     if col is not None:
                         obs[col] = m[idx]
                 obs.pop("values", None)
-                rv.append(obs)
-
+                pprint(obs)
+                r = self.client.submit(**obs)
+                rv.append(r)
             limit -= 1
             if limit == 0:
                 break

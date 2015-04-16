@@ -66,7 +66,7 @@ class Router(object):
         self.logger.debug("replying {}".format(rv))
         self.frontend.send_multipart([id, '', mtype, rv])
 
-    def handle_ping(self, data):
+    def handle_ping(self, token, data):
         rv = {
             "status": "success",
             "data": str(time.time())
@@ -86,7 +86,6 @@ class Router(object):
         return self.storage.recv()
 
     def handle_submission(self, token, data):
-        pprint(data)
         self.storage.send_multipart(['submission', token, data])
         m = self.storage.recv()
         return m

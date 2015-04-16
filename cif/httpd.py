@@ -8,16 +8,16 @@ import textwrap
 import re
 
 from pprint import pprint
-import zmq
 
 
-from cif.constants import LOG_FORMAT
-from cif.client import ZMQClient as zClient
+from cif.constants import LOG_FORMAT, ROUTER_FRONTEND
+from cif.client.zeromq import ZMQ as Client
 
 # https://github.com/mitsuhiko/flask/blob/master/examples/minitwit/minitwit.py
 
 app = Flask(__name__)
 logger = logging.getLogger(__name__)
+remote = ROUTER_FRONTEND
 
 
 def pull_token():
@@ -33,14 +33,13 @@ def before_request():
 
 @app.route("/")
 def help():
-    pprint(request)
     return jsonify({
         "message": "hello world!",
     })
 
-@app.route("/ping", methods=['GET', 'POST'])
+@app.route("/ping", methods=['GET'])
 def ping():
-    r = zClient(token=pull_token).ping()
+    r = Client(remote, pull_token()).ping()
     return jsonify({
         "message": "success",
         "data": r
@@ -51,33 +50,25 @@ def ping():
 def search():
     q = request.args.get('q')
     limit = request.args.get('limit')
-    token = pull_token()
 
-    r = zClient(token=token).search(str(q), limit=limit)
+    r = Client(remote, pull_token()).search(str(q), limit=limit)
 
     return jsonify({
         "message": "success",
         "data": r
     })
 
-@app.route("/observables", methods=["GET", "POST"])
+@app.route("/observables", methods=["POST"])
 def observables():
-    token = pull_token()
-    pprint(request.data)
-
-    if request.method == "GET":
-        pass
-    else:
-        r = zClient(token=token).send('submission', request.data)
-        x = jsonify({
-            "message": "success",
-            "data": r
-        })
-    return x
+    r = Client(remote, pull_token()).submit(request.data)
+    return jsonify({
+        "message": "success",
+        "data": r
+    })
 
 
 def main():
-    parser = ArgumentParser(
+    p = ArgumentParser(
         description=textwrap.dedent('''\
         example usage:
             $ cif-httpd -d
@@ -86,11 +77,14 @@ def main():
         prog='cif-httpd'
     )
 
-    parser.add_argument("-v", "--verbose", dest="verbose", action="count",
+    p.add_argument("-v", "--verbose", dest="verbose", action="count",
                         help="set verbosity level [default: %(default)s]")
-    parser.add_argument('-d', '--debug', dest='debug', action="store_true")
+    p.add_argument('-d', '--debug', dest='debug', action="store_true")
 
-    args = parser.parse_args()
+    p.add_argument("--token", dest="token", help="specify httpd token", default="1234")
+    p.add_argument("--remote", dest="remote", default=ROUTER_FRONTEND)
+
+    args = p.parse_args()
 
     loglevel = logging.WARNING
     if args.verbose:
@@ -104,8 +98,16 @@ def main():
     logging.getLogger('').addHandler(console)
 
     options = vars(args)
-    app.config["SECRET_KEY"] = "ITSASECRET"
-    app.run(debug=options.get('debug'))
+
+    remote = options["remote"]
+
+    try:
+        if Client(remote, options["token"]).ping():
+            app.config["SECRET_KEY"] = "ITSASECRET"
+            app.run(debug=options.get('debug'))
+    except KeyboardInterrupt:
+        logger.info('shutting down...')
+        raise SystemExit
 
 if __name__ == "__main__":
     main()

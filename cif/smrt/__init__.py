@@ -6,12 +6,9 @@ import logging
 import textwrap
 from cif.constants import LOG_FORMAT, DEFAULT_CONFIG, REMOTE
 import os.path
-from cif.client import Client
-from cif.smrt.fetcher import Fetcher as HTTPFetcher
 from cif.rule import Rule
-from cif.observable import Observable
 import cif.color
-import pkgutil
+from cif.utils import load_plugin
 import re
 
 
@@ -19,6 +16,8 @@ from pprint import pprint
 
 PARSERS_PATH = os.path.join("cif", "smrt", "parser")
 FETCHERS_PATH = os.path.join("cif", "smrt", "fetcher")
+CLIENTS_PATH = os.path.join("cif", "client")
+CLIENT_DEFAULT = "http"
 LIMIT = 10000000
 
 import sys
@@ -27,65 +26,54 @@ import sys
 # https://gist.github.com/pazdera/1099559
 
 
-class Smrt(Client):
+class Smrt(object):
 
-    def __init__(self, logger=logging.getLogger(__name__), **kwargs):
-        super(Smrt, self).__init__(**kwargs)
+    def __init__(self, remote, token, client=CLIENT_DEFAULT, logger=logging.getLogger(__name__)):
 
         self.logger = logger
+        self.client = load_plugin(CLIENTS_PATH, client)(remote, token)
 
-    def parse(self, rule, feed, data, limit):
-        if rule.parser:
-            parser = rule.parser
-        else:
-            parser = 'pattern'
+    def _process(self, rule, feed, limit=None):
 
-        for loader, modname, is_pkg in pkgutil.iter_modules([PARSERS_PATH]):
-            self.logger.debug('testing: {0}'.format(modname))
-            if modname == parser:
-                self.logger.debug("using {0} to parse the data".format(modname))
-                parser = loader.find_module(modname).load_module(modname)
-                parser = parser.Plugin()
-                data = parser.process(rule, feed, data, limit=limit)
-                return data
+        fetcher = load_plugin(FETCHERS_PATH, "http")
+        fetcher = fetcher("ssh", rule=rule)
 
-        self.logger.debug(rule)
-        raise RuntimeError
+        parser = load_plugin(PARSERS_PATH, "pipe")
+
+        parser = parser(self.client, fetcher, rule, feed=feed, limit=limit)
+
+        rv = parser.process()
+
+        return rv
 
     def process(self, rule, feed=None, limit=None):
-        fetcher = HTTPFetcher(feed, rule=rule)
-        data = []
+        rv = []
+        if os.path.isdir(rule):
+            for f in os.listdir(rule):
+                if not f.startswith('.'):
+                    self.logger.debug("processing {0}/{1}".format(rule, file))
+                    r = Rule(path=os.path.join(rule, file))
 
-        # past the client to the parser
-        # pass the parser to the fetcher
-        # stream the results as it parses...
-        # page 237
+                    if not r.feeds:
+                        continue
 
-        if rule.fetcher:
-            for loader, modname, is_pkg in pkgutil.iter_modules([FETCHERS_PATH]):
-                self.logger.debug('testing: {0}'.format(modname))
-                if modname == rule.fetcher:
-                    self.logger.debug("using {0} to fetch the data".format(modname))
-                    fetcher = loader.find_module(modname).load_module(modname)
-                    fetcher = fetcher.Plugin(feed, rule=rule)
+                    for feed in r.feeds:
+                        rv = self._process(r, feed, limit=limit)
+        else:
+            self.logger.debug("processing {0}".format(rule))
+            r = Rule(path=rule)
 
-        # pass the parser to the fetcher
-        # that way we can iterate over the data w/o dragging the raw data in and out
-        # page 202
-        data = fetcher.process()
+            if not r.feeds:
+                self.logger.error("rules file contains no feeds")
+                raise RuntimeError
 
-        try:
-            data = self.parse(rule, feed, data, limit)
-        except RuntimeError:
-            self.logger.error("unable to parse data")
-            raise
+            if feed:
+                rv = self._process(r, feed=feed, limit=limit)
+            else:
+                for feed in r.feeds:
+                    rv = self._process(r, feed=feed, limit=limit)
 
-        if limit and len(data) > int(limit):
-            data = data[0:int(limit)]
-
-        self.logger.debug('submitting...')
-        for idx, d in enumerate(data):
-            self.submit(str(Observable(**d)))
+        return rv
 
 
 def main():
@@ -115,8 +103,10 @@ def main():
 
     p.add_argument("--limit", dest="limit", help="limit the number of records processed [default: %(default)s",
                    default=LIMIT)
-    p.add_argument("--token", dest="token", help="specify token")
+    p.add_argument("--token", dest="token", help="specify token", default="1234")
 
+    p.add_argument("--client", dest="client", help="specify a client transport [http|zeromq, default %(default)s",
+                   default=CLIENT_DEFAULT)
 
     args = p.parse_args()
 
@@ -135,36 +125,13 @@ def main():
     options = vars(args)
     rule = options['rule']
 
-    s = Smrt(logger=logger, token=options.get('token'))
+    s = Smrt(options["remote"], options["token"], options["client"], logger=logger)
 
-    if os.path.isdir(rule):
-        for file in os.listdir(rule):
-            if re.search("^\.\.?", file): # skip hidden files .file.swp, etc
-                continue
-            logger.debug("processing {0}/{1}".format(rule, file))
-            r = Rule(path=os.path.join(rule, file))
-
-            if not r.feeds:
-                continue
-
-            for feed in r.feeds:
-                s.process(r, feed=feed, limit=options.get('limit'))
-    else:
-        logger.debug("processing {0}".format(rule))
-        r = Rule(path=rule)
-
-        if not r.feeds:
-            logger.error("rules file contains no feeds")
-            raise RuntimeError
-
-        if options.get('feed'):
-            s.process(r, feed=options['feed'], limit=options.get('limit'))
-        else:
-            for feed in r.feeds:
-                s.process(r, feed=feed, limit=options.get('limit'))
-
-
-    sys.exit()
+    try:
+        x = s.process(rule, feed=options.get("feed"), limit=options.get("limit"))
+        pprint(x)
+    except KeyboardInterrupt:
+        sys.exit()
 
 
 if __name__ == "__main__":
