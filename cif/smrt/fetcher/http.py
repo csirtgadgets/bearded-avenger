@@ -16,7 +16,7 @@ RE_SUPPORTED_DECODE = re.compile("zip|lzf|lzma|xz|lzop")
 
 class Http(Fetcher):
 
-    def __init__(self, feed, cache='var/smrt/', rule=None, logger=logging.getLogger(__name__)):
+    def __init__(self, rule, feed, cache='var/smrt/', logger=logging.getLogger(__name__)):
 
         self.logger = logger
         self.feed = feed
@@ -45,14 +45,12 @@ class Http(Fetcher):
         self.ua = "User-Agent: cif-smrt/{0} (csirtgadgets.org)".format(VERSION)
 
     def process(self, split="\n", limit=LIMIT):
-
         # using wget until we can find a better way to mirror files in python
         subprocess.check_call(['wget', '--header', self.ua, '--quiet', '-c', self.remote, '-O', self.cache])
 
         ftype = magic.from_file(self.cache, mime=True)
         self.logger.debug(ftype)
 
-        data = []
         if ftype == 'text/plain':
             with open(self.cache) as f:
                 while True:

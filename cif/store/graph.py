@@ -1,6 +1,6 @@
 from cif.store import Store
 import logging
-from rdflib import Graph, ConjunctiveGraph, Literal, URIRef
+from rdflib import Graph, ConjunctiveGraph, Literal, URIRef, RDF
 from pprint import pprint
 import uuid
 
@@ -33,9 +33,10 @@ class Graph(Store):
 
         for k in data:
             if k == "observable":
-                continue
-            subject = Literal(data["observable"])
-            self.handle.add((subject, Literal(k), Literal(data[k]), self.store_id))
+                self.handle.add((subject, RDF.type, Literal(data["otype"]), self.store_id))
+            else:
+                subject = Literal(data["observable"])
+                self.handle.add((subject, Literal(k), Literal(data[k]), self.store_id))
 
         self.logger.debug(self.handle.serialize(format="trig"))
 

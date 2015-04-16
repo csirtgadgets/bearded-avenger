@@ -5,8 +5,6 @@ import json
 
 from pprint import pprint
 
-from cif.constants import LOG_FORMAT, REMOTE, DEFAULT_CONFIG, ROUTER_FRONTEND
-import sys
 from cif.client import Client
 
 

@@ -6,17 +6,15 @@ import logging
 import textwrap
 import select
 import os.path
-#from cif.client.http import Plugin
 from cif.format.table import Table
 from pprint import pprint
 from cif.observable import Observable
-import ujson as json
 from cif.constants import LOG_FORMAT, DEFAULT_CONFIG
 
 
 class Client(object):
 
-    def __init__(self, remote, token, logger=logging.getLogger(__name__), *args, **kwargs):
+    def __init__(self, remote, token, logger=logging.getLogger(__name__)):
         self.logger = logger
         self.remote = remote
         self.token = str(token)

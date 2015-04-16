@@ -4,7 +4,7 @@ LIMIT = 10000000000
 class Fetcher:
 
     def __init__(self):
-        raise NotImplemented
+        raise NotImplementedError
 
     def process(self):
-        raise NotImplemented
+        raise NotImplementedError

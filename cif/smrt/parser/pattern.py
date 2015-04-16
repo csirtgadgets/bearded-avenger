@@ -3,59 +3,50 @@ import re
 from pprint import pprint
 import sys
 
-RE_COMMENTS = '^([#|;]+)'
-
 
 class Pattern(Parser):
 
-    def __init__(self, *args, **kwargs):
-        super(Pattern, self).__init__(*args, **kwargs)
+    def __init__(self, client, fetcher, rule, feed, limit=None):
+        super(Pattern, self).__init__(client, fetcher, rule, feed, limit=None)
 
-        self.comments = re.compile(RE_COMMENTS)
-        self.pattern = None
+        if self.rule.defaults.get('pattern'):
+            self.pattern = self.rule.defaults.get('pattern')
+        elif self.rule.feeds[self.feed].get('pattern'):
+            self.pattern = self.rule.feeds[self.feed].get('pattern')
 
-    def is_comment(self, line):
-        if self.comments.match(line):
-            return True
-        return False
+        self.pattern = re.compile(self.pattern)
 
-    def process(self, client, fetcher, rule, feed=None, limit=10000000):
-        cols = rule.defaults['values']
+    def process(self):
+        cols = self.rule.defaults['values']
 
-        pattern = self.pattern
-
-        if rule.defaults.get('pattern'):
-            pattern = rule.defaults.get('pattern')
-        elif rule.feeds[feed].get('pattern'):
-            pattern = rule.feeds[feed].get('pattern')
-
-        pattern = re.compile(pattern)
-
-        for l in fetcher.process():
+        limit = self.limit
+        rv = []
+        for l in self.fetcher.process():
             if self.is_comment(l):
                 continue
 
             try:
-                m = pattern.match(l).group()
+                m = self.pattern.match(l).group()
             except ValueError:
                 continue
             except AttributeError:
                 continue
 
             if len(cols):
-                obs = rule.defaults
+                obs = self.rule.defaults
 
                 for idx, col in enumerate(cols):
                     if col is not None:
                         obs[col] = m[idx]
                 obs.pop("values", None)
                 obs.pop("pattern", None)
-                pprint(obs)
-
-            sys.exit()
+                r = self.client.submit(**obs)
+                rv.append(r)
 
             max += 1
             if max >= limit:
                 break
+
+        return rv
 
 Plugin = Pattern

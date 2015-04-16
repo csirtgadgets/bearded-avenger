@@ -18,6 +18,8 @@ PARSERS_PATH = os.path.join("cif", "smrt", "parser")
 FETCHERS_PATH = os.path.join("cif", "smrt", "fetcher")
 CLIENTS_PATH = os.path.join("cif", "client")
 CLIENT_DEFAULT = "http"
+FETCHER_DEFAULT = "http"
+PARSER_DEFAULT = "pattern"
 LIMIT = 10000000
 
 import sys
@@ -35,12 +37,14 @@ class Smrt(object):
 
     def _process(self, rule, feed, limit=None):
 
-        fetcher = load_plugin(FETCHERS_PATH, "http")
-        fetcher = fetcher("ssh", rule=rule)
+        fetcher = rule.fetcher or FETCHER_DEFAULT
+        fetcher = load_plugin(FETCHERS_PATH, fetcher)
+        fetcher = fetcher(rule, feed)
 
-        parser = load_plugin(PARSERS_PATH, "pipe")
+        parser = rule.parser or PARSER_DEFAULT
+        parser = load_plugin(PARSERS_PATH, parser)
 
-        parser = parser(self.client, fetcher, rule, feed=feed, limit=limit)
+        parser = parser(self.client, fetcher, rule, feed, limit=limit)
 
         rv = parser.process()
 
