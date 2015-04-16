@@ -1,5 +1,3 @@
-# WARNING - THE DEVELOP BRANCH WILL RAPIDLY CHANGE IN THE PRE-ALPHA STAGES, MAKE SURE YOU'RE PULLING UPDATES DAILY
-# IF YOU'RE MAKING PRs MAKE SURE THEY'RE SMALL AND TARGETED
 # Getting Started 
 ## Ubuntu
 ```
@@ -10,9 +8,12 @@ $ pip install git+https://github.com/csirtgadgets/bearded-avenger.git
 ```
 
 [![Build Status](https://travis-ci.org/csirtgadgets/bearded-avenger.png?branch=master)](https://travis-ci.org/csirtgadgets/bearded-avenger)
- * [the Wiki](https://github.com/csirtgadgets/bearded-avenger/wiki)
- * [FAQ](https://github.com/csirtgadgets/bearded-avenger/wiki/FAQ)
- * [Known Issues](https://github.com/csirtgadgets/bearded-avenger/issues?labels=bug&state=open) 
+
+# Project Goals
+* Pythonic re-write
+* Break storage out from cif-router
+* Enable various types of storage
+* Less batch processing by cif-smrt, more streaming through HTTP and ZMQ
 
 # Getting Involved
 There are many ways to get involved with the project. If you have a new and exciting feature, or even a simple bugfix, simply [fork the repo](https://help.github.com/articles/fork-a-repo), create some simple test cases, [generate a pull-request](https://help.github.com/articles/using-pull-requests) and give yourself credit!
