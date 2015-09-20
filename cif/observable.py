@@ -109,7 +109,8 @@ class Observable(object):
             "tags": ",".join(self.tags),
             "asn": self.asn,
             "asn_desc": self.asn_desc,
-            "cc": self.cc
+            "cc": self.cc,
+            "group": self.group
         }
         if self.logger.getEffectiveLevel() == 10:
             return json.dumps(o, indent=4, sort_keys=True)
