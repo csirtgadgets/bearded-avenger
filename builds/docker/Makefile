@@ -1,10 +1,13 @@
 # https://github.com/phusion/baseimage-docker/blob/master/Makefile
 NAME = cif
-VERSION = 3.0.0-a.1
+VERSION = latest # make this a version number!
 
-.PHONY: all build
+.PHONY: all build run
 
 all: build
 
 build:
 	docker build -t $(NAME):$(VERSION) .
+
+run:
+	docker run $(NAME):$(VERSION)
