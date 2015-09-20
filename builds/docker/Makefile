@@ -9,5 +9,8 @@ all: build
 build:
 	docker build -t $(NAME):$(VERSION) .
 
+build-clean:
+	docker build -t $(NAME):$(VERSION) --no-cache .
+
 run:
 	docker run $(NAME):$(VERSION)

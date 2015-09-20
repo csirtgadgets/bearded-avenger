@@ -6,7 +6,7 @@ RUN useradd -m $NEWUSER
 
 RUN pip install pyzmq --install-option="--zmq=bundled"
 RUN pip install git+https://github.com/csirtgadgets/py-whiteface-sdk.git
-RUN pip install git+https://github.com/csirtgadgets/bearded-avenger.git@fix/7
+RUN pip install git+https://github.com/csirtgadgets/bearded-avenger.git
 
 VOLUME /var/lib
 
