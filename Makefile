@@ -2,7 +2,7 @@
 NAME = cif
 VERSION = latest # make this a version number!
 
-.PHONY: all build docker docker-run test develop ubuntu14
+.PHONY: all build docker docker-run test develop
 
 all: build test
 
@@ -26,3 +26,11 @@ docker-run:
 
 run:
 	supervisord
+
+vagrant:
+	vagrant up --provider virtualbox
+
+vagrant-destroy:
+	vagrant destroy --force
+
+vagrant-reload: vagrant-destroy vagrant

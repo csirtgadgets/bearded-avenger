@@ -1,11 +1,15 @@
 # Getting Started
+## Ubuntu 14.04
+```
+$ make ubuntu14
+```
 ## Docker
 ```
 $ make docker
 ```
-## Ubuntu 14.04
+## Vagrant (Ubuntu14/Virtualbox)
 ```
-$ make ubuntu14
+$ make vagrant
 ```
 
 # Getting Involved
