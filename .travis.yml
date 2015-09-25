@@ -1,19 +1,16 @@
 language: python
 python:
-    - 2.7
+    - 2.7.6
+    - 2.7.10
 
 before_install:
     - pip install pyzmq --install-option="--zmq=bundled"
-    - pip install git+https://github.com/csirtgadgets/py-whiteface-sdk.git
 
 script:
     - python setup.py build
-    - nosetests
+    - py.test tests
 
 notifications:
     email:
         on_success: never
         on_failure: never
-branches:
-    only:
-        - master
