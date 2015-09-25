@@ -17,6 +17,4 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     external = File.read VAGRANTFILE_LOCAL
     eval external
   end
-
-
 end
