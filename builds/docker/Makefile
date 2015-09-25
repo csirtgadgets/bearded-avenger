@@ -7,10 +7,10 @@ VERSION = latest # make this a version number!
 all: build
 
 build:
-	docker build -t $(NAME):$(VERSION) .
+	@docker build -t $(NAME):$(VERSION) .
 
 build-clean:
-	docker build -t $(NAME):$(VERSION) --no-cache .
+	@docker build -t $(NAME):$(VERSION) --no-cache .
 
 run:
-	docker run $(NAME):$(VERSION)
+	@docker run $(NAME):$(VERSION)

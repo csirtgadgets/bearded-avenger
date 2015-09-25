@@ -19,7 +19,7 @@ setup(
                    ],
       keywords=['security'],
       author="Wes Young",
-      author_email="wes@barely3am.com",
+      author_email="wes@csirtgadgets.org",
       packages=find_packages(),
       install_requires=reqs,
       scripts=[],
@@ -34,5 +34,4 @@ setup(
               'cif-storage=cif.storage:main',
               ]
       },
-      test_suite="cif.test"
 )

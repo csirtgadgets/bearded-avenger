@@ -8,7 +8,7 @@ before_install:
 
 script:
     - python setup.py build
-    - nosetests
+    - py.test
 
 notifications:
     email:
