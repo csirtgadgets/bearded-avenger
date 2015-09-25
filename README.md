@@ -2,6 +2,7 @@
 ## Ubuntu 14.04
 ```
 $ make ubuntu14
+$ supervisord
 ```
 ## Docker
 ```
@@ -10,6 +11,10 @@ $ make docker
 ## Vagrant (Ubuntu14/Virtualbox)
 ```
 $ make vagrant
+$ vagrant ssh
+$ mkvirtualenv cif && workon cif
+$ cd /vagrant && bash ./helpers/develop.sh
+$ supervisord
 ```
 
 # Getting Involved
