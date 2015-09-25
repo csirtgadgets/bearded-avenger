@@ -1,6 +1,12 @@
+try:
+    from elasticsearch import Elasticsearch
+except ImportError:
+    raise SystemExit('Requires Elasticsearch to be installed')
+
 from cif.store import Store
 
 
+## TODO -- sep plugin
 class Plugin(Store):
 
     name = 'elasticsearch'

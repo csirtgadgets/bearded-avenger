@@ -1,6 +1,11 @@
+
+try:
+    from rdflib import Graph, ConjunctiveGraph, Literal, URIRef, RDF
+except ImportError:
+    raise SystemExit('Requires RDFLib to be installed')
+
 from cif.store import Store
 import logging
-from rdflib import Graph, ConjunctiveGraph, Literal, URIRef, RDF
 from pprint import pprint
 import uuid
 
