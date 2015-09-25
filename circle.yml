@@ -4,4 +4,4 @@ machine:
 
 test:
   override:
-    - py.test
+    - py.test tests
