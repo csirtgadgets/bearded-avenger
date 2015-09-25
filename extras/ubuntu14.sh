@@ -2,16 +2,20 @@
 
 set -e
 
-if [ `whoami` != "root" ]; then
-    echo "This script must be run as root"
-    exit 1 
-fi
-
 echo "adding bleeding edge python2.7 ppa"
-add-apt-repository -y ppa:fkrull/deadsnakes-python2.7
+sudo add-apt-repository -y ppa:fkrull/deadsnakes-python2.7
 
 echo "installing the basics"
-apt-get install -y libzmq3 python-zmq python2.7 python-dev virtualenvwrapper git build-essential
+sudo apt-get install -y libzmq3 python-zmq python2.7 python-dev virtualenvwrapper git build-essential
 
 echo "upgrading pip"
 sudo pip install pip --upgrade
+
+echo "creating virtualenv"
+source ~/.bashrc
+
+echo "setting up environment"
+mkvirtualenv cif
+pip install pyzmq --install-option="--zmq=bundled"
+pip install -r requirements.txt
+python setup.py develop

@@ -8,10 +8,10 @@ defaults:
   confidence: 85
   values:
     - asn
-      asn_desc
-      observable
-      lasttime
-      null
+    - asn_desc
+    - observable
+    - lasttime
+    - null
 feeds:
   ssh:
     remote: http://dragonresearchgroup.org/insight/sshpwauth.txt

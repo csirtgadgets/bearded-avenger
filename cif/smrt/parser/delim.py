@@ -1,6 +1,6 @@
 from cif.smrt.parser import Parser
 
-
+from pprint import pprint
 class Delim(Parser):
 
     def __init__(self, *args, **kwargs):
@@ -16,6 +16,7 @@ class Delim(Parser):
                 continue
 
             m = self.pattern.split(l)
+
             if len(cols):
                 obs = {}
                 for k, v in defaults.iteritems():

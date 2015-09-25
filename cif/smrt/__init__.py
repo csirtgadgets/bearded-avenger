@@ -20,7 +20,9 @@ CLIENTS_PATH = os.path.join("cif", "client")
 CLIENT_DEFAULT = "http"
 FETCHER_DEFAULT = "http"
 PARSER_DEFAULT = "pattern"
-LIMIT = 10000000
+LIMIT = os.environ.get('CIF_SMRT_LIMIT', 10000)
+TOKEN = os.environ.get('CIF_TOKEN', None)
+REMOTE = os.environ.get('CIF_REMOTE', 'http://localhost:5000')
 
 import sys
 
