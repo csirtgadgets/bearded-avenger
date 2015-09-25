@@ -13,7 +13,7 @@ build:
 	python setup.py build
 
 ubuntu:
-	(bash ./extras/ubuntu14.sh)
+	(bash ./helpers/ubuntu14.sh)
 
 docker:
 	(cd builds/docker && make build)
