@@ -1,3 +1,5 @@
+builds/
+cif-3*
 .vagrant
 *.swp
 *.sqlite

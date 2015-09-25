@@ -12,7 +12,7 @@ echo "updating repos..."
 sudo apt-get update
 
 echo "installing the basics"
-sudo apt-get install -y libzmq3 libzmq3-dev python-zmq python2.7 python-dev virtualenvwrapper git build-essential
+sudo apt-get install -y libzmq3 libzmq3-dev python-zmq python2.7 python-dev virtualenvwrapper git build-essential dh-make bzr-builddeb
 
 echo "upgrading pip"
 sudo pip install pip --upgrade --force-reinstall
