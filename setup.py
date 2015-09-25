@@ -34,4 +34,5 @@ setup(
               'cif-storage=cif.storage:main',
               ]
       },
+      test_suite="tests"
 )
