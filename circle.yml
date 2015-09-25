@@ -1,6 +1,5 @@
 machine:
   python:
-    version: 2.7.6
     version: 2.7.10
 
 test:
