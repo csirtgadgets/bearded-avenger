@@ -10,12 +10,3 @@ sudo apt-get install -y libzmq3 python-zmq python2.7 python-dev virtualenvwrappe
 
 echo "upgrading pip"
 sudo pip install pip --upgrade
-
-echo "creating virtualenv"
-source ~/.bashrc
-
-echo "setting up environment"
-mkvirtualenv cif
-pip install pyzmq --install-option="--zmq=bundled"
-pip install -r requirements.txt
-python setup.py develop

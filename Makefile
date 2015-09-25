@@ -2,7 +2,7 @@
 NAME = cif
 VERSION = latest # make this a version number!
 
-.PHONY: all build docker docker-run test
+.PHONY: all build docker docker-run test develop ubuntu14
 
 all: build test
 
@@ -12,7 +12,10 @@ test:
 build:
 	python setup.py build
 
-ubuntu:
+develop:
+	(bash ./helpers/develop.sh)
+
+ubuntu14:
 	(bash ./helpers/ubuntu14.sh)
 
 docker:

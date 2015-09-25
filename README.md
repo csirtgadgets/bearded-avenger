@@ -5,7 +5,7 @@ $ make docker
 ```
 ## Ubuntu 14.04
 ```
-$ make ubuntu
+$ make ubuntu14
 ```
 
 # Getting Involved
