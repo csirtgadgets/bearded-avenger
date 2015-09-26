@@ -4,7 +4,7 @@ with open('requirements.txt') as f:
     reqs = f.read().splitlines()
 
 setup(
-      name="cif",
+      name="bearded-avenger",
       version='3.0.0a1',
       description="CIF",
       long_description="",

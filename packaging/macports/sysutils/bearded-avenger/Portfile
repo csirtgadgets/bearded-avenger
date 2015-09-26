@@ -1,0 +1,37 @@
+# -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
+
+PortSystem      1.0
+PortGroup       python 1.0
+
+name            bearded-avenger
+version         devel
+categories      sysutils
+supported_archs noarch
+
+maintainers     nomaintainer
+
+homepage        http://csirtgadgets.org/collective-intelligence-framework/
+description     The smartest way to consume threat intelligence
+long_description \
+    The smartest way to consume threat intelligence
+
+license         LGPL-3+
+
+platforms       darwin
+
+fetch.type         git
+git.url            https://github.com/csirtgadgets/bearded-avenger.git
+git.branch         ${version}
+
+python.default_version  27
+depends_lib-append      port:py${python.version}-zmq \
+                        port:py${python.version}-yaml
+
+post-destroot {
+  # documentation and examples
+  xinstall -m 644 -W ${worksrcpath} README.md contributing.md COPYING  \
+    ${destroot}${prefix}/share/doc/${name}
+
+}
+
+python.link_binaries_suffix

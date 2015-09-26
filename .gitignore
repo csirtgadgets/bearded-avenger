@@ -1,3 +1,6 @@
+pyinstaller_temp/
+pyinstaller_dist/
+deb-build/
 builds/
 cif-3*
 .vagrant

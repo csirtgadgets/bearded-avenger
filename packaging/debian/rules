@@ -1,0 +1,7 @@
+#!/usr/bin/make -f
+
+include /usr/share/cdbs/1/rules/debhelper.mk
+
+binary-install/package_name::
+	mkdir debian/$(cdbs_curpkg)/usr/local/bin
+	cp dist/*  debian/$(cdbs_curpkg)/usr/local/bin
