@@ -66,7 +66,6 @@ def observables():
         "data": r
     })
 
-
 def main():
     p = ArgumentParser(
         description=textwrap.dedent('''\
@@ -104,7 +103,9 @@ def main():
     try:
         if Client(remote, options["token"]).ping():
             app.config["SECRET_KEY"] = "ITSASECRET"
-            app.run(debug=options.get('debug'))
+            #app.run(debug=options.get('debug'), passthrough_errors=True) # this changes pids so supervisord gets
+            # confused
+            app.run()
     except KeyboardInterrupt:
         logger.info('shutting down...')
         raise SystemExit

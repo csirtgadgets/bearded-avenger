@@ -142,7 +142,7 @@ def main():
         r.run()
     except KeyboardInterrupt:
         logger.info('shutting down...')
-        sys.exit()
+        raise SystemExit
 
 
 
