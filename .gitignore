@@ -2,7 +2,6 @@ pyinstaller_temp/
 pyinstaller_dist/
 deb-build/
 builds/
-cif-3*
 .vagrant
 *.swp
 *.sqlite
@@ -38,7 +37,7 @@ var/
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
-*.spec
+#*.spec
 
 # Installer logs
 pip-log.txt
