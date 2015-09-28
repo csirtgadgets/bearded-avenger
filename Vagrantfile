@@ -8,6 +8,9 @@ VAGRANTFILE_LOCAL = 'Vagrantfile.local'
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.provision "shell", path: "helpers/ubuntu14.sh"
   config.vm.box = 'ubuntu/trusty64'
+  #config.vm.box = 'puppetlabs/centos-7.0-64-puppet'
+  #config.vm.provision "shell", path: "helpers/centos7.sh"
+
   config.vm.network :forwarded_port, guest: 5000, host: 5000
   config.vm.provider :virtualbox do |vb|
     vb.customize ["modifyvm", :id, "--cpus", "1", "--ioapic", "on", "--memory", "384" ]

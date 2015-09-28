@@ -64,6 +64,7 @@ sdist: clean
 	$(PYTHON) setup.py sdist
 
 # Pyinstaller params
+# https://mborgerson.com/creating-an-executable-from-a-python-script
 PYINSTALLER = pyinstaller
 PYINSTALLER_DIST_PATH = pyinstaller_dist
 PYINSTALLER_WORK_PATH = pyinstaller_temp
@@ -72,6 +73,7 @@ PYINSTALLER_SPEC_DIR = packaging/pyinstaller
 PYINSTALLER_SPECS = cif.spec cif-router.spec cif-smrt.spec cif-httpd.spec
 
 pyinstaller:
+	cp -a cif $(PYINSTALLER_SPEC_DIR)/ ;
 	@for SPEC in $(PYINSTALLER_SPECS) ; do \
 		$(PYINSTALLER) $(PYINSTALLER_OPTS) $(PYINSTALLER_SPEC_DIR)/$${SPEC} ; \
 	done
@@ -79,11 +81,11 @@ pyinstaller:
 pyinstaller-clean:
 	rm -rf $(PYINSTALLER_WORK_PATH)
 	rm -rf $(PYINSTALLER_DIST_PATH)
+	rm -rf $(PYINSTALLER_SPEC_DIR)/cif
 
 
 # DEB build parameters
 DEBUILD_BIN ?= debuild
-#DEBUILD_OPTS = --source-option="-I"
 DPUT_BIN ?= dput
 DPUT_OPTS ?=
 DEB_DATE := $(shell date +"%a, %d %b %Y %T %z")
@@ -104,11 +106,6 @@ DEBUILD = $(DEBUILD_BIN) $(DEBUILD_OPTS)
 DEB_PPA ?= ppa
 # Choose the desired Ubuntu release: lucid precise saucy trusty
 DEB_DIST ?= unstable
-
-# https://github.com/ulikoehler/deb-buildscripts/blob/master/deb-zeromq.sh
-# https://www.google.com/webhp?sourceid=chrome-instant&ion=1&espv=2&ie=UTF-8#q=zeromq%20debuild
-# http://stackoverflow.com/questions/10999948/how-to-include-a-directory-in-the-package-debuild
-# http://askubuntu.com/questions/473429/debuild-failed-at-dh-install-with-cp-cannot-stat-debian-tmp-path-to-install-b
 
 debian: pyinstaller-clean pyinstaller
 	@for DIST in $(DEB_DIST) ; do \
@@ -131,5 +128,36 @@ deb: debian
 
 debian-clean:
 	rm -rf deb-build
+
+# RPM build parameters
+RPMSPECDIR= packaging/rpm
+RPMSPEC = $(RPMSPECDIR)/bearded-avenger.spec
+RPMDIST = $(shell rpm --eval '%{?dist}')
+RPMRELEASE = $(RELEASE)
+ifneq ($(OFFICIAL),yes)
+    RPMRELEASE = 0.git$(DATE)$(GITINFO)
+endif
+RPMNVR = "$(NAME)-$(VERSION)-$(RPMRELEASE)$(RPMDIST)"
+
+rpmcommon: pyinstaller-clean pyinstaller
+	@mkdir -p rpm-build
+	cp -a $(PYINSTALLER_DIST_PATH)/* rpm-build/
+	cp -a packaging/rpm/*.spec rpm-build/
+	@sed -e 's#^Version:.*#Version: $(VERSION)#' -e 's#^Release:.*#Release: $(RPMRELEASE)%{?dist}#' $(RPMSPEC) >rpm-build/$(NAME).spec
+
+rpm: rpmcommon
+	@rpmbuild --define "_topdir %(pwd)/rpm-build" \
+	--define "_builddir %{_topdir}" \
+	--define "_rpmdir %{_topdir}" \
+	--define "_srcrpmdir %{_topdir}" \
+	--define "_specdir $(RPMSPECDIR)" \
+	--define "_sourcedir %{_topdir}" \
+	--define "_rpmfilename %%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm" \
+	-ba rpm-build/$(NAME).spec
+	@rm -f rpm-build/$(NAME).spec
+	@echo "#############################################"
+	@echo "bearded-avenger RPM is built:"
+	@echo "    rpm-build/$(RPMNVR).noarch.rpm"
+	@echo "#############################################"
 
 clean: debian-clean pyinstaller-clean

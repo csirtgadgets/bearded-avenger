@@ -1,3 +1,4 @@
+packaging/pyinstaller/cif/
 pyinstaller_temp/
 pyinstaller_dist/
 deb-build/
