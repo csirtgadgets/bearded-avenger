@@ -1,25 +1,29 @@
 from cif.smrt.parser import Parser
 import re
 from pprint import pprint
+import copy
 import sys
 
 
 class Pattern(Parser):
 
-    def __init__(self, client, fetcher, rule, feed, limit=None):
-        super(Pattern, self).__init__(client, fetcher, rule, feed, limit=None)
+    def __init__(self, client, fetcher, rule, feed, limit=0):
+        super(Pattern, self).__init__(client, fetcher, rule, feed, limit=0)
 
-        if self.rule.defaults.get('pattern'):
-            self.pattern = self.rule.defaults.get('pattern')
-        elif self.rule.feeds[self.feed].get('pattern'):
+        self.pattern = self.rule.defaults.get('pattern')
+
+        if self.rule.feeds[self.feed].get('pattern'):
             self.pattern = self.rule.feeds[self.feed].get('pattern')
 
         self.pattern = re.compile(self.pattern)
+        self.limit = limit
 
     def process(self):
         cols = self.rule.defaults['values']
 
         limit = self.limit
+
+        max = 0
         rv = []
         for l in self.fetcher.process():
             if self.is_comment(l):
@@ -33,13 +37,15 @@ class Pattern(Parser):
                 continue
 
             if len(cols):
-                obs = self.rule.defaults
+                obs = copy.deepcopy(self.rule.defaults)
+                obs.pop("values", None)
+                obs.pop("pattern", None)
 
                 for idx, col in enumerate(cols):
                     if col is not None:
                         obs[col] = m[idx]
-                obs.pop("values", None)
-                obs.pop("pattern", None)
+
+
                 r = self.client.submit(**obs)
                 rv.append(r)
 

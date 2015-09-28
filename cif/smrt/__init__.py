@@ -9,6 +9,7 @@ import os.path
 from cif.rule import Rule
 import cif.color
 from cif.utils import load_plugin
+from cif.smrt.fetcher import Fetcher
 import re
 
 
@@ -39,14 +40,12 @@ class Smrt(object):
 
     def _process(self, rule, feed, limit=0):
 
-        fetcher = rule.fetcher or FETCHER_DEFAULT
-        fetcher = load_plugin(FETCHERS_PATH, fetcher)
-        fetcher = fetcher(rule, feed)
+        fetch = Fetcher(rule, feed)
 
         parser = rule.parser or PARSER_DEFAULT
         parser = load_plugin(PARSERS_PATH, parser)
 
-        parser = parser(self.client, fetcher, rule, feed, limit=limit)
+        parser = parser(self.client, fetch, rule, feed, limit=limit)
 
         rv = parser.process()
 

@@ -53,6 +53,7 @@ clean:
 	rm -rf dist
 	@echo "Cleaning up byte compiled python stuff"
 	find . -type f -regex ".*\.py[co]$$" -delete
+	find . -type d -regex ".*__pycache__" -delete
 	@echo "Cleaning up output from test runs"
 	rm -rf tests/__pycache__
 	@echo "Cleaning up RPM building stuff"
