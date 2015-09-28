@@ -1,7 +1,6 @@
 Vagrantfile.local
 *.box
-pyinstaller_temp/
-pyinstaller_dist/
+*-build/
 deb-build/
 builds/
 .vagrant

@@ -67,22 +67,23 @@ sdist: clean
 # https://mborgerson.com/creating-an-executable-from-a-python-script
 # TODO - move build up to main dir instead of cif/ fix the pathex in specs
 PYINSTALLER = pyinstaller
-PYINSTALLER_DIST_PATH = pyinstaller_dist
-PYINSTALLER_WORK_PATH = pyinstaller_temp
 PYINSTALLER_OPTS = --distpath=$(PYINSTALLER_DIST_PATH) --workpath=$(PYINSTALLER_WORK_PATH) -y --onefile
 PYINSTALLER_SPEC_DIR = packaging/pyinstaller
 PYINSTALLER_SPECS = cif.spec cif-router.spec cif-smrt.spec cif-httpd.spec
+PYINSTALLER_BUILD = pyinstaller-build
+PYINSTALLER_DIST_PATH = dist
+PYINSTALLER_WORK_PATH = temp
 
 pyinstaller:
-	cp -a cif $(PYINSTALLER_SPEC_DIR)/ ;
+	mkdir -p $(PYINSTALLER_BUILD) ;
+	cp -a cif $(PYINSTALLER_BUILD) ;
+	cp -a $(PYINSTALLER_SPEC_DIR)/*.spec $(PYINSTALLER_BUILD)/ ;
 	@for SPEC in $(PYINSTALLER_SPECS) ; do \
-		$(PYINSTALLER) $(PYINSTALLER_OPTS) $(PYINSTALLER_SPEC_DIR)/$${SPEC} ; \
+		(cd $(PYINSTALLER_BUILD) && $(PYINSTALLER) $(PYINSTALLER_OPTS) $${SPEC} ) ; \
 	done
 
 pyinstaller-clean:
-	rm -rf $(PYINSTALLER_WORK_PATH)
-	rm -rf $(PYINSTALLER_DIST_PATH)
-	rm -rf $(PYINSTALLER_SPEC_DIR)/cif
+	rm -rf
 
 
 # DEB build parameters
@@ -112,7 +113,7 @@ debian: pyinstaller-clean pyinstaller
 	@for DIST in $(DEB_DIST) ; do \
 	    mkdir -p deb-build/$${DIST}/$(NAME)-$(VERSION)/ ; \
 	    cp -a packaging/debian deb-build/$${DIST}/$(NAME)-$(VERSION)/ ; \
-	    cp -a $(PYINSTALLER_DIST_PATH)/* deb-build/$${DIST}/$(NAME)-$(VERSION)/ ; \
+	    cp -a $(PYINSTALLER_BUILD)/$(PYINSTALLER_DIST_PATH)/* deb-build/$${DIST}/$(NAME)-$(VERSION)/ ; \
         sed -ie "s|%VERSION%|$(VERSION)|g;s|%RELEASE%|$(DEB_RELEASE)|;s|%DIST%|$${DIST}|g;s|%DATE%|$(DEB_DATE)|g" deb-build/$${DIST}/$(NAME)-$(VERSION)/debian/changelog ; \
 	done
 
