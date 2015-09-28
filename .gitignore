@@ -1,3 +1,4 @@
+Vagrantfile.local
 *.box
 pyinstaller_temp/
 pyinstaller_dist/
