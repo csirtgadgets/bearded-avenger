@@ -1,0 +1,4 @@
+cif /usr/bin
+cif-router /usr/bin
+cif-httpd /usr/bin
+cif-smrt /usr/bin

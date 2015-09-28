@@ -1,0 +1,5 @@
+prune packaging
+include README.md packaging/rpm/bearded-avenger.spec COPYING requirements.txt
+include Makefile
+include VERSION
+include MANIFEST.in
