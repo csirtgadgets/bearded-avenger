@@ -1,3 +1,4 @@
+*.pid
 Vagrantfile.local
 *.box
 *-build/

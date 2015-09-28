@@ -28,7 +28,9 @@ class Delim(Parser):
                 obs.pop("values", None)
                 r = self.client.submit(**obs)
                 rv.append(r)
-            self.limit -= 1
+
+            if self.limit:
+                self.limit -= 1
             if self.limit == 0:
                 break
 

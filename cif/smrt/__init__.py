@@ -37,7 +37,7 @@ class Smrt(object):
         self.logger = logger
         self.client = load_plugin(CLIENTS_PATH, client)(remote, token)
 
-    def _process(self, rule, feed, limit=None):
+    def _process(self, rule, feed, limit=0):
 
         fetcher = rule.fetcher or FETCHER_DEFAULT
         fetcher = load_plugin(FETCHERS_PATH, fetcher)
@@ -52,7 +52,7 @@ class Smrt(object):
 
         return rv
 
-    def process(self, rule, feed=None, limit=None):
+    def process(self, rule, feed=None, limit=0):
         rv = []
         if os.path.isdir(rule):
             for f in os.listdir(rule):
