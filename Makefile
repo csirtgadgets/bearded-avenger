@@ -65,6 +65,7 @@ sdist: clean
 
 # Pyinstaller params
 # https://mborgerson.com/creating-an-executable-from-a-python-script
+# TODO - move build up to main dir instead of cif/ fix the pathex in specs
 PYINSTALLER = pyinstaller
 PYINSTALLER_DIST_PATH = pyinstaller_dist
 PYINSTALLER_WORK_PATH = pyinstaller_temp
