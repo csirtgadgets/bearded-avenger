@@ -2,4 +2,4 @@ bearded-avenger (%VERSION%-%RELEASE%~%DIST%) %DIST%; urgency=low
 
   * %VERSION% release
 
- -- CSIRT Gadgets Foundation. <contact@csirtgadgets.com>  %DATE%
+ -- CSIRT Gadgets Foundation. <https://github.com/csirtgadgets/bearded-avenger/issues>  %DATE%

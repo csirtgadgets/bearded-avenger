@@ -63,9 +63,27 @@ clean:
 sdist: clean
 	$(PYTHON) setup.py sdist
 
+# Pyinstaller params
+PYINSTALLER = pyinstaller
+PYINSTALLER_DIST_PATH = pyinstaller_dist
+PYINSTALLER_WORK_PATH = pyinstaller_temp
+PYINSTALLER_OPTS = --distpath=$(PYINSTALLER_DIST_PATH) --workpath=$(PYINSTALLER_WORK_PATH) -y --onefile
+PYINSTALLER_SPEC_DIR = packaging/pyinstaller
+PYINSTALLER_SPECS = cif.spec cif-router.spec cif-smrt.spec cif-httpd.spec
+
+pyinstaller:
+	@for SPEC in $(PYINSTALLER_SPECS) ; do \
+		$(PYINSTALLER) $(PYINSTALLER_OPTS) $(PYINSTALLER_SPEC_DIR)/$${SPEC} ; \
+	done
+
+pyinstaller-clean:
+	rm -rf $(PYINSTALLER_WORK_PATH)
+	rm -rf $(PYINSTALLER_DIST_PATH)
+
+
 # DEB build parameters
 DEBUILD_BIN ?= debuild
-DEBUILD_OPTS = --source-option="-I"
+#DEBUILD_OPTS = --source-option="-I"
 DPUT_BIN ?= dput
 DPUT_OPTS ?=
 DEB_DATE := $(shell date +"%a, %d %b %Y %T %z")
@@ -83,16 +101,21 @@ else
     DPUT_OPTS += -u
 endif
 DEBUILD = $(DEBUILD_BIN) $(DEBUILD_OPTS)
-DEB_PPA ?= ppa:wes-8/ppa
+DEB_PPA ?= ppa
 # Choose the desired Ubuntu release: lucid precise saucy trusty
 DEB_DIST ?= unstable
 
-debian:
+# https://github.com/ulikoehler/deb-buildscripts/blob/master/deb-zeromq.sh
+# https://www.google.com/webhp?sourceid=chrome-instant&ion=1&espv=2&ie=UTF-8#q=zeromq%20debuild
+# http://stackoverflow.com/questions/10999948/how-to-include-a-directory-in-the-package-debuild
+# http://askubuntu.com/questions/473429/debuild-failed-at-dh-install-with-cp-cannot-stat-debian-tmp-path-to-install-b
+
+debian: pyinstaller-clean pyinstaller
 	@for DIST in $(DEB_DIST) ; do \
-	    mkdir -p deb-build/$${DIST}/$(NAME)-$(VERSION)/dist ; \
-	    cp -a packaging/pyinstaller/dist/* deb-build/$${DIST}/$(NAME)-$(VERSION)/dist ; \
+	    mkdir -p deb-build/$${DIST}/$(NAME)-$(VERSION)/ ; \
 	    cp -a packaging/debian deb-build/$${DIST}/$(NAME)-$(VERSION)/ ; \
-		sed -ie "s|%VERSION%|$(VERSION)|g;s|%RELEASE%|$(DEB_RELEASE)|;s|%DIST%|$${DIST}|g;s|%DATE%|$(DEB_DATE)|g" deb-build/$${DIST}/$(NAME)-$(VERSION)/debian/changelog ; \
+	    cp -a $(PYINSTALLER_DIST_PATH)/* deb-build/$${DIST}/$(NAME)-$(VERSION)/ ; \
+        sed -ie "s|%VERSION%|$(VERSION)|g;s|%RELEASE%|$(DEB_RELEASE)|;s|%DIST%|$${DIST}|g;s|%DATE%|$(DEB_DATE)|g" deb-build/$${DIST}/$(NAME)-$(VERSION)/debian/changelog ; \
 	done
 
 deb: debian
@@ -100,28 +123,13 @@ deb: debian
 	    (cd deb-build/$${DIST}/$(NAME)-$(VERSION)/ && $(DEBUILD) -b) ; \
 	done
 	@echo "#############################################"
+	@echo "bearded-avenger DEB artifacts:"
 	@for DIST in $(DEB_DIST) ; do \
 	    echo deb-build/$${DIST}/$(NAME)_$(VERSION)-$(DEB_RELEASE)~$${DIST}_amd64.changes ; \
 	done
 	@echo "#############################################"
 
-deb-upload: deb
-	@for DIST in $(DEB_DIST) ; do \
-	    $(DPUT_BIN) $(DPUT_OPTS) $(DEB_PPA) deb-build/$${DIST}/$(NAME)_$(VERSION)-$(DEB_RELEASE)~$${DIST}_amd64.changes ; \
-	done
+debian-clean:
+	rm -rf deb-build
 
-PYINSTALLER = pyinstaller
-PYINSTALLER_DIST_PATH = pyinstaller_dist
-PYINSTALLER_WORK_PATH = pyinstaller_temp
-PYINSTALLER_OPTS = --distpath=$(PYINSTALLER_DIST_PATH) --workpath=$(PYINSTALLER_WORK_PATH) -y --onefile
-PYINSTALLER_SPEC_DIR = packaging/pyinstaller
-PYINSTALLER_SPECS = cif.spec cif-router.spec cif-smrt.spec cif-httpd.spec
-
-pyinstaller:
-	@for SPEC in $(PYINSTALLER_SPECS) ; do \
-		$(PYINSTALLER) $(PYINSTALLER_OPTS) $(PYINSTALLER_SPEC_DIR)/$${SPEC} ; \
-	done
-
-pyinstaller-clean:
-	rm -rf $(PYINSTALLER_WORK_PATH)
-	rm -rf $(PYINSTALLER_DIST_PATH)
+clean: debian-clean pyinstaller-clean

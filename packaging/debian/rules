@@ -1,7 +1,8 @@
 #!/usr/bin/make -f
+export DH_VERBOSE=1
 
-include /usr/share/cdbs/1/rules/debhelper.mk
+override_dh_auto_build override_dh_auto_install:
+	@
 
-binary-install/package_name::
-	mkdir debian/$(cdbs_curpkg)/usr/local/bin
-	cp dist/*  debian/$(cdbs_curpkg)/usr/local/bin
+%:
+	dh $@

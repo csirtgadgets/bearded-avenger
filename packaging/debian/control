@@ -4,7 +4,7 @@ Priority: optional
 Standards-Version: 3.9.3
 Maintainer: Wes Young <wes@csirtgadgets.org>
 Build-Depends: cdbs, debhelper (>= 5.0.0)
-Homepage: http://csirtgadgets.org/collective-intelligence-framework/
+Homepage: https://github.com/csirtgadgets/bearded-avenger
 
 Package: bearded-avenger
 Architecture: all
