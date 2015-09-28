@@ -54,7 +54,7 @@ class Smrt(object):
 
     def process(self, rule, feed=None, limit=0):
         rv = []
-        if os.path.isdir(rule):
+        if type(rule) == str and os.path.isdir(rule):
             for f in os.listdir(rule):
                 if not f.startswith('.'):
                     self.logger.debug("processing {0}/{1}".format(rule, file))
@@ -67,17 +67,18 @@ class Smrt(object):
                         rv = self._process(r, feed, limit=limit)
         else:
             self.logger.debug("processing {0}".format(rule))
-            r = Rule(path=rule)
+            if type(rule) == str:
+                rule = Rule(path=rule)
 
-            if not r.feeds:
+            if not rule.feeds:
                 self.logger.error("rules file contains no feeds")
                 raise RuntimeError
 
             if feed:
-                rv = self._process(r, feed=feed, limit=limit)
+                rv = self._process(rule, feed=feed, limit=limit)
             else:
                 for feed in r.feeds:
-                    rv = self._process(r, feed=feed, limit=limit)
+                    rv = self._process(rule, feed=feed, limit=limit)
 
         return rv
 
