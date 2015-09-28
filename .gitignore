@@ -1,3 +1,4 @@
+*.box
 pyinstaller_temp/
 pyinstaller_dist/
 deb-build/
