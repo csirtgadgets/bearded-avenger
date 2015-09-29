@@ -16,6 +16,17 @@ class Parser(object):
 
         self.comments = re.compile(RE_COMMENTS)
 
+        self.skip = rule.defaults.get('skip', None)
+        if self.skip:
+            self.skip = re.compile(self.skip)
+
+    def ignore(self, line):
+        if self.is_comment(line):
+            return True
+
+        if self.skip and self.skip.search(line):
+            return True
+
     def is_comment(self, line):
         if self.comments.match(line):
             return True

@@ -29,7 +29,7 @@ class Pattern(Parser):
         max = 0
         rv = []
         for l in self.fetcher.process():
-            if self.is_comment(l):
+            if self.ignore(l): # comment or skip
                 continue
 
             try:
