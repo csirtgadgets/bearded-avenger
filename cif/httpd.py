@@ -1,23 +1,27 @@
 #!/usr/bin/env python
 
-from flask import Flask, session, redirect, url_for, escape, request, jsonify, abort, g
+from flask import Flask, request, jsonify
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 import logging
 import textwrap
 import re
+import os
+from cif.utils import get_argument_parser, setup_logging
 
 from pprint import pprint
 
 
-from cif.constants import LOG_FORMAT, ROUTER_FRONTEND
+from cif.constants import FRONTEND_ADDR
 from cif.client.zeromq import ZMQ as Client
+TOKEN = os.environ.get('CIF_TOKEN', None)
+TOKEN = os.environ.get('CIF_HTTPD_TOKEN', TOKEN)
 
 # https://github.com/mitsuhiko/flask/blob/master/examples/minitwit/minitwit.py
 
 app = Flask(__name__)
 logger = logging.getLogger(__name__)
-remote = ROUTER_FRONTEND
+remote = FRONTEND_ADDR
 
 
 def pull_token():
@@ -66,46 +70,34 @@ def observables():
         "data": r
     })
 
+
 def main():
+    p = get_argument_parser()
     p = ArgumentParser(
         description=textwrap.dedent('''\
         example usage:
             $ cif-httpd -d
         '''),
         formatter_class=RawDescriptionHelpFormatter,
-        prog='cif-httpd'
+        prog='cif-httpd',
+        parents=[p]
     )
 
-    p.add_argument("-v", "--verbose", dest="verbose", action="count",
-                        help="set verbosity level [default: %(default)s]")
-    p.add_argument('-d', '--debug', dest='debug', action="store_true")
-
-    p.add_argument("--token", dest="token", help="specify httpd token", default="1234")
-    p.add_argument("--remote", dest="remote", default=ROUTER_FRONTEND)
+    p.add_argument("--router", help="specify router frontend [default %(default)s]", default=FRONTEND_ADDR)
+    p.add_argument("--token", default=TOKEN)
 
     args = p.parse_args()
-
-    loglevel = logging.WARNING
-    if args.verbose:
-        loglevel = logging.INFO
-    if args.debug:
-        loglevel = logging.DEBUG
-
-    console = logging.StreamHandler()
-    logging.getLogger('').setLevel(loglevel)
-    console.setFormatter(logging.Formatter(LOG_FORMAT))
-    logging.getLogger('').addHandler(console)
-
-    options = vars(args)
-
-    remote = options["remote"]
+    setup_logging(args)
+    logger = logging.getLogger(__name__)
 
     try:
-        if Client(remote, options["token"]).ping():
+        logger.info('pinging router...')
+        if Client(args.router, args.token).ping():
             app.config["SECRET_KEY"] = "ITSASECRET"
-            #app.run(debug=options.get('debug'), passthrough_errors=True) # this changes pids so supervisord gets
-            # confused
+            logger.info('starting up...')
             app.run()
+        else:
+            logger.error('router unavailable...')
     except KeyboardInterrupt:
         logger.info('shutting down...')
         raise SystemExit

@@ -9,7 +9,7 @@ import os.path
 from cif.format.table import Table
 from pprint import pprint
 from cif.observable import Observable
-from cif.constants import LOG_FORMAT, DEFAULT_CONFIG
+from cif.constants import LOG_FORMAT
 
 
 class Client(object):
@@ -45,9 +45,6 @@ def main():
     p.add_argument("--submit", dest="submit", help="submit an observable")
 
     p.add_argument("--zmq", dest="zmq", help="use zmq as a transport instead of http", action="store_true")
-
-    p.add_argument("--config", dest="config", help="specify a configuration file [default: %(default)s]",
-                   default=os.path.join(os.path.expanduser("~"), DEFAULT_CONFIG))
 
     args = p.parse_args()
 

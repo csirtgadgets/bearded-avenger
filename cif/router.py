@@ -4,17 +4,14 @@ from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 import logging
 import textwrap
-from cif.constants import LOG_FORMAT, DEFAULT_CONFIG, ROUTER_FRONTEND, ROUTER_GATHERER, STORAGE_ADDR, \
-    ROUTER_PUBLISHER, CTRL_ADDR
-import time
-import os.path
+from cif.constants import CTRL_ADDR, FRONTEND_ADDR, STORAGE_ADDR, PUBLISH_ADDR
 
 from pprint import pprint
 import zmq
 from zmq.eventloop import ioloop
-import sys
 import json
 import time
+from cif.utils import setup_logging, get_argument_parser
 
 
 class Router(object):
@@ -26,9 +23,8 @@ class Router(object):
         self.stop()
         return self
 
-    def __init__(self, frontend=ROUTER_FRONTEND, publisher=ROUTER_PUBLISHER, storage=STORAGE_ADDR,
-                 logger=logging.getLogger(__name__), **kwargs):
-        self.logger = logger
+    def __init__(self, frontend=FRONTEND_ADDR, publisher=PUBLISH_ADDR, storage=STORAGE_ADDR):
+        self.logger = logging.getLogger(__name__)
 
         self.context = zmq.Context.instance()
         self.frontend = self.context.socket(zmq.ROUTER)
@@ -89,7 +85,6 @@ class Router(object):
 
     def handle_search(self, token, data):
         self.storage.send_multipart(['search', token, data])
-        #m = self.storage.recv()
         return self.storage.recv()
 
     def handle_submission(self, token, data):
@@ -107,53 +102,34 @@ class Router(object):
     def stop(self):
         return self
 
+
 def main():
+    p = get_argument_parser()
     p = ArgumentParser(
         description=textwrap.dedent('''\
         example usage:
             $ cif-router -d
         '''),
         formatter_class=RawDescriptionHelpFormatter,
-        prog='cif-router'
+        prog='cif-router',
+        parents=[p]
     )
 
-    p.add_argument("-v", "--verbose", dest="verbose", action="count",
-                        help="set verbosity level [default: %(default)s]")
-    p.add_argument('-d', '--debug', dest='debug', action="store_true")
-
-    p.add_argument('--frontend', dest='listen', help='address to listen on', default=ROUTER_FRONTEND)
-    p.add_argument('--publish', dest='publish', help='address to publish on', default=ROUTER_PUBLISHER)
-    p.add_argument("--storage", dest="storage", help="specify a storage address", default=STORAGE_ADDR)
-
-    p.add_argument("--config", dest="config", help="specify a configuration file [default: %(default)s]",
-                        default=os.path.join(os.path.expanduser("~"), DEFAULT_CONFIG))
-
+    p.add_argument('--frontend', help='address to listen on [default: %(default)s]', default=FRONTEND_ADDR)
+    p.add_argument('--publish', help='address to publish on [default: %(default)s]', default=PUBLISH_ADDR)
+    p.add_argument("--storage", help="specify a storage address [default: %(default)s]",
+                   default=STORAGE_ADDR)
 
     args = p.parse_args()
-
-    loglevel = logging.WARNING
-    if args.verbose:
-        loglevel = logging.INFO
-    if args.debug:
-        loglevel = logging.DEBUG
-
-    console = logging.StreamHandler()
-    logging.getLogger('').setLevel(loglevel)
-    console.setFormatter(logging.Formatter(LOG_FORMAT))
-    logging.getLogger('').addHandler(console)
+    setup_logging(args)
     logger = logging.getLogger(__name__)
 
-    options = vars(args)
-
-    r = Router(logger=logger)
-    logger.info('staring router...')
-    try:
-        r.run()
-    except KeyboardInterrupt:
-        logger.info('shutting down...')
-        raise SystemExit
-
-
+    with Router(frontend=args.frontend, publisher=args.publish, storage=args.storage) as r:
+        try:
+            logger.info('starting router..')
+            r.run()
+        except KeyboardInterrupt:
+            logger.info('shutting down...')
 
 if __name__ == "__main__":
     main()

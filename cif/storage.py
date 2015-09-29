@@ -4,8 +4,7 @@ from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 import logging
 import textwrap
-from cif.constants import LOG_FORMAT, DEFAULT_CONFIG, STORAGE_ADDR, CTRL_ADDR
-import os.path
+from cif.constants import CTRL_ADDR, STORAGE_ADDR
 import pkgutil
 import os
 import time
@@ -15,6 +14,7 @@ import ujson as json
 from pprint import pprint
 from cif.errors import CIFConnectionError, StorageSubmissionFailed
 import inspect
+from cif.utils import setup_logging, get_argument_parser
 
 MOD_PATH = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 
@@ -22,12 +22,20 @@ STORE_PATH = os.path.join(MOD_PATH, "store")
 RCVTIMEO = 5000
 SNDTIMEO = 2000
 LINGER = 3
+STORE_DEFAULT = 'dummy'
+STORE_PLUGINS = ['dummy', 'sqlite', 'elasticsearch', 'rdflib']
 
 
 class Storage(object):
+    def __enter__(self):
+        return self
 
-    def __init__(self, logger=logging.getLogger(__name__), store='dummy', store_nodes=None, router=STORAGE_ADDR, **kwargs):
-        self.logger = logger
+    def __exit__(self, type, value, traceback):
+        #self.stop()
+        return self
+
+    def __init__(self, store=STORE_DEFAULT, router=STORAGE_ADDR):
+        self.logger = logging.getLogger(__name__)
         self.context = zmq.Context()
         self.router = self.context.socket(zmq.ROUTER)
         self.router_addr = router
@@ -132,54 +140,34 @@ class Storage(object):
 
 
 def main():
+    p = get_argument_parser()
     p = ArgumentParser(
         description=textwrap.dedent('''\
         example usage:
             $ cif-storage -d
         '''),
         formatter_class=RawDescriptionHelpFormatter,
-        prog='cif-storage'
+        prog='cif-storage',
+        parents=[p]
     )
 
-    p.add_argument("-v", "--verbose", dest="verbose", action="count",help="set verbosity level [default: %(default)s]")
-    p.add_argument("-d", "--debug", dest="debug", action="store_true", help="turn on the firehose")
-
-    p.add_argument("--config", dest="config", help="specify a configuration file [default: %(default)s]",
-                   default=os.path.join(os.path.expanduser("~"), DEFAULT_CONFIG))
-
-    p.add_argument("--router", dest="router", help="specify the router backend [default: %(default)s]",
+    p.add_argument("--router", help="specify the storage address [default: %(default)s]",
                    default=STORAGE_ADDR)
 
-    p.add_argument("--store", dest="store", help="specify a store type [dummy, sqlite, graph, default: %(default)s",
-                   default="dummy")
-    p.add_argument("--store-nodes", dest="store_nodes", help="specify store node addresses")
+    p.add_argument("--store", help="specify a store type {} [default: %(default)s]".format(', '.join(STORE_PLUGINS)),
+                   default=STORE_DEFAULT)
 
     args = p.parse_args()
 
-    loglevel = logging.WARNING
-    if args.verbose:
-        loglevel = logging.INFO
-    if args.debug:
-        loglevel = logging.DEBUG
-
-    console = logging.StreamHandler()
-    logging.getLogger('').setLevel(loglevel)
-    console.setFormatter(logging.Formatter(LOG_FORMAT))
-    logging.getLogger('').addHandler(console)
+    setup_logging(args)
     logger = logging.getLogger(__name__)
 
-    options = vars(args)
-
-    s = Storage(router=options['router'], store=options['store'], store_nodes=options.get('store_nodes'))
-
-    logger.info('running...')
-
-    try:
-        s.run()
-    except KeyboardInterrupt:
-        logger.info('shutting down...')
-        raise SystemExit
-
+    with Storage(router=args.router, store=args.store) as s:
+        try:
+            logger.info('starting up...')
+            s.run()
+        except KeyboardInterrupt:
+            logger.info('shutting down...')
 
 if __name__ == "__main__":
     main()
