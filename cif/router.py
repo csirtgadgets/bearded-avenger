@@ -19,6 +19,13 @@ import time
 
 class Router(object):
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.stop()
+        return self
+
     def __init__(self, frontend=ROUTER_FRONTEND, publisher=ROUTER_PUBLISHER, storage=STORAGE_ADDR,
                  logger=logging.getLogger(__name__), **kwargs):
         self.logger = logger
@@ -97,6 +104,8 @@ class Router(object):
         loop.add_handler(self.ctrl, self.handle_ctrl, zmq.POLLIN)
         loop.start()
 
+    def stop(self):
+        return self
 
 def main():
     p = ArgumentParser(
