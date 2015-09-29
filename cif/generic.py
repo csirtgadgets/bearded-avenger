@@ -1,17 +1,18 @@
-#!/usr/bin/env python
-
 import logging
 import zmq
-import sys
-from pprint import pprint
 
 from zmq.eventloop import ioloop
 
 
 class Generic(object):
+    def __enter__(self):
+        return self
 
-    def __init__(self, logger=logging.getLogger(__name__), context=zmq.Context.instance(), socket=zmq.ROUTER):
-        self.logger = logger
+    def __exit__(self, type, value, traceback):
+        return self
+
+    def __init__(self, context=zmq.Context.instance(), socket=zmq.ROUTER):
+        self.logger = logging.getLogger(__name__)
         self.context = context
         self.socket = self.context.socket(socket)
         self.poller = zmq.Poller()
@@ -24,12 +25,3 @@ class Generic(object):
         loop = ioloop.IOLoop.instance()
         loop.add_handler(self.socket, self.handle_message, zmq.POLLIN)
         loop.start()
-
-
-
-def main():
-    g = Generic()
-    g.run()
-
-if __name__ == "__main__":
-    main()

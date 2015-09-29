@@ -28,10 +28,10 @@ TOKEN = os.environ.get('CIF_SMRT_TOKEN', TOKEN)
 
 class Smrt(object):
 
-    def __init__(self, remote, token):
+    def __init__(self, remote, token, client='http'):
 
         self.logger = logging.getLogger(__name__)
-        self.client = load_plugin(CLIENTS_PATH, 'http')(remote, token)
+        self.client = load_plugin(CLIENTS_PATH, client)(remote, token)
 
     def _process(self, rule, feed, limit=0):
 

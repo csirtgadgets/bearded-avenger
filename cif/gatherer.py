@@ -5,10 +5,9 @@ from argparse import RawDescriptionHelpFormatter
 import logging
 import textwrap
 import cif.generic
-from cif.constants import ROUTER_PUBLISHER, DEFAULT_CONFIG, ROUTER_FRONTEND, ROUTER_GATHERER, LOG_FORMAT
-import os.path
-import sys
+from cif.constants import GATHER_ADDR
 import zmq
+from cif.utils import setup_logging, get_argument_parser
 
 
 class Gatherer(cif.generic.Generic):
@@ -27,48 +26,30 @@ class Gatherer(cif.generic.Generic):
 
 
 def main():
+    p = get_argument_parser()
     p = ArgumentParser(
         description=textwrap.dedent('''\
         example usage:
             $ cif-gatherer
         '''),
         formatter_class=RawDescriptionHelpFormatter,
-        prog='cif-gatherer'
+        prog='cif-gatherer',
+        parents=[p]
     )
 
-    p.add_argument("-v", "--verbose", dest="verbose", action="count",
-                        help="set verbosity level [default: %(default)s]")
-    p.add_argument('-d', '--debug', dest='debug', action="store_true")
-
-    p.add_argument("--config", dest="config", help="specify a configuration file [default: %(default)s]",
-                   default=os.path.join(os.path.expanduser("~"), DEFAULT_CONFIG))
-
     p.add_argument("--remote", dest="remote", help="specify the cif-router publishing channel [default: %(default)s",
-                   default=ROUTER_GATHERER)
+                   default=GATHER_ADDR)
 
 
     args = p.parse_args()
+    logger = setup_logging(args)
 
-    loglevel = logging.WARNING
-    if args.verbose:
-        loglevel = logging.INFO
-    if args.debug:
-        loglevel = logging.DEBUG
+    with Gatherer() as r:
+        logger.info('staring gatherer...')
+        try:
+            r.run()
+        except KeyboardInterrupt:
+            logger.info('shutting down...')
 
-    console = logging.StreamHandler()
-    logging.getLogger('').setLevel(loglevel)
-    console.setFormatter(logging.Formatter(LOG_FORMAT))
-    logging.getLogger('').addHandler(console)
-    logger = logging.getLogger(__name__)
-
-    options = vars(args)
-
-    r = Gatherer(logger=logger)
-    logger.info('staring gatherer...')
-    try:
-        r.run()
-    except KeyboardInterrupt:
-        logger.info('shutting down...')
-        sys.exit()
 if __name__ == "__main__":
     main()

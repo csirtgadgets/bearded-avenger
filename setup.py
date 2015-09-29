@@ -29,7 +29,7 @@ setup(
               'cif-smrt=cif.smrt:main',
               'cif-router=cif.router:main',
               'cif-hunter=cif.hunter:main',
-              'cif-gatherer=cif.gatherer:main',
+              'cif-gatherer =cif.gatherer:main',
               'cif-httpd=cif.httpd:main',
               'cif-storage=cif.storage:main',
               ]

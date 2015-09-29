@@ -14,8 +14,8 @@ from cif.constants import LOG_FORMAT
 
 class Client(object):
 
-    def __init__(self, remote, token, logger=logging.getLogger(__name__)):
-        self.logger = logger
+    def __init__(self, remote, token):
+        self.logger = logging.getLogger(__name__)
         self.remote = remote
         self.token = str(token)
 

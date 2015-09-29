@@ -69,7 +69,7 @@ class Router(object):
         self.logger.debug("replying {}".format(rv))
         self.frontend.send_multipart([id, '', mtype, rv])
 
-    def handle_ping(self, token, data):
+    def handle_ping(self):
         rv = {
             "status": "success",
             "data": str(time.time())

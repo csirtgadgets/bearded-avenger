@@ -25,3 +25,9 @@ STORAGE_ADDR = os.environ.get('CIF_STORAGE_ADDR', STORAGE_ADDR)
 
 CTRL_ADDR = 'ipc://{}'.format(os.path.join(TEMP_DIR, 'ctrl.ipc'))
 CTRL_ADDR = os.environ.get('CIF_CTRL_ADDR', CTRL_ADDR)
+
+GATHER_ADDR = 'ipc://{}'.format(os.path.join(TEMP_DIR, 'gather.ipc'))
+GATHER_ADDR = os.environ.get('CIF_GATHER_ADDR', GATHER_ADDR)
+
+HUNTER_ADDR = 'ipc://{}'.format(os.path.join(TEMP_DIR, 'hunter.ipc'))
+HUNTER_ADDR = os.environ.get('CIF_GATHER_ADDR', HUNTER_ADDR)
