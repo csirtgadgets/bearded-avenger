@@ -10,6 +10,7 @@ rule = Rule(path=rule)
 rule.fetcher = 'file'
 s = Smrt(REMOTE, 1234, client='dummy')
 
+
 def test_spamhaus_drop():
     rule.feeds['drop']['remote'] = 'tests/spamhaus/drop.txt'
     x = s.process(rule, feed="drop")
@@ -20,7 +21,3 @@ def test_spamhaus_edrop():
     rule.feeds['edrop']['remote'] = 'tests/spamhaus/edrop.txt'
     x = s.process(rule, feed="edrop")
     assert len(x) > 0
-
-if __name__ == '__main__':
-    test_spamhaus_drop()
-    test_spamhaus_edrop()

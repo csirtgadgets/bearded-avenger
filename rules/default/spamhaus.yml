@@ -7,7 +7,7 @@ defaults:
     - suspicious
     - hijacked
   altid: http://www.spamhaus.org/sbl/sbl.lasso?query=<reference>
-  pattern: '^(\S+)\s;\s(\S+)$'
+  pattern: '(.+)\s;\s(.+)'
   values:
     - observable
     - reference

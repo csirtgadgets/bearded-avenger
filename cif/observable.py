@@ -33,9 +33,9 @@ for x in IPV4_PRIVATE_NETS:
 
 class Observable(object):
 
-    def __init__(self, observable=None, otype=None, tlp=TLP,
+    def __init__(self, observable=None, otype=None, tlp=TLP, tags=[], group=GROUP,
                  reporttime=datetime.datetime.fromtimestamp(time.time()).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
-                 provider=None, group=GROUP, protocol=None, portlist=None, tags=[], asn=None,
+                 provider=None,  protocol=None, portlist=None,  asn=None,
                  asn_desc=None, cc=None, application=None, reference=None, reference_tlp=None, logger=logging.getLogger(
                 __name__), *args, **kwargs):
 

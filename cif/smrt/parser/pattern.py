@@ -21,6 +21,9 @@ class Pattern(Parser):
     def process(self):
         cols = self.rule.defaults['values']
 
+        if isinstance(cols, basestring):
+            cols = cols.split(',')
+
         limit = self.limit
 
         max = 0
@@ -30,7 +33,9 @@ class Pattern(Parser):
                 continue
 
             try:
-                m = self.pattern.match(l).group()
+                m = self.pattern.search(l).groups()
+                if isinstance(m, basestring):
+                    m = [m]
             except ValueError:
                 continue
             except AttributeError:
@@ -44,7 +49,6 @@ class Pattern(Parser):
                 for idx, col in enumerate(cols):
                     if col is not None:
                         obs[col] = m[idx]
-
 
                 r = self.client.submit(**obs)
                 rv.append(r)
