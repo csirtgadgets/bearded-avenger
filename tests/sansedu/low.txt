@@ -1,0 +1,42 @@
+#
+#   DShield.org Suspicious Domain List
+#    (c) 2015 DShield.org
+#   some rights reserved. Details http://creativecommons.org/licenses/by-nc-sa/2.5/
+#   use on your own risk. No warranties implied.
+#   primary URL: http://www.dshield.org/feeds/suspiciousdomains_High.txt
+#
+#   comments: info@dshield.org
+#    updated: Tue Sep 29 04:07:29 2015 UTC
+#
+#    This list consists of High Level Sensitivity website URLs
+#     Columns (tab delimited):
+#
+#      (1) site
+#
+Site
+000007.ru
+000cc.com
+09cd.co.kr
+1-verygoods.ru
+10kpictures.com
+114bds.com
+114oldest.com
+120a.com
+123kochi.com
+123mdw.com
+13grandferi.ru
+1492tapasbar.com
+168asia.com
+18dd.net
+18xn.com
+19tenco.com
+1a-teensbilder.de
+1day.su
+1sense.info
+1speed.info
+1trillionemails.com
+1tvv.com
+1verygoods.ru
+2000tours.com
+2009dddd.cn
+2009llll.cn
