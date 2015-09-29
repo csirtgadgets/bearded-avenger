@@ -1,0 +1,46 @@
+
+
+#
+#   DShield.org Recommended Block List
+#    (c) 2007 DShield.org
+#   some rights reserved. Details http://creativecommons.org/licenses/by-nc-sa/2.5/
+#   use on your own risk. No warranties implied.
+#   primary URL: http://feeds.dshield.org/block.txt
+#     PGP Sign.: http://feeds.dshield.org/block.txt.asc
+#
+#   comments: info@dshield.org
+#    updated: Tue Sep 29 11:18:10 2015 UTC
+#
+#    This list summarizes the top 20 attacking class C (/24) subnets
+#   over the last three days. The number of 'attacks' indicates the
+#   number of targets reporting scans from this subnet.
+#
+#
+#    Columns (tab delimited):
+#
+#    (1) start of netblock
+#    (2) end of netblock
+#    (3) subnet (/24 for class C)
+#    (4) number of targets scanned
+#    (5) name of Network
+#    (6) Country
+#    (7) contact email address
+#
+#    If a range is assigned to multiple users, the first one is listed.
+#
+Start	End	Netblock	Attacks	Name	Country	email
+207.150.177.0	207.150.177.255	24	13840
+193.104.41.0	193.104.41.255	24	3223
+141.212.122.0	141.212.122.255	24	923	University of Michigan (NET-UMNET3)	US	paul@engin.umich.edu
+115.231.222.0	115.231.222.255	24	865	CHINANET-BACKBONE No.31,Jin-rong Street	CN	anti-spam@mail.lsptt.zj.cn
+43.229.53.0	43.229.53.255	24	786	Japan Inet	JP	admin@v6nic.net
+89.248.172.0	89.248.172.255	24	721
+60.169.78.0	60.169.78.255	24	569	CHINANET-BACKBONE No.31,Jin-rong Street	CN	wang@mail.hf.ah.cninfo.net
+222.186.21.0	222.186.21.255	24	365
+222.186.56.0	222.186.56.255	24	357
+222.186.34.0	222.186.34.255	24	348
+199.203.59.0	199.203.59.255	24	346	Elron Technologies (NETBLK-ELRON-C-BLK1)	US	abuse@netvision.net.il
+104.219.234.0	104.219.234.255	24	341
+96.44.187.0	96.44.187.255	24	320	SPNW - Secured Private Network	US	noc@quadranet.com
+198.55.103.0	198.55.103.255	24	318
+218.65.30.0	218.65.30.255	24	311	CHINANET jiangxi province network	CN	abuse@public1.nc.jx.cn
