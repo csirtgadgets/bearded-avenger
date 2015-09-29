@@ -4,15 +4,19 @@ import time
 import datetime
 import re
 import pytricia
+import socket
 from pprint import pprint
+from urlparse import urlparse
 
 TLP = "green"
 GROUP = "everyone"
 
-RE_IPV4 = re.compile("^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}")
-RE_FQDN = re.compile("^(?:[0-9a-zA-Z-]{1,63}\.)+[a-zA-Z]{2,63}$")
-RE_URL = re.compile("^(http|https|smtp|ftp|sftp):\/\/")
-RE_URL_BROKEN = re.compile("^([a-z0-9.-]+[a-z]{2,63}|\b(?:\d{1,3}\.){3}\d{1,3}\b)(:(\d+))?\/+")
+RE_IPV4 = re.compile('^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}')
+# http://stackoverflow.com/a/17871737
+RE_IPV6 = re.compile('(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))')
+# http://goo.gl/Cztyn2 -- probably needs more work
+RE_FQDN = re.compile('^((xn--)?(--)?[a-zA-Z0-9-_]+(-[a-zA-Z0-9]+)*\.)+[a-zA-Z]{2,}(--p1ai)?$')
+RE_URI_SCHEMES = re.compile('^(https?|ftp)$')
 
 IPV4_PRIVATE = pytricia.PyTricia()
 IPV4_PRIVATE_NETS = [
@@ -77,25 +81,47 @@ class Observable(object):
                 return True
         return False
 
+    def resolve_otype(self, observable):
+        return self.resolve_obj(observable)
+
     def resolve_obj(self, observable):
+        def _ipv6(s):
+            try:
+                socket.inet_pton(socket.AF_INET6, s)
+            except socket.error:
+                if not re.match(RE_IPV6, s):
+                    return False
+
+            return True
+
         def _ipv4(s):
-            if RE_IPV4.match(s):
-                return 1
+            try:
+                socket.inet_pton(socket.AF_INET, s)
+            except socket.error:
+                if not re.match(RE_IPV4, s):
+                    return False
+            return True
 
         def _fqdn(s):
             if RE_FQDN.match(s):
                 return 1
 
         def _url(s):
-            if RE_URL.match(s):
-                return 1
+            u = urlparse(s)
+            if re.match(RE_URI_SCHEMES, u.scheme):
+                if _fqdn(u.netloc) or _ipv4(u.netloc) or _ipv6(u.netloc):
+                    return True
 
         if _fqdn(observable):
             return 'fqdn'
+        elif _ipv6(observable):
+            return 'ipv6'
         elif _ipv4(observable):
             return 'ipv4'
         elif _url(observable):
             return 'url'
+
+        raise NotImplementedError('unknown otype for {}'.format(observable))
 
     def __repr__(self):
         o = {
