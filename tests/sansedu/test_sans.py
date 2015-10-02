@@ -26,9 +26,7 @@ def test_sans_block():
     feed = 'block'
     rule.feeds[feed]['remote'] = 'tests/sansedu/block.txt'
     x = s.process(rule, feed=feed)
-    assert len(x) > 0
-
-    x = json.loads(x[0])
-
     pprint(x)
+    assert len(x) > 0
+    x = json.loads(x[0])
     assert len(x['observable']) > 4

@@ -54,7 +54,7 @@ class Fetcher(object):
         ftype = magic.from_file(self.cache, mime=True)
         self.logger.debug(ftype)
 
-        if ftype == 'text/plain':
+        if ftype.startswith('text'):
             with open(self.cache) as f:
                 while True:
                     yield f.readline().strip()

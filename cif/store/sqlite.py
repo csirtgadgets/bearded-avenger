@@ -8,6 +8,7 @@ import arrow
 DB_FILE = 'cif.db'
 Base = declarative_base()
 
+
 class Observable(Base):
     __tablename__ = "observables"
 

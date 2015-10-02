@@ -29,9 +29,8 @@ class Parser(object):
             return True
 
     def is_comment(self, line):
-        if self.comments.match(line):
+        if self.comments.search(line):
             return True
-        return False
 
     def _defaults(self):
         defaults = self.rule.defaults
