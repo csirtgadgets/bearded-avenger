@@ -9,7 +9,11 @@ import os.path
 from cif.format.table import Table
 from pprint import pprint
 from cif.observable import Observable
-from cif.constants import LOG_FORMAT
+from cif.constants import REMOTE_ADDR
+from cif.utils import setup_logging, get_argument_parser
+
+TOKEN = os.environ.get('CIF_TOKEN', None)
+REMOTE_ADDR = os.environ.get('CIF_REMOTE', REMOTE_ADDR)
 
 
 class Client(object):
@@ -22,8 +26,12 @@ class Client(object):
     def _kv_to_observable(self, kv):
         return str(Observable(**kv))
 
+    def ping(self):
+        raise NotImplementedError
+
 
 def main():
+    p = get_argument_parser()
     p = ArgumentParser(
         description=textwrap.dedent('''\
         example usage:
@@ -32,47 +40,38 @@ def main():
             $ cif --ping
         '''),
         formatter_class=RawDescriptionHelpFormatter,
-        prog='cif'
+        prog='cif',
+        parents=[p]
     )
 
-    p.add_argument("-v", "--verbose", dest="verbose", action="count",
-                   help="set verbosity level [default: %(default)s]")
-    p.add_argument('-d', '--debug', dest='debug', action="store_true")
-
-    p.add_argument('--token', dest='token', help='specify api token', default=str(1234))
-    p.add_argument('-p', '--ping', dest='ping', action="store_true") #meg
-    p.add_argument("--search", dest="search", help="search")
-    p.add_argument("--submit", dest="submit", help="submit an observable")
+    p.add_argument('--token', help='specify api token', default=str(1234))
+    p.add_argument('--remote', help='specify API remote [default %(default)s]', default=REMOTE_ADDR)
+    p.add_argument('-p', '--ping', action="store_true") # meg?
+    p.add_argument("--search", help="search")
+    p.add_argument("--submit", help="submit an observable")
 
     p.add_argument("--zmq", dest="zmq", help="use zmq as a transport instead of http", action="store_true")
 
     args = p.parse_args()
 
-    loglevel = logging.WARNING
-    if args.verbose:
-        loglevel = logging.INFO
-    if args.debug:
-        loglevel = logging.DEBUG
-
-    console = logging.StreamHandler()
-    logging.getLogger('').setLevel(loglevel)
-    console.setFormatter(logging.Formatter(LOG_FORMAT))
-    logging.getLogger('').addHandler(console)
+    setup_logging(args)
     logger = logging.getLogger(__name__)
 
     options = vars(args)
 
-    cli = Client(**options)
     if options.get("zmq"):
-        from cif.client.zeromq import Client as ZMQClient
+        from cif.client.zeromq import ZMQ as ZMQClient
         cli = ZMQClient(**options)
+    else:
+        from cif.client.http import HTTP as HTTPClient
+        cli = HTTPClient(args.remote, args.token)
 
     if options.get('ping'):
         logger.info('running ping')
         for num in range(0, 4):
             ret = cli.ping()
             if ret != 0:
-                logger.info("roundtrip: %s ms" % ret)
+                print("roundtrip: {} ms".format(ret))
                 select.select([], [], [], 1)
             else:
                 logger.error('ping failed')
