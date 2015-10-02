@@ -116,10 +116,3 @@ class SQLite(Store):
 
 
 Plugin = SQLite
-
-if __name__ == '__main__':
-    c = SQLite()
-    c.submit({
-        'observable': 'example.com',
-        'tags': ['botnet'],
-    })
