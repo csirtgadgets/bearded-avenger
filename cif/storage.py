@@ -94,7 +94,6 @@ class Storage(object):
         self.logger.debug('message received')
         m = s.recv_multipart()
 
-        self.logger.debug(m)
         id, mtype, token, data = m
 
         if isinstance(data, basestring):
@@ -105,24 +104,22 @@ class Storage(object):
                 self.router.send_multipart(["", json.dumps({"status": "failed" })])
 
         handler = getattr(self, "handle_" + mtype)
-        if handler is None:
+        if handler:
+            self.logger.debug("mtype: {0}".format(mtype))
+
+            self.logger.debug('running handler: {}'.format(mtype))
+            rv = handler(token, data)
+
+            if rv:
+                rv = {"status": "success", "data": str(rv) }
+            else:
+                rv = {"status": "failed"}
+
+            rv = json.dumps(rv)
+            self.router.send_multipart([id, rv])
+        else:
             self.logger.error('message type {0} unknown'.format(mtype))
             self.router.send_multipart([id, '0'])
-            return
-
-        self.logger.debug("mtype: {0}".format(mtype))
-
-        self.logger.debug('running handler: {}'.format(handler))
-        rv = handler(token, data)
-
-        if rv:
-            rv = {"status": "success", "data": str(rv) }
-        else:
-            rv = {"status": "failed"}
-
-        rv = json.dumps(rv)
-        self.logger.debug(rv)
-        self.router.send_multipart([id, rv])
 
     def handle_search(self, token, data):
         return self.store.search(data)

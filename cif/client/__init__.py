@@ -48,7 +48,10 @@ def main():
     p.add_argument('--remote', help='specify API remote [default %(default)s]', default=REMOTE_ADDR)
     p.add_argument('-p', '--ping', action="store_true") # meg?
     p.add_argument("--search", help="search")
-    p.add_argument("--submit", help="submit an observable")
+    p.add_argument("--submit", action="store_true", help="submit an observable")
+
+    p.add_argument('--observable')
+    p.add_argument('--tags', nargs='+')
 
     p.add_argument("--zmq", dest="zmq", help="use zmq as a transport instead of http", action="store_true")
 
@@ -82,7 +85,8 @@ def main():
         print Table(data=rv)
     elif options.get("submit"):
         logger.info("submitting {0}".format(options.get("submit")))
-        rv = cli.submit(options.get("submit"))
+
+        rv = cli.submit(observable=args.observable, tags=args.tags)
         pprint(rv)
 
 if __name__ == "__main__":

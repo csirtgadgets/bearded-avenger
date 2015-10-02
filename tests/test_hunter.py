@@ -1,7 +1,8 @@
 import py.test
 
-import cif.hunter as hunter
+from cif.hunter import Hunter
 
 
 def test_hunter():
-    pass
+    with Hunter() as h:
+        assert isinstance(h, Hunter)
