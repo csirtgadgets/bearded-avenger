@@ -31,28 +31,29 @@ class Storage(object):
         return self
 
     def __exit__(self, type, value, traceback):
-        #self.stop()
-        return self
+        self.stop()
 
-    def __init__(self, store=STORE_DEFAULT, router=STORAGE_ADDR):
+    def __init__(self, store=STORE_DEFAULT, router=STORAGE_ADDR, *args, **kv):
         self.logger = logging.getLogger(__name__)
         self.context = zmq.Context()
         self.router = self.context.socket(zmq.ROUTER)
         self.router_addr = router
         self.connected = False
         self.ctrl = None
+        self.loop = ioloop.IOLoop.instance()
 
         for loader, modname, is_pkg in pkgutil.iter_modules([STORE_PATH]):
             if modname == store:
                 self.logger.debug('Loading plugin: {0}'.format(modname))
                 self.store = loader.find_module(modname).load_module(modname)
-                self.store = self.store.Plugin()
+                self.store = self.store.Plugin(*args, **kv)
 
         self.router = self.context.socket(zmq.ROUTER)
 
+    def start(self):
         while not self.connected:
             try:
-                self.logger.debug('connecting to router: {0}'.format(router))
+                self.logger.debug('connecting to router: {0}'.format(self.router))
                 self._connect_ctrl()
             except zmq.error.Again:
                 self.logger.error("problem connecting to router, retrying...")
@@ -65,6 +66,12 @@ class Storage(object):
                 self.connected = True
 
         self.router.connect(STORAGE_ADDR)
+
+        self.loop.add_handler(self.router, self.handle_message, zmq.POLLIN)
+        self.loop.start()
+
+    def stop(self):
+        self.loop.stop()
 
     def _connect_ctrl(self):
         if self.ctrl:
@@ -98,14 +105,16 @@ class Storage(object):
                 self.router.send_multipart(["", json.dumps({"status": "failed" })])
 
         handler = getattr(self, "handle_" + mtype)
-        if handler == None:
+        if handler is None:
             self.logger.error('message type {0} unknown'.format(mtype))
             self.router.send_multipart([id, '0'])
             return
 
         self.logger.debug("mtype: {0}".format(mtype))
 
+        self.logger.debug('running handler: {}'.format(handler))
         rv = handler(token, data)
+
         if rv:
             rv = {"status": "success", "data": str(rv) }
         else:
@@ -116,27 +125,11 @@ class Storage(object):
         self.router.send_multipart([id, rv])
 
     def handle_search(self, token, data):
+        return self.store.search(data)
         self.logger.debug('searching')
-        rv = self.store.search(data)
-        return rv
 
     def handle_submission(self, token, data):
-        self.logger.debug('submitting')
-
-        try:
-            x = self.store.submit(data)
-        except Exception as err:
-            self.logger.exception(err)
-            x = False
-        else:
-            self.logger.debug("success!")
-        finally:
-            return x
-
-    def run(self):
-        loop = ioloop.IOLoop.instance()
-        loop.add_handler(self.router, self.handle_message, zmq.POLLIN)
-        loop.start()
+        return self.store.submit(data)
 
 
 def main():
@@ -165,7 +158,7 @@ def main():
     with Storage(router=args.router, store=args.store) as s:
         try:
             logger.info('starting up...')
-            s.run()
+            s.start()
         except KeyboardInterrupt:
             logger.info('shutting down...')
 
