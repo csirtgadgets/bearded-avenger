@@ -1,7 +1,8 @@
 import py.test
 
-import cif.smrt as smrt
+from cif.smrt import Smrt
 
 
 def test_smrt():
-    pass
+    with Smrt() as s:
+        assert type(s) is Smrt

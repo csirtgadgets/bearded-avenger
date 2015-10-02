@@ -9,7 +9,7 @@ def running_router():
 
 
 def test_router_ping(running_router):
-    x = running_router.handle_ping()
+    x = running_router.handle_ping('1234', 'ping')
     assert len(x) > 0
 
     x = json.loads(x)
