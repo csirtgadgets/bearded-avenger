@@ -38,7 +38,5 @@ def test_storage_sqlite():
             'observable': 'example.com'
         })
 
-        pprint(x)
-
     os.unlink(dbfile)
 
