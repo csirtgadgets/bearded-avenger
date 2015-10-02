@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 import logging
 import textwrap
-from cif.constants import CTRL_ADDR, FRONTEND_ADDR, STORAGE_ADDR, PUBLISH_ADDR
+from cif.constants import CTRL_ADDR, FRONTEND_ADDR, STORAGE_ADDR, HUNTER_ADDR
 
 from pprint import pprint
 import zmq
@@ -22,20 +22,20 @@ class Router(object):
     def __exit__(self, type, value, traceback):
         self.stop()
 
-    def __init__(self, frontend=FRONTEND_ADDR, publisher=PUBLISH_ADDR, storage=STORAGE_ADDR):
+    def __init__(self, frontend=FRONTEND_ADDR, hunter=HUNTER_ADDR, storage=STORAGE_ADDR):
         self.logger = logging.getLogger(__name__)
 
         self.context = zmq.Context.instance()
         self.frontend = self.context.socket(zmq.ROUTER)
         self.storage = self.context.socket(zmq.DEALER)
-        self.publisher = self.context.socket(zmq.PUB)
+        self.hunters = self.context.socket(zmq.PUB)
         self.ctrl = self.context.socket(zmq.REP)
 
         self.poller = zmq.Poller()
 
         self.ctrl.bind(CTRL_ADDR)
         self.frontend.bind(frontend)
-        self.publisher.bind(publisher)
+        self.hunters.bind(hunter)
         self.storage.bind(storage)
 
     def auth(self, token):
@@ -89,6 +89,7 @@ class Router(object):
     def handle_submission(self, token, data):
         self.storage.send_multipart(['submission', token, data])
         m = self.storage.recv()
+        self.hunters.send_multipart([data])
         return m
 
     def run(self):
@@ -115,7 +116,7 @@ def main():
     )
 
     p.add_argument('--frontend', help='address to listen on [default: %(default)s]', default=FRONTEND_ADDR)
-    p.add_argument('--publish', help='address to publish on [default: %(default)s]', default=PUBLISH_ADDR)
+    p.add_argument('--hunter', help='address hunters listen on on [default: %(default)s]', default=HUNTER_ADDR)
     p.add_argument("--storage", help="specify a storage address [default: %(default)s]",
                    default=STORAGE_ADDR)
 
@@ -123,7 +124,7 @@ def main():
     setup_logging(args)
     logger = logging.getLogger(__name__)
 
-    with Router(frontend=args.frontend, publisher=args.publish, storage=args.storage) as r:
+    with Router(frontend=args.frontend, hunter=args.hunter, storage=args.storage) as r:
         try:
             logger.info('starting router..')
             r.run()
