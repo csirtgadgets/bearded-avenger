@@ -1,3 +1,4 @@
+cif.db
 *.pid
 Vagrantfile.local
 *.box
