@@ -30,7 +30,7 @@ class ZMQ(Client):
         # zmq requires .encode
         self.logger.debug("sending")
         self.socket.send_multipart([self.token.encode(ENCODING_DEFAULT), mtype.encode(ENCODING_DEFAULT), data.encode(ENCODING_DEFAULT)])
-        self.logger.debug("receving")
+        self.logger.debug("receiving")
         return self._recv()
 
     def _recv(self):

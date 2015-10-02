@@ -18,6 +18,7 @@ class Parser(object):
 
         self.skip = rule.defaults.get('skip', None)
         if self.skip:
+            del rule.defaults['skip']
             self.skip = re.compile(self.skip)
 
     def ignore(self, line):

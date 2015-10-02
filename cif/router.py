@@ -21,7 +21,6 @@ class Router(object):
 
     def __exit__(self, type, value, traceback):
         self.stop()
-        return self
 
     def __init__(self, frontend=FRONTEND_ADDR, publisher=PUBLISH_ADDR, storage=STORAGE_ADDR):
         self.logger = logging.getLogger(__name__)
@@ -69,7 +68,7 @@ class Router(object):
         self.logger.debug("replying {}".format(rv))
         self.frontend.send_multipart([id, '', mtype, rv])
 
-    def handle_ping(self):
+    def handle_ping(self, token, data):
         rv = {
             "status": "success",
             "data": str(time.time())

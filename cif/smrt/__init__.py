@@ -27,8 +27,13 @@ TOKEN = os.environ.get('CIF_SMRT_TOKEN', TOKEN)
 
 
 class Smrt(object):
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
 
-    def __init__(self, remote, token, client='http'):
+    def __enter__(self):
+        return self
+
+    def __init__(self, remote=REMOTE_ADDR, token=TOKEN, client='http'):
 
         self.logger = logging.getLogger(__name__)
         self.client = load_plugin(CLIENTS_PATH, client)(remote, token)

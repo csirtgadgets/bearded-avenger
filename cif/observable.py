@@ -39,11 +39,10 @@ class Observable(object):
 
     def __init__(self, observable=None, otype=None, tlp=TLP, tags=[], group=GROUP,
                  reporttime=datetime.datetime.fromtimestamp(time.time()).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
-                 provider=None,  protocol=None, portlist=None,  asn=None,
-                 asn_desc=None, cc=None, application=None, reference=None, reference_tlp=None, logger=logging.getLogger(
-                __name__), *args, **kwargs):
+                 provider=None,  protocol=None, portlist=None,  asn=None, firsttime=None, lasttime=None,
+                 asn_desc=None, cc=None, application=None, reference=None, reference_tlp=None, confidence=None):
 
-        self.logger = logger
+        self.logger = logging.getLogger(__name__)
 
         if isinstance(tags, basestring):
             tags = tags.split(",")
@@ -60,6 +59,7 @@ class Observable(object):
         self.application = application
         self.reference = reference
         self.reference_tlp = reference_tlp
+        self.confidence = confidence
 
         if asn and asn.lower() == 'na':
             asn = None
