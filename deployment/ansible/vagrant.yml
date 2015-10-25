@@ -1,0 +1,17 @@
+# https://github.com/whiskerlabs/ansible-python
+---
+- name: Install bearded-avenger
+  hosts: all 
+  remote_user: vagrant
+  sudo: True
+  pre_tasks:
+    - name: Add apt HTTPS support
+      apt: name=apt-transport-https state=present
+    - name: Update apt cache if needed.
+      apt: update_cache=yes cache_valid_time=3600
+    - name: Install htop
+      apt: name=htop state=present
+  roles:
+    - { role: ubuntu-check, tags: role-ubuntu-check }
+    - { role: python27, tags: role-python }
+    #- { role: development, tags: role-development }
