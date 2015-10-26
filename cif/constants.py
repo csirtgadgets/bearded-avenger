@@ -17,9 +17,6 @@ REMOTE_ADDR = os.environ.get('CIF_REMOTE_ADDR', REMOTE_ADDR)
 FRONTEND_ADDR = "ipc://{}".format(os.path.join(TEMP_DIR, 'frontend.ipc'))
 FRONTEND_ADDR = os.environ.get('CIF_FRONTEND_ADDR', FRONTEND_ADDR)
 
-PUBLISH_ADDR = 'ipc://{}'.format(os.path.join(TEMP_DIR, 'publisher.ipc'))
-PUBLISH_ADDR = os.environ.get('CIF_PUBLISH_ADDR', PUBLISH_ADDR)
-
 STORAGE_ADDR = 'ipc://{}'.format(os.path.join(TEMP_DIR, 'storage.ipc'))
 STORAGE_ADDR = os.environ.get('CIF_STORAGE_ADDR', STORAGE_ADDR)
 
@@ -30,4 +27,4 @@ GATHER_ADDR = 'ipc://{}'.format(os.path.join(TEMP_DIR, 'gather.ipc'))
 GATHER_ADDR = os.environ.get('CIF_GATHER_ADDR', GATHER_ADDR)
 
 HUNTER_ADDR = 'ipc://{}'.format(os.path.join(TEMP_DIR, 'hunter.ipc'))
-HUNTER_ADDR = os.environ.get('CIF_GATHER_ADDR', HUNTER_ADDR)
+HUNTER_ADDR = os.environ.get('CIF_HUNTER_ADDR', HUNTER_ADDR)

@@ -64,7 +64,7 @@ class ZMQ(Client):
             data = self._kv_to_observable(data)
 
         data = self._send("submission", data)
-        data = json.loads(data)
+        self.logger.debug(data)
         return data
 
 Plugin = ZMQ
