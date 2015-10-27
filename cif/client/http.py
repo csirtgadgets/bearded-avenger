@@ -38,9 +38,7 @@ class HTTP(Client):
             self.logger.error(err)
             raise RuntimeWarning(err)
 
-        self.logger.debug(body.content)
-        body = json.loads(body.content)
-        return body
+        return json.loads(body.content)
 
     def _post(self, uri, data):
         body = self.session.post(uri, data=data)
@@ -69,12 +67,13 @@ class HTTP(Client):
         body = json.loads(body.content)
         return body
 
-    def search(self):
-        return []
+    def search(self, q, filters={}, limit=None):
+        rv = self._get('/search', params={ 'q': q, 'filters': filters, 'limit': limit})
+        return rv['data']
 
     def submit(self, **data):
         if isinstance(data, dict):
-            data = self._kv_to_observable(data)
+            data = str(self._kv_to_observable(data))
 
         uri = "{0}/observables".format(self.remote)
         self.logger.debug(uri)

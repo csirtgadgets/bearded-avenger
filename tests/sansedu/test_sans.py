@@ -18,8 +18,7 @@ def test_sans_low():
     x = s.process(rule, feed=feed)
     assert len(x) > 0
 
-    x = json.loads(x[0])
-    assert len(x['observable']) > 4
+    assert len(x[0].observable) > 4
 
 
 def test_sans_block():
@@ -28,5 +27,4 @@ def test_sans_block():
     x = s.process(rule, feed=feed)
 
     assert len(x) > 0
-    x = json.loads(x[0])
-    assert len(x['observable']) > 4
+    assert len(x[0].observable) > 4

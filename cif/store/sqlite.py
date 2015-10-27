@@ -4,6 +4,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from cif.store import Store
 import logging
 import arrow
+from pprint import pprint
 
 DB_FILE = 'cif.db'
 Base = declarative_base()
@@ -29,7 +30,9 @@ class Observable(Base):
     confidence = Column(Float)
 
     def __init__(self, observable=None, otype=None, tlp=None, provider=None, portlist=None, asn=None, asn_desc=None,
-                 cc=None, protocol=None, firsttime=arrow.utcnow().datetime, lasttime=arrow.utcnow().datetime, reporttime=arrow.utcnow().datetime, group="everyone", tags=[], confidence=None):
+                 cc=None, protocol=None, firsttime=None, lasttime=None,
+                 reporttime=None, group="everyone", tags=[], confidence=None,
+                 reference=None, reference_tlp=None, application=None):
 
         self.observable = observable
         self.group = group
@@ -46,6 +49,17 @@ class Observable(Base):
         self.lasttime = lasttime
         self.tags = tags
         self.confidence = confidence
+        self.reference = reference
+        self.reference_tlp = reference_tlp
+
+        if self.reporttime and isinstance(self.reporttime, basestring):
+            self.reporttime = arrow.get(self.reporttime).datetime
+
+        if self.lasttime and isinstance(self.lasttime, basestring):
+            self.lasttime = arrow.get(self.lasttime).datetime
+
+        if self.firsttime and isinstance(self.firsttime, basestring):
+            self.firsttime = arrow.get(self.firsttime).datetime
 
 
 class Tag(Base):
@@ -84,13 +98,27 @@ class SQLite(Store):
         self.logger.debug(self.path)
 
     def _as_dict(self, obj):
-        return dict((col.name, getattr(obj, col.name))
-            for col in class_mapper(obj.__class__).mapped_table.c)
+        #return dict((col.name, getattr(obj, col.name))
+        #    for col in class_mapper(obj.__class__).mapped_table.c)
+        d = {}
+        for col in class_mapper(obj.__class__).mapped_table.c:
+            d[col.name] = getattr(obj, col.name)
+            if d[col.name] and col.name.endswith('time'):
+                d[col.name] = getattr(obj, col.name).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+
+            d[col.name] = str(d[col.name])  # unicode?
+
+        return d
+
+    def _search(self, filters):
+        return [self._as_dict(x)
+                for x in self.handle().query(Observable).filter(Observable.observable == filters["observable"]).all()]
 
     def search(self, filters):
         self.logger.debug('running search')
         return [self._as_dict(x)
                 for x in self.handle().query(Observable).filter(Observable.observable == filters["observable"]).all()]
+
 
     def submit(self, data):
         if type(data) == dict:

@@ -5,7 +5,7 @@ from cif.format import COLUMNS, MAX_FIELD_SIZE
 
 class Table(object):
 
-    def __init__(self, cols=COLUMNS, max_field_size=MAX_FIELD_SIZE, data=[]):
+    def __init__(self, data, cols=COLUMNS, max_field_size=MAX_FIELD_SIZE):
         self.cols = cols
         self.max_field_size = max_field_size
         self.data = data
