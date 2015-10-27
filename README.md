@@ -1,3 +1,7 @@
+# Documentation
+
+See: http://bearded-avenger.readthedocs.org
+
 # Getting Started
 ## Vagrant (Ubuntu14/Virtualbox)
 ```
@@ -30,4 +34,9 @@ If you've never worked on a GitHub project, [this is a good piece](https://guide
 * [Project Page](http://csirtgadgets.org/collective-intelligence-framework/)
 
 # COPYRIGHT AND LICENCE
+
+Copyright (C) 2015 [the CSIRT Gadgets Foundation](http://csirtgadgets.org)
+
 Free use of this software is granted under the terms of the GNU Lesser General Public License (LGPLv3). For details see the files `COPYING` included with the distribution.
+
+
