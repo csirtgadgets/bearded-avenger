@@ -108,11 +108,11 @@ class Storage(object):
             self.logger.debug("mtype: {0}".format(mtype))
 
             self.logger.debug('running handler: {}'.format(mtype))
-            rv = handler(token, data)
 
-            if rv:
-                rv = {"status": "success", "data": str(rv) }
-            else:
+            try:
+                rv = handler(token, data)
+                rv = {"status": "success", "data": rv}
+            except Exception as e:
                 rv = {"status": "failed"}
 
             rv = json.dumps(rv)
@@ -122,8 +122,8 @@ class Storage(object):
             self.router.send_multipart([id, '0'])
 
     def handle_search(self, token, data):
-        return self.store.search(data)
         self.logger.debug('searching')
+        return self.store.search(data)
 
     def handle_submission(self, token, data):
         return self.store.submit(data)

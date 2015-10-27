@@ -25,7 +25,6 @@ remote = FRONTEND_ADDR
 
 
 def pull_token():
-    pprint(request.headers)
     token = re.match("^Token token=(\S+)$", request.headers.get("Authorization")).group(1)
     return token
 
@@ -54,13 +53,15 @@ def ping():
 def search():
     q = request.args.get('q')
     limit = request.args.get('limit')
+    filters = request.args.get('filters') or {}
 
-    r = Client(remote, pull_token()).search(str(q), limit=limit)
+    r = Client(remote, pull_token()).search(str(q), limit=limit, filters=filters)
 
     return jsonify({
         "message": "success",
         "data": r
     })
+
 
 @app.route("/observables", methods=["POST"])
 def observables():

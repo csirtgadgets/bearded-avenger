@@ -10,6 +10,7 @@ SNDTIMEO = 2000
 RCVTIMEO = 30000
 LINGER = 3
 ENCODING_DEFAULT = "utf-8"
+SEARCH_LIMIT = 100
 
 
 class ZMQ(Client):
@@ -29,13 +30,14 @@ class ZMQ(Client):
 
         # zmq requires .encode
         self.logger.debug("sending")
-        self.socket.send_multipart([self.token.encode(ENCODING_DEFAULT), mtype.encode(ENCODING_DEFAULT), data.encode(ENCODING_DEFAULT)])
+        self.socket.send_multipart([self.token.encode(ENCODING_DEFAULT),
+                                    mtype.encode(ENCODING_DEFAULT),
+                                    data.encode(ENCODING_DEFAULT)])
         self.logger.debug("receiving")
         return self._recv()
 
     def _recv(self):
         mtype, data = self.socket.recv_multipart()
-        pprint(data)
         data = json.loads(data)
 
         if data.get('status') == 'success':
@@ -48,15 +50,17 @@ class ZMQ(Client):
     def ping(self):
         return self._send('ping', str(time.time()))
 
-    def search(self, q, limit=100, filters={}):
+    def search(self, q, limit=SEARCH_LIMIT, filters={}):
         query = {
             "observable": q,
             "limit": limit
         }
+
         for k, v in filters:
             query[k] = v
 
-        rv = self._send('search', data=query)
+        query = json.dumps(query)
+        rv = self._send('search', query)
         return rv
 
     def submit(self, data):
@@ -64,7 +68,6 @@ class ZMQ(Client):
             data = self._kv_to_observable(data)
 
         data = self._send("submission", data)
-        self.logger.debug(data)
         return data
 
 Plugin = ZMQ

@@ -1,12 +1,12 @@
-import logging
 import json
 import time
-import datetime
+from datetime import datetime
 import re
 import pytricia
 import socket
 from pprint import pprint
 from urlparse import urlparse
+import arrow
 
 TLP = "green"
 GROUP = "everyone"
@@ -38,11 +38,9 @@ for x in IPV4_PRIVATE_NETS:
 class Observable(object):
 
     def __init__(self, observable=None, otype=None, tlp=TLP, tags=[], group=GROUP,
-                 reporttime=datetime.datetime.fromtimestamp(time.time()).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                 reporttime=arrow.get(datetime.utcnow()).datetime,
                  provider=None,  protocol=None, portlist=None,  asn=None, firsttime=None, lasttime=None,
                  asn_desc=None, cc=None, application=None, reference=None, reference_tlp=None, confidence=None):
-
-        self.logger = logging.getLogger(__name__)
 
         if isinstance(tags, basestring):
             tags = tags.split(",")
@@ -60,6 +58,18 @@ class Observable(object):
         self.reference = reference
         self.reference_tlp = reference_tlp
         self.confidence = confidence
+        self.firsttime = firsttime
+        self.lasttime = lasttime
+
+        if reporttime and isinstance(reporttime, basestring):
+            self.reporttime = arrow.get(reporttime).datetime
+
+        if firsttime:
+            self.firsttime = arrow.get(firsttime).datetime
+
+        if lasttime:
+            self.lasttime = arrow.get(lasttime).datetime
+
 
         if asn and asn.lower() == 'na':
             asn = None
@@ -128,7 +138,7 @@ class Observable(object):
             "observable": self.observable,
             "otype": self.otype,
             "tlp": self.tlp,
-            "reporttime": self.reporttime,
+            "reporttime": self.reporttime.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
             "provider": self.provider,
             "portlist": self.portlist,
             "protocol": self.protocol,
@@ -136,9 +146,17 @@ class Observable(object):
             "asn": self.asn,
             "asn_desc": self.asn_desc,
             "cc": self.cc,
-            "group": self.group
+            "group": self.group,
+            "reference": self.reference,
+            "reference_tlp": self.reference_tlp,
+            "application": self.application
         }
-        if self.logger.getEffectiveLevel() == 10:
-            return json.dumps(o, indent=4, sort_keys=True)
-        else:
-            return json.dumps(o, sort_keys=True)
+
+        if self.firsttime:
+            o['firsttime'] = self.firsttime.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+
+        if self.lasttime:
+            o['lasttime'] = self.lasttime.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+
+        #return json.dumps(o, indent=4, sort_keys=True)
+        return json.dumps(o, sort_keys=True)

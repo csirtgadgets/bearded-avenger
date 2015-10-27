@@ -24,9 +24,12 @@ class Client(object):
         self.token = str(token)
 
     def _kv_to_observable(self, kv):
-        return str(Observable(**kv))
+        return Observable(**kv)
 
     def ping(self):
+        raise NotImplementedError
+
+    def search(self):
         raise NotImplementedError
 
 
@@ -47,7 +50,7 @@ def main():
     p.add_argument('--token', help='specify api token', default=str(1234))
     p.add_argument('--remote', help='specify API remote [default %(default)s]', default=REMOTE_ADDR)
     p.add_argument('-p', '--ping', action="store_true") # meg?
-    p.add_argument("--search", help="search")
+    p.add_argument('-q', '--search', help="search")
     p.add_argument("--submit", action="store_true", help="submit an observable")
 
     p.add_argument('--observable')
@@ -87,7 +90,6 @@ def main():
         logger.info("submitting {0}".format(options.get("submit")))
 
         rv = cli.submit(observable=args.observable, tags=args.tags)
-        pprint(rv)
 
 if __name__ == "__main__":
     main()

@@ -27,7 +27,9 @@ class Delim(Parser):
                     if col is not None:
                         obs[col] = m[idx]
                 obs.pop("values", None)
+
                 r = self.client.submit(**obs)
+                self.logger.debug(str(obs))
                 rv.append(r)
 
             if self.limit:
