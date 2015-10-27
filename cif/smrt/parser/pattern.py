@@ -3,12 +3,13 @@ import re
 from pprint import pprint
 import copy
 import sys
+import logging
 
 
 class Pattern(Parser):
 
-    def __init__(self, client, fetcher, rule, feed, limit=0):
-        super(Pattern, self).__init__(client, fetcher, rule, feed, limit=0)
+    def __init__(self, *args, **kwargs):
+        super(Pattern, self).__init__(*args, **kwargs)
 
         self.pattern = self.rule.defaults.get('pattern')
 
@@ -16,7 +17,6 @@ class Pattern(Parser):
             self.pattern = self.rule.feeds[self.feed].get('pattern')
 
         self.pattern = re.compile(self.pattern)
-        self.limit = limit
 
     def process(self):
         cols = self.rule.defaults['values']
@@ -24,12 +24,10 @@ class Pattern(Parser):
         if isinstance(cols, basestring):
             cols = cols.split(',')
 
-        limit = self.limit
-
-        max = 0
         rv = []
         for l in self.fetcher.process():
-            if self.ignore(l): # comment or skip
+            self.logger.debug(l)
+            if self.ignore(l):  # comment or skip
                 continue
 
             try:
@@ -53,9 +51,12 @@ class Pattern(Parser):
                 r = self.client.submit(**obs)
                 rv.append(r)
 
-            max += 1
-            if max >= limit:
-                break
+            if self.limit:
+                self.limit -= 1
+
+                if self.limit == 0:
+                    self.logger.debug('limit reached...')
+                    break
 
         return rv
 

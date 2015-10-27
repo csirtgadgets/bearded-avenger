@@ -6,13 +6,17 @@ RE_COMMENTS = '^([#|;]+)'
 
 class Parser(object):
 
-    def __init__(self, client, fetcher, rule, feed, limit=0, logger=logging.getLogger(__name__)):
-        self.logger = logger
+    def __init__(self, client, fetcher, rule, feed, limit=None):
+
+        self.logger = logging.getLogger(__name__)
         self.client = client
         self.fetcher = fetcher
         self.rule = rule
         self.feed = feed
-        self.limit = int(limit)
+        self.limit = limit
+
+        if self.limit is not None:
+            self.limit = int(limit)
 
         self.comments = re.compile(RE_COMMENTS)
 

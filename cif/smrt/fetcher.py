@@ -3,7 +3,7 @@ import subprocess
 import os
 from pprint import pprint
 
-from cif.constants import VERSION
+from cif.constants import VERSION, SMRT_CACHE
 
 import magic
 import re
@@ -12,9 +12,9 @@ RE_SUPPORTED_DECODE = re.compile("zip|lzf|lzma|xz|lzop")
 
 class Fetcher(object):
 
-    def __init__(self, rule, feed, cache='var/smrt/', logger=logging.getLogger(__name__)):
+    def __init__(self, rule, feed, cache=SMRT_CACHE):
 
-        self.logger = logger
+        self.logger = logging.getLogger(__name__)
         self.feed = feed
         self.rule = rule
         self.cache = cache
@@ -41,10 +41,18 @@ class Fetcher(object):
         # http://www-archive.mozilla.org/build/revised-user-agent-strings.html
         self.ua = "User-Agent: cif-smrt/{0} (csirtgadgets.org)".format(VERSION)
 
+        if not self.fetcher:
+            if self.remote.startswith('http'):
+                self.fetcher = 'http'
+            else:
+                self.fetcher = 'file'
+
     def process(self, split="\n", limit=0):
         if self.fetcher == 'http':
             # using wget until we can find a better way to mirror files in python
-            subprocess.check_call(['wget', '--header', self.ua, '--quiet', '-c', self.remote, '-O', self.cache])
+            subprocess.check_call([
+                'wget', '--header', self.ua,  '-q', self.remote, '-N', '-O', self.cache
+            ])
         else:
             if self.fetcher == 'file':
                 self.cache = self.remote
@@ -56,8 +64,8 @@ class Fetcher(object):
 
         if ftype.startswith('text'):
             with open(self.cache) as f:
-                while True:
-                    yield f.readline().strip()
+                for l in f:
+                    yield l.strip()
 
         # if ftype == "application/zip":
         #     with ZipFile(self.cache) as f:

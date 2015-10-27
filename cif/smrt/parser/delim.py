@@ -11,6 +11,7 @@ class Delim(Parser):
         cols = defaults['values']
 
         rv = []
+
         for l in self.fetcher.process():
             if l == '' or self.is_comment(l):
                 continue
@@ -31,9 +32,12 @@ class Delim(Parser):
 
             if self.limit:
                 self.limit -= 1
-            if self.limit == 0:
-                break
 
+                if self.limit == 0:
+                    self.logger.debug('limit reached...')
+                    break
+
+        self.logger.debug('done...')
         return rv
 
 Plugin = Delim

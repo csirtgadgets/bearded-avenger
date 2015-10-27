@@ -38,12 +38,14 @@ class Smrt(object):
         self.logger = logging.getLogger(__name__)
         self.client = load_plugin(CLIENTS_PATH, client)(remote, token)
 
-    def _process(self, rule, feed, limit=0):
+    def _process(self, rule, feed, limit=None):
 
         fetch = Fetcher(rule, feed)
 
         parser = rule.parser or PARSER_DEFAULT
         parser = load_plugin(PARSERS_PATH, parser)
+
+        self.logger.debug("loading parser: {}".format(parser))
 
         parser = parser(self.client, fetch, rule, feed, limit=limit)
 
@@ -51,9 +53,9 @@ class Smrt(object):
 
         return rv
 
-    def process(self, rule, feed=None, limit=0):
+    def process(self, rule, feed=None, limit=None):
         rv = []
-        if type(rule) == str and os.path.isdir(rule):
+        if isinstance(rule, basestring) and os.path.isdir(rule):
             for f in os.listdir(rule):
                 if not f.startswith('.'):
                     self.logger.debug("processing {0}/{1}".format(rule, file))
@@ -66,18 +68,19 @@ class Smrt(object):
                         rv = self._process(r, feed, limit=limit)
         else:
             self.logger.debug("processing {0}".format(rule))
-            if type(rule) == str:
-                rule = Rule(path=rule)
+            r = rule
+            if isinstance(rule, basestring):
+                r = Rule(path=rule)
 
-            if not rule.feeds:
+            if not r.feeds:
                 self.logger.error("rules file contains no feeds")
                 raise RuntimeError
 
             if feed:
-                rv = self._process(rule, feed=feed, limit=limit)
+                rv = self._process(r, feed=feed, limit=limit)
             else:
                 for feed in r.feeds:
-                    rv = self._process(rule, feed=feed, limit=limit)
+                    rv = self._process(Rule(path=rule), feed=feed, limit=limit)
 
         return rv
 
@@ -104,7 +107,7 @@ def main():
                    default=REMOTE_ADDR)
 
     p.add_argument("--limit", dest="limit", help="limit the number of records processed [default: %(default)s]",
-                   default=0)
+                   default=None)
 
     p.add_argument("--token", dest="token", help="specify token [default: %(default)s]", default=TOKEN)
 

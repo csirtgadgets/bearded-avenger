@@ -121,7 +121,7 @@ class Observable(object):
         elif _url(observable):
             return 'url'
 
-        raise NotImplementedError('unknown otype for {}'.format(observable))
+        raise NotImplementedError('unknown otype for "{}"'.format(observable))
 
     def __repr__(self):
         o = {
