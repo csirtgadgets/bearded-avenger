@@ -28,3 +28,6 @@ GATHER_ADDR = os.environ.get('CIF_GATHER_ADDR', GATHER_ADDR)
 
 HUNTER_ADDR = 'ipc://{}'.format(os.path.join(TEMP_DIR, 'hunter.ipc'))
 HUNTER_ADDR = os.environ.get('CIF_HUNTER_ADDR', HUNTER_ADDR)
+
+SMRT_CACHE = os.path.join('var', 'smrt')
+SMRT_CACHE = os.environ.get('CIF_SMRT_CACHE', SMRT_CACHE)
