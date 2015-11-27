@@ -9,7 +9,7 @@ defaults:
   values:
     - asn
     - asn_desc
-    - observable
+    - indicator
     - lasttime
     - null
 feeds:

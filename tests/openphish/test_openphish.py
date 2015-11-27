@@ -16,4 +16,4 @@ def test_spamhaus_drop():
     rule.feeds['urls']['remote'] = 'tests/openphish/feed.txt'
     x = s.process(rule, feed="urls")
     assert len(x) > 0
-    assert len(x[0].observable) > 4
+    assert len(x[0].indicator) > 4

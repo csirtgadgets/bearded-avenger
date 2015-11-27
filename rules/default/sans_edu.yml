@@ -3,7 +3,7 @@ defaults:
   reference_tlp: white
   provider: 'isc.sans.edu'
   pattern:  '^(.+)$'
-  values: observable
+  values: indicator
   tags: suspicious
   skip: '^Site$'
 
@@ -22,6 +22,6 @@ feeds:
     confidence: 75
     pattern: ^(\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b)\t\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b\t(\d+)
     values:
-      - observable
+      - indicator
       - mask
     tags: scanner

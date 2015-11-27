@@ -1,11 +1,11 @@
 import pytest
 
-from cif.observable import Observable
+from cif.indicator import Indicator
 
 
 def _not(data):
     for d in data:
-        d = Observable(d)
+        d = Indicator(d)
         assert d.otype != 'fqdn'
 
 
@@ -27,5 +27,5 @@ def test_fqdn_ok():
     data = ['example.org', '1.2.3.4.com', 'xn----jtbbmekqknepg3a.xn--p1ai']
 
     for d in data:
-        d = Observable(d)
+        d = Indicator(d)
         assert d.otype is 'fqdn'

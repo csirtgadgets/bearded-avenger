@@ -12,7 +12,7 @@ from cif.utils import setup_logging, get_argument_parser
 
 class Gatherer(cif.generic.Generic):
     """
-    Gatherers gather data about incoming observables (geoip, asn, cc, etc...)
+    Gatherers gather data about incoming indicators (geoip, asn, cc, etc...)
     """
 
     def __init__(self, **kwargs):

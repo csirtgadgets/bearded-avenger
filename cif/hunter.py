@@ -10,7 +10,7 @@ import json
 from cif.constants import HUNTER_ADDR
 from cif.utils import setup_logging, get_argument_parser
 from pprint import pprint
-from cif.observable import Observable
+from cif.indicator import Indicator
 from cif.format.table import Table
 
 
@@ -19,7 +19,7 @@ class Hunter(object):
     def handle_message(s, e):
         m = s.recv_multipart()
         m = json.loads(m[0])
-        m = Observable(**m)
+        m = indicator(**m)
         print(m)
 
     def __init__(self, remote=HUNTER_ADDR, callback=handle_message):

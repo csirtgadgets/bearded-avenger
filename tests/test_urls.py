@@ -1,11 +1,11 @@
 import pytest
 
-from cif.observable import Observable
+from cif.indicator import Indicator
 
 
 def _not(data):
     for d in data:
-        d = Observable(d)
+        d = Indicator(d)
         assert d.otype != 'url'
 
 
@@ -27,5 +27,5 @@ def test_urls_ok():
     ]
 
     for d in data:
-        d = Observable(d)
+        d = Indicator(d)
         assert d.otype is 'url'

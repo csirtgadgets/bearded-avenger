@@ -10,11 +10,11 @@ DB_FILE = 'cif.db'
 Base = declarative_base()
 
 
-class Observable(Base):
-    __tablename__ = "observables"
+class indicator(Base):
+    __tablename__ = "indicators"
 
     id = Column(Integer, primary_key=True)
-    observable = Column(String)
+    indicator = Column(String)
     group = Column(String)
     otype = Column(String)
     tlp = Column(String)
@@ -29,12 +29,12 @@ class Observable(Base):
     lasttime= Column(DateTime)
     confidence = Column(Float)
 
-    def __init__(self, observable=None, otype=None, tlp=None, provider=None, portlist=None, asn=None, asn_desc=None,
+    def __init__(self, indicator=None, otype=None, tlp=None, provider=None, portlist=None, asn=None, asn_desc=None,
                  cc=None, protocol=None, firsttime=None, lasttime=None,
                  reporttime=None, group="everyone", tags=[], confidence=None,
                  reference=None, reference_tlp=None, application=None):
 
-        self.observable = observable
+        self.indicator = indicator
         self.group = group
         self.otype = otype
         self.tlp = tlp
@@ -68,10 +68,10 @@ class Tag(Base):
     id = Column(Integer, primary_key=True)
     tag = Column(String)
 
-    observable_id = Column(Integer, ForeignKey('observables.id'))
-    observable = relationship(
-        Observable,
-        backref=backref('observables',
+    indicator_id = Column(Integer, ForeignKey('indicators.id'))
+    indicator = relationship(
+        indicator,
+        backref=backref('indicators',
                          uselist=True,
                          cascade='delete,all'))
 
@@ -112,12 +112,12 @@ class SQLite(Store):
 
     def _search(self, filters):
         return [self._as_dict(x)
-                for x in self.handle().query(Observable).filter(Observable.observable == filters["observable"]).all()]
+                for x in self.handle().query(indicator).filter(indicator.indicator == filters["indicator"]).all()]
 
     def search(self, filters):
         self.logger.debug('running search')
         return [self._as_dict(x)
-                for x in self.handle().query(Observable).filter(Observable.observable == filters["observable"]).all()]
+                for x in self.handle().query(indicator).filter(indicator.indicator == filters["indicator"]).all()]
 
 
     def submit(self, data):
@@ -127,7 +127,7 @@ class SQLite(Store):
         s = self.handle()
 
         for d in data:
-            o = Observable(**d)
+            o = indicator(**d)
 
             s.add(o)
 
@@ -136,7 +136,7 @@ class SQLite(Store):
                 tags = tags.split(',')
 
             for t in tags:
-                t = Tag(tag=t, observable=o)
+                t = Tag(tag=t, indicator=o)
                 s.add(t)
 
         s.commit()

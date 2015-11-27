@@ -52,7 +52,7 @@ class ZMQ(Client):
 
     def search(self, q, limit=SEARCH_LIMIT, filters={}):
         query = {
-            "observable": q,
+            "indicator": q,
             "limit": limit
         }
 
@@ -65,7 +65,7 @@ class ZMQ(Client):
 
     def submit(self, data):
         if isinstance(data, dict):
-            data = self._kv_to_observable(data)
+            data = self._kv_to_indicator(data)
 
         data = self._send("submission", data)
         return data

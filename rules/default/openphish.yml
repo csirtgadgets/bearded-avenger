@@ -5,7 +5,7 @@ defaults:
   tlp: green
   reference_tlp: white
   confidence: 65
-  values: observable
+  values: indicator
 feeds:
   urls:
     otype: url

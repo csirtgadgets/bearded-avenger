@@ -21,7 +21,7 @@ class Dummy(Client):
 
     def submit(self, **data):
         if isinstance(data, dict):
-            data = self._kv_to_observable(data)
+            data = self._kv_to_indicator(data)
 
         return data
 

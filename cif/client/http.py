@@ -73,9 +73,9 @@ class HTTP(Client):
 
     def submit(self, **data):
         if isinstance(data, dict):
-            data = str(self._kv_to_observable(data))
+            data = str(self._kv_to_indicator(data))
 
-        uri = "{0}/observables".format(self.remote)
+        uri = "{0}/indicators".format(self.remote)
         self.logger.debug(uri)
         rv = self._post(uri, data)
         return rv["data"]

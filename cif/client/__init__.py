@@ -8,7 +8,7 @@ import select
 import os.path
 from cif.format.table import Table
 from pprint import pprint
-from cif.observable import Observable
+from cif.indicator import Indicator
 from cif.constants import REMOTE_ADDR
 from cif.utils import setup_logging, get_argument_parser
 
@@ -23,8 +23,8 @@ class Client(object):
         self.remote = remote
         self.token = str(token)
 
-    def _kv_to_observable(self, kv):
-        return Observable(**kv)
+    def _kv_to_indicator(self, kv):
+        return Indicator(**kv)
 
     def ping(self):
         raise NotImplementedError
@@ -51,9 +51,9 @@ def main():
     p.add_argument('--remote', help='specify API remote [default %(default)s]', default=REMOTE_ADDR)
     p.add_argument('-p', '--ping', action="store_true") # meg?
     p.add_argument('-q', '--search', help="search")
-    p.add_argument("--submit", action="store_true", help="submit an observable")
+    p.add_argument("--submit", action="store_true", help="submit an indicator")
 
-    p.add_argument('--observable')
+    p.add_argument('--indicator')
     p.add_argument('--tags', nargs='+')
 
     p.add_argument("--zmq", dest="zmq", help="use zmq as a transport instead of http", action="store_true")
@@ -89,7 +89,7 @@ def main():
     elif options.get("submit"):
         logger.info("submitting {0}".format(options.get("submit")))
 
-        rv = cli.submit(observable=args.observable, tags=args.tags)
+        rv = cli.submit(indicator=args.indicator, tags=args.tags)
 
 if __name__ == "__main__":
     main()

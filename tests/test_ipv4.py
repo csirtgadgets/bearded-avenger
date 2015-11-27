@@ -1,11 +1,11 @@
 import pytest
 
-from cif.observable import Observable
+from cif.indicator import Indicator
 
 
 def _not(data):
     for d in data:
-        d = Observable(d)
+        d = Indicator(d)
         assert d.otype is not 'ipv4'
 
 
@@ -31,12 +31,12 @@ def test_ipv4_urls():
 def test_ipv4_ok():
     data = ['192.168.1.0/24', '192.168.1.1', '255.255.255.255']
     for d in data:
-        assert Observable(observable=d).otype is 'ipv4'
+        assert Indicator(indicator=d).otype is 'ipv4'
 
 
 def test_ipv4_private():
     data = ['128.205.1.0/24', '2001:1608:10:147::21', '2001:4860::8888/64']
     for d in data:
-        assert not Observable(observable=d).is_private()
+        assert not Indicator(indicator=d).is_private()
 
-    assert Observable('192.168.1.1').is_private()
+    assert Indicator('192.168.1.1').is_private()

@@ -63,8 +63,8 @@ def search():
     })
 
 
-@app.route("/observables", methods=["POST"])
-def observables():
+@app.route("/indicators", methods=["POST"])
+def indicators():
     r = Client(remote, pull_token()).submit(request.data)
     return jsonify({
         "message": "success",

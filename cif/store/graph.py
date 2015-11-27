@@ -34,13 +34,13 @@ class Graph(Store):
 
     # http://en.wikipedia.org/wiki/Resource_Description_Framework
     def submit(self, data):
-        subject = Literal(data["observable"])
+        subject = Literal(data["indicator"])
 
         for k in data:
-            if k == "observable":
+            if k == "indicator":
                 self.handle.add((subject, RDF.type, Literal(data["otype"]), self.store_id))
             else:
-                subject = Literal(data["observable"])
+                subject = Literal(data["indicator"])
                 self.handle.add((subject, Literal(k), Literal(data[k]), self.store_id))
 
         self.logger.debug(self.handle.serialize(format="trig"))

@@ -35,9 +35,9 @@ for x in IPV4_PRIVATE_NETS:
     IPV4_PRIVATE[x] = True
 
 
-class Observable(object):
+class Indicator(object):
 
-    def __init__(self, observable=None, otype=None, tlp=TLP, tags=[], group=GROUP,
+    def __init__(self, indicator=None, otype=None, tlp=TLP, tags=[], group=GROUP,
                  reporttime=arrow.get(datetime.utcnow()).datetime,
                  provider=None,  protocol=None, portlist=None,  asn=None, firsttime=None, lasttime=None,
                  asn_desc=None, cc=None, application=None, reference=None, reference_tlp=None, confidence=None):
@@ -45,7 +45,7 @@ class Observable(object):
         if isinstance(tags, basestring):
             tags = tags.split(",")
 
-        self.observable = observable
+        self.indicator = indicator
         self.tlp = tlp
         self.provider = provider
         self.reporttime = reporttime
@@ -83,18 +83,18 @@ class Observable(object):
         self.cc = cc
 
         if not otype:
-            self.otype = self.resolve_obj(self.observable)
+            self.otype = self.resolve_obj(self.indicator)
 
     def is_private(self):
         if self.otype and self.otype == 'ipv4':
-            if IPV4_PRIVATE.get(self.observable):
+            if IPV4_PRIVATE.get(self.indicator):
                 return True
         return False
 
-    def resolve_otype(self, observable):
-        return self.resolve_obj(observable)
+    def resolve_otype(self, indicator):
+        return self.resolve_obj(indicator)
 
-    def resolve_obj(self, observable):
+    def resolve_obj(self, indicator):
         def _ipv6(s):
             try:
                 socket.inet_pton(socket.AF_INET6, s)
@@ -122,20 +122,20 @@ class Observable(object):
                 if _fqdn(u.netloc) or _ipv4(u.netloc) or _ipv6(u.netloc):
                     return True
 
-        if _fqdn(observable):
+        if _fqdn(indicator):
             return 'fqdn'
-        elif _ipv6(observable):
+        elif _ipv6(indicator):
             return 'ipv6'
-        elif _ipv4(observable):
+        elif _ipv4(indicator):
             return 'ipv4'
-        elif _url(observable):
+        elif _url(indicator):
             return 'url'
 
-        raise NotImplementedError('unknown otype for "{}"'.format(observable))
+        raise NotImplementedError('unknown otype for "{}"'.format(indicator))
 
     def __repr__(self):
         o = {
-            "observable": self.observable,
+            "indicator": self.indicator,
             "otype": self.otype,
             "tlp": self.tlp,
             "reporttime": self.reporttime.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
