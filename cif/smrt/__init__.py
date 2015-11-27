@@ -9,8 +9,9 @@ import os.path
 from cif.rule import Rule
 from cif.smrt.fetcher import Fetcher
 from cif.utils import setup_logging, get_argument_parser, load_plugin
-
-
+from random import randint
+from time import sleep
+import signal
 from pprint import pprint
 
 PARSERS_PATH = os.path.join("cif", "smrt", "parser")
@@ -58,8 +59,8 @@ class Smrt(object):
         if isinstance(rule, basestring) and os.path.isdir(rule):
             for f in os.listdir(rule):
                 if not f.startswith('.'):
-                    self.logger.debug("processing {0}/{1}".format(rule, file))
-                    r = Rule(path=os.path.join(rule, file))
+                    self.logger.debug("processing {0}/{1}".format(rule, f))
+                    r = Rule(path=os.path.join(rule, f))
 
                     if not r.feeds:
                         continue
@@ -111,17 +112,39 @@ def main():
 
     p.add_argument("--token", dest="token", help="specify token [default: %(default)s]", default=TOKEN)
 
+    p.add_argument('--test', action='store_true')
+    p.add_argument('--sleep', default=60)
+
     args = p.parse_args()
 
     setup_logging(args)
     logger = logging.getLogger(__name__)
 
-    with Smrt(args.remote, args.token) as s:
+    stop = False
+
+    r = False
+    if not args.test:
+        r = randint(5, 55)
+        logger.info("random delay is {}, then running every 60min after that".format(r))
+        sleep((r * 60))
+
+    while not stop:
+        if args.test:
+            stop = True
+
+        logger.info('starting...')
         try:
-            logger.info('staring up...')
-            x = s.process(args.rule, feed=args.feed, limit=args.limit)
+            with Smrt(args.remote, args.token) as s:
+                logger.info('staring up...')
+                x = s.process(args.rule, feed=args.feed, limit=args.limit)
+                logger.info('complete')
+
+                if not args.test:
+                    logger.info('sleeping for 1 hour')
+                    sleep((60 * 60))
         except KeyboardInterrupt:
-            logging.error("shutting down...")
+            logger.info('shutting down')
+            stop = True
 
 if __name__ == "__main__":
     main()

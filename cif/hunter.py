@@ -19,7 +19,7 @@ class Hunter(object):
     def handle_message(s, e):
         m = s.recv_multipart()
         m = json.loads(m[0])
-        m = indicator(**m)
+        m = Indicator(**m)
         print(m)
 
     def __init__(self, remote=HUNTER_ADDR, callback=handle_message):
