@@ -29,7 +29,6 @@ class Pattern(Parser):
             self.logger.debug(l)
             if self.ignore(l):  # comment or skip
                 continue
-
             try:
                 m = self.pattern.search(l).groups()
                 if isinstance(m, basestring):
@@ -48,6 +47,7 @@ class Pattern(Parser):
                     if col is not None:
                         obs[col] = m[idx]
 
+                pprint(self.rule)
                 r = self.client.submit(**obs)
                 rv.append(r)
 

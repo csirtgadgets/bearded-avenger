@@ -3,7 +3,7 @@ import re
 
 RE_COMMENTS = '^([#|;]+)'
 
-
+from pprint import pprint
 class Parser(object):
 
     def __init__(self, client, fetcher, rule, feed, limit=None):
@@ -14,23 +14,23 @@ class Parser(object):
         self.rule = rule
         self.feed = feed
         self.limit = limit
+        self.skip = None
 
         if self.limit is not None:
             self.limit = int(limit)
 
         self.comments = re.compile(RE_COMMENTS)
 
-        self.skip = rule.defaults.get('skip', None)
-        if self.skip:
-            del rule.defaults['skip']
-            self.skip = re.compile(self.skip)
+        if self.rule.skip:
+            self.skip = re.compile(self.rule.skip)
 
     def ignore(self, line):
         if self.is_comment(line):
             return True
 
-        if self.skip and self.skip.search(line):
-            return True
+        if self.skip:
+            if self.skip.search(line):
+                return True
 
     def is_comment(self, line):
         if self.comments.search(line):

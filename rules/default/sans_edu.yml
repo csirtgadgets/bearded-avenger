@@ -1,3 +1,4 @@
+skip: '^Site$'
 defaults:
   tlp: green
   reference_tlp: white
@@ -5,7 +6,6 @@ defaults:
   pattern:  '^(.+)$'
   values: indicator
   tags: suspicious
-  skip: '^Site$'
 
 feeds:
   02_domains_low:

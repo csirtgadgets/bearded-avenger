@@ -20,16 +20,19 @@ class Rule(dict):
             self.feeds = d.get('feeds')
             self.parser = d.get('parser')
             self.fetcher = d.get('fetcher')
+            self.skip = d.get('skip')
         else:
             self.defaults = rule.get('defaults')
             self.feeds = rule.get('feeds')
             self.parser = rule.get('parser')
             self.fetcher = rule.get('fetcher')
+            self.skip = rule.get('skip')
 
     def __repr__(self):
         return json.dumps({
             "defaults": self.defaults,
             "feeds": self.feeds,
             "parser": self.parser,
-            "fetcher": self.fetcher
+            "fetcher": self.fetcher,
+            'skip': self.skip
         }, sort_keys=True, indent=4, separators=(',', ': '))
