@@ -9,7 +9,7 @@ def test_obs_ipv4():
     o = Indicator('192.168.1.1')
     assert o.is_private()
     assert o.indicator == '192.168.1.1'
-    assert o.otype == 'ipv4'
+    assert o.itype == 'ipv4'
 
 
 def test_obs_fqdn():
@@ -17,7 +17,7 @@ def test_obs_fqdn():
 
     assert o.is_private() is False
     assert o.indicator == 'example.org'
-    assert o.otype == 'fqdn'
+    assert o.itype == 'fqdn'
 
 
 def test_obs_url():
@@ -25,5 +25,5 @@ def test_obs_url():
 
     assert o.is_private() is False
     assert o.indicator == 'http://example.org'
-    assert o.otype is not 'fqdn'
-    assert o.otype is 'url'
+    assert o.itype is not 'fqdn'
+    assert o.itype is 'url'

@@ -38,7 +38,7 @@ class Graph(Store):
 
         for k in data:
             if k == "indicator":
-                self.handle.add((subject, RDF.type, Literal(data["otype"]), self.store_id))
+                self.handle.add((subject, RDF.type, Literal(data["itype"]), self.store_id))
             else:
                 subject = Literal(data["indicator"])
                 self.handle.add((subject, Literal(k), Literal(data[k]), self.store_id))

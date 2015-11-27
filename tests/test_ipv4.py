@@ -6,7 +6,7 @@ from cif.indicator import Indicator
 def _not(data):
     for d in data:
         d = Indicator(d)
-        assert d.otype is not 'ipv4'
+        assert d.itype is not 'ipv4'
 
 
 def test_ipv4_ipv6():
@@ -31,7 +31,7 @@ def test_ipv4_urls():
 def test_ipv4_ok():
     data = ['192.168.1.0/24', '192.168.1.1', '255.255.255.255']
     for d in data:
-        assert Indicator(indicator=d).otype is 'ipv4'
+        assert Indicator(indicator=d).itype is 'ipv4'
 
 
 def test_ipv4_private():

@@ -8,6 +8,6 @@ defaults:
   values: indicator
 feeds:
   urls:
-    otype: url
+    itype: url
     pattern: ^(.+)$
     remote: http://openphish.com/feed.txt

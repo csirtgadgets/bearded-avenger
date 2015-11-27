@@ -37,7 +37,7 @@ for x in IPV4_PRIVATE_NETS:
 
 class Indicator(object):
 
-    def __init__(self, indicator=None, otype=None, tlp=TLP, tags=[], group=GROUP,
+    def __init__(self, indicator=None, itype=None, tlp=TLP, tags=[], group=GROUP,
                  reporttime=arrow.get(datetime.utcnow()).datetime,
                  provider=None,  protocol=None, portlist=None,  asn=None, firsttime=None, lasttime=None,
                  asn_desc=None, cc=None, application=None, reference=None, reference_tlp=None, confidence=None):
@@ -50,7 +50,7 @@ class Indicator(object):
         self.provider = provider
         self.reporttime = reporttime
         self.group = group
-        self.otype = otype
+        self.itype = itype
         self.protocol = protocol
         self.portlist = portlist
         self.tags = tags
@@ -82,16 +82,16 @@ class Indicator(object):
         self.asn_desc = asn_desc
         self.cc = cc
 
-        if not otype:
-            self.otype = self.resolve_obj(self.indicator)
+        if not itype:
+            self.itype = self.resolve_obj(self.indicator)
 
     def is_private(self):
-        if self.otype and self.otype == 'ipv4':
+        if self.itype and self.itype == 'ipv4':
             if IPV4_PRIVATE.get(self.indicator):
                 return True
         return False
 
-    def resolve_otype(self, indicator):
+    def resolve_itype(self, indicator):
         return self.resolve_obj(indicator)
 
     def resolve_obj(self, indicator):
@@ -131,12 +131,12 @@ class Indicator(object):
         elif _url(indicator):
             return 'url'
 
-        raise NotImplementedError('unknown otype for "{}"'.format(indicator))
+        raise NotImplementedError('unknown itype for "{}"'.format(indicator))
 
     def __repr__(self):
         o = {
             "indicator": self.indicator,
-            "otype": self.otype,
+            "itype": self.itype,
             "tlp": self.tlp,
             "reporttime": self.reporttime.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
             "provider": self.provider,

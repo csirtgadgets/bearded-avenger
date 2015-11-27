@@ -16,7 +16,7 @@ class indicator(Base):
     id = Column(Integer, primary_key=True)
     indicator = Column(String)
     group = Column(String)
-    otype = Column(String)
+    itype = Column(String)
     tlp = Column(String)
     provider = Column(String)
     portlist = Column(String)
@@ -29,14 +29,14 @@ class indicator(Base):
     lasttime= Column(DateTime)
     confidence = Column(Float)
 
-    def __init__(self, indicator=None, otype=None, tlp=None, provider=None, portlist=None, asn=None, asn_desc=None,
+    def __init__(self, indicator=None, itype=None, tlp=None, provider=None, portlist=None, asn=None, asn_desc=None,
                  cc=None, protocol=None, firsttime=None, lasttime=None,
                  reporttime=None, group="everyone", tags=[], confidence=None,
                  reference=None, reference_tlp=None, application=None):
 
         self.indicator = indicator
         self.group = group
-        self.otype = otype
+        self.itype = itype
         self.tlp = tlp
         self.provider = provider
         self.portlist = str(portlist)

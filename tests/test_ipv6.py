@@ -6,7 +6,7 @@ from cif.indicator import Indicator
 def _not(data):
     for d in data:
         d = Indicator(d)
-        assert d.otype != 'ip'
+        assert d.itype != 'ip'
 
 
 def test_urls_ip():
@@ -28,4 +28,4 @@ def test_urls_ok():
 
     for d in data:
         d = Indicator(d)
-        assert d.otype == 'url'
+        assert d.itype == 'url'
