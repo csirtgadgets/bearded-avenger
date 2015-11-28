@@ -1,5 +1,8 @@
 ---
 # tasks file for bearded-avenger-dev
+- name: install virtualenvwrapper
+  pip: name=python-virtualenvwrapper
+
 - name: setup virtualenv
   shell: /usr/bin/virtualenv "{{ venv_path }}"
   become: yes

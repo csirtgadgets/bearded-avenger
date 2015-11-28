@@ -22,6 +22,7 @@ $ cif-smrt -r rules/default -d --test
 
 ### CentOS 7.1
 ```
+$ export VAGRANT_VAGRANT_FILE=Vagrantfile.centos7
 $ make vagrant-centos7
 $ workon cif
 $ cd /vagrant; supervisord
