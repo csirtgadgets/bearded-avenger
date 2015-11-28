@@ -1,7 +1,7 @@
 # https://github.com/whiskerlabs/ansible-python
 ---
 - name: Install bearded-avenger
-  hosts: localhost
+  hosts: all
   sudo: True
   roles:
     - { role: ubuntu14, tags: role-ubuntu14 }

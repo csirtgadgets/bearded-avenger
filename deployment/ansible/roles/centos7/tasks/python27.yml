@@ -38,7 +38,21 @@
   command: /usr/local/bin/python2.7 ./get-pip.py chdir="{{ python_tmp }}"
 
 - name: symlink python2.7
-  file: src=/usr/local/bin/python2.7 dest=/usr/bin/python state=link force=yes
+  file: src=/usr/local/bin/python2.7 dest=/usr/local/bin/python state=link force=yes
 
 - name: symlink pip
   file: src=/usr/local/bin/pip dest=/usr/bin/pip state=link force=yes
+
+- name: install virtualenvwrapper
+  pip: name=virtualenvwrapper
+
+- name: Ensure vagrant user has a .profile
+  file:
+    path: "/home/{{ ansible_env.SUDO_USER }}/.profile"
+    state: touch
+    owner: "{{ ansible_env.SUDO_USER }}"
+    group: "{{ansible_env.SUDO_USER }}"
+    mode: 0660
+
+- name: Add vars to app env
+  lineinfile: dest="/home/{{ ansible_env.SUDO_USER }}/.bash_profile" line="export PATH=/usr/local/bin:$PATH"
