@@ -15,6 +15,8 @@
 import sys
 import os
 import shlex
+sys.path.insert(0, os.path.abspath('../cif'))
+from cif.constants import VERSION
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -29,7 +31,9 @@ import shlex
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = []
+extensions = [
+    'sphinx.ext.autodoc'
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -55,7 +59,7 @@ author = u'CSIRT Gadgets Foundation'
 # built documents.
 #
 # The short X.Y version.
-version = '3'
+version = VERSION
 # The full version, including alpha/beta/rc tags.
 release = '0.0'
 

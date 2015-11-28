@@ -6,7 +6,7 @@ VAGRANTFILE_API_VERSION = "2"
 VAGRANTFILE_LOCAL = 'Vagrantfile.local'
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-  config.vm.box = 'ubuntu/trusty64'
+  config.vm.box = 'bento/centos-7.1'
 
   config.vm.network :forwarded_port, guest: 5000, host: 5000
   config.vm.provider :virtualbox do |vb|
@@ -14,7 +14,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   end
 
   config.vm.provision "ansible" do |ansible|
-    ansible.playbook = "deployment/ansible/vagrant_ubuntu14.yml"
+    ansible.playbook = "deployment/ansible/vagrant_centos7.yml"
   end
 
   if File.file?(VAGRANTFILE_LOCAL)

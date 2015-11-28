@@ -1,0 +1,5 @@
+---
+# handlers file for centos
+- name: restart firewall
+  command: service iptables save
+  command: service firewall restart

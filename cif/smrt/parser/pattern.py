@@ -47,7 +47,6 @@ class Pattern(Parser):
                     if col is not None:
                         obs[col] = m[idx]
 
-                pprint(self.rule)
                 r = self.client.submit(**obs)
                 rv.append(r)
 

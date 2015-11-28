@@ -58,8 +58,10 @@ class Router(object):
 
         if self.auth(token):
             handler = getattr(self, "handle_" + mtype)
+            self.logger.debug('handler: {}'.format(handler))
             rv = handler(token, data)
         else:
+            self.logger.debug('auth failed...')
             rv = json.dumps({
                 "status": "failed",
                 "data": "unauthorized"

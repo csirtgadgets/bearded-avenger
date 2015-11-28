@@ -142,6 +142,10 @@ def main():
                 if not args.test:
                     logger.info('sleeping for 1 hour')
                     sleep((60 * 60))
+        except RuntimeError as e:
+            logger.error(e)
+            if str(e).startswith('submission failed'):
+                stop = True
         except KeyboardInterrupt:
             logger.info('shutting down')
             stop = True

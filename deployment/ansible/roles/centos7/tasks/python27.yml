@@ -1,0 +1,38 @@
+---
+- name: create sandbox directory
+  file: path={{ python_tmp }} state=directory
+
+- name: download source tarballs
+  get_url:
+    url: "{{ item.url }}"
+    dest: "{{ item.dest }}"
+  with_items:
+    - url: "https://www.python.org/ftp/python/{{ python_version }}/Python-{{ python_version }}.tgz"
+      dest: "{{ python_tmp }}"
+    - url: https://bitbucket.org/pypa/setuptools/raw/bootstrap/ez_setup.py
+      dest: "{{ python_tmp }}"
+    - url: https://raw.githubusercontent.com/pypa/pip/master/contrib/get-pip.py
+      dest: "{{ python_tmp }}"
+
+- name: unarchive tarballs
+  unarchive:
+    copy: no
+    src: "{{ python_tmp }}/{{ item }}"
+    dest: "{{ python_tmp }}"
+  with_items:
+    - Python-{{ python_version }}.tgz
+
+- name: configure python
+  command: ./configure --prefix=/usr/local --enable-unicode=ucs2 chdir="{{ python_tmp }}/Python-{{ python_version }}"
+
+- name: make python
+  command: make chdir="{{ python_tmp }}/Python-{{ python_version }}"
+
+- name: install python
+  command: make install chdir="{{ python_tmp }}/Python-{{ python_version }}"
+
+- name: install ez_setup
+  command: /usr/local/bin/python2.7 ./ez_setup.py chdir="{{ python_tmp }}"
+
+- name: install pip
+  command: /usr/local/bin/python2.7 ./get-pip.py chdir="{{ python_tmp }}"

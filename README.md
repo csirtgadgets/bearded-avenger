@@ -3,25 +3,43 @@
 See: http://bearded-avenger.readthedocs.org
 
 # Getting Started
-## Vagrant (Ubuntu14/Virtualbox)
+## QuickStart
 ```
-$ make vagrant
-$ vagrant ssh
-$ mkvirtualenv cif && workon cif
-$ cd /vagrant && bash ./helpers/develop.sh
+$ mkvirtualenv cif
+$ python setup.py develop
 $ supervisord
 ```
 
-## Ubuntu 14.04 (clean install)
+## Vagrant
+### Ubuntu 14 LTS
 ```
-$ make ubuntu14
-$ mkvirtualenv cif && workon cif
-$ bash helpers/develop.sh
+$ make vagrant
+$ vagrant ssh
+$ workon cif
+$ cd /vagrant; supervisord
+```
+
+### CentOS 7.1
+```
+$ make vagrant-centos7
+$ workon cif
+$ cd /vagrant; supervisord
 $ supervisord
 ```
-## Docker
+
+## Clean Install
+### Ubuntu 14 LTS
 ```
-$ make docker
+$ cd bearded-avenger
+$ sudo pip install ansible
+$ ansible-playbook -i "localhost," -c local deployment/ansible/ubuntu14.yml
+```
+
+### CentOS 7.1
+```
+$ cd bearded-avenger
+$ sudo pip install ansible
+$ ansible-playbook -i "localhost," -c local deployment/ansible/centos7.yml
 ```
 
 # Getting Involved

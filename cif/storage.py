@@ -113,6 +113,7 @@ class Storage(object):
                 rv = handler(token, data)
                 rv = {"status": "success", "data": rv}
             except Exception as e:
+                self.logger.error(e)
                 rv = {"status": "failed"}
 
             rv = json.dumps(rv)

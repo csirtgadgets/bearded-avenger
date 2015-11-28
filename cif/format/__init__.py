@@ -1,2 +1,3 @@
-COLUMNS = ["indicator", "asn", "group", "cc", "tlp"]
+COLUMNS = ['tlp', 'reporttime', 'itype', 'indicator', 'cc', 'asn', 'asn_desc', 'confidence', 'description', 'tags',
+           'rdata', 'provider']
 MAX_FIELD_SIZE = 30

@@ -12,13 +12,23 @@ class Table(object):
 
     def __repr__(self):
         t = PrettyTable(self.cols)
-        for o in self.data:
+        t.align['provider'] = 'l'
+        for obs in self.data:
             r = []
             for c in self.cols:
-                y = o.get(c) or ''
-                # make sure we do this last
-                if isinstance(y, list):
+                y = obs.get(c, '')
+                if type(y) is list:
                     y = ','.join(y)
+
+                # http://stackoverflow.com/questions/3224268/python-unicode-encode-error
+                # http://stackoverflow.com/questions/19833440/unicodeencodeerror-ascii-codec-cant-encode-character-u-xe9-in-position-7
+                try:
+                    if type(y) is unicode:
+                        y = y.encode('ascii', 'ignore')
+                except NameError:
+                    # python3
+                    pass
+
                 y = str(y)
                 y = (y[:self.max_field_size] + '..') if len(y) > self.max_field_size else y
                 r.append(y)

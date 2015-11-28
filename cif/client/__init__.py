@@ -51,6 +51,7 @@ def main():
     p.add_argument('--remote', help='specify API remote [default %(default)s]', default=REMOTE_ADDR)
     p.add_argument('-p', '--ping', action="store_true") # meg?
     p.add_argument('-q', '--search', help="search")
+    #p.add_argument('--itype', help='filter by indicator type')  ## need to fix sqlite for non-ascii stuff first
     p.add_argument("--submit", action="store_true", help="submit an indicator")
 
     p.add_argument('--indicator')
@@ -85,7 +86,15 @@ def main():
     elif options.get('search'):
         logger.info("searching for {0}".format(options.get("search")))
         rv = cli.search(options.get("search"))
-        print Table(data=rv)
+        print(Table(data=rv))
+    elif options.get('itype'):
+        logger.info('filtering by itype {}'.format(options['itype']))
+        try:
+            rv = cli.filter(filters={'itype': options['itype']})
+        except RuntimeError as e:
+            logger.error(e)
+        else:
+            print(Table(data=rv))
     elif options.get("submit"):
         logger.info("submitting {0}".format(options.get("submit")))
 

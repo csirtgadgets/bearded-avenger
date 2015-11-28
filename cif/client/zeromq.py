@@ -45,7 +45,7 @@ class ZMQ(Client):
         else:
             self.logger.error(data.get('status'))
             self.logger.error(data.get('data'))
-            raise RuntimeError
+            raise RuntimeError(data.get('status'))
 
     def ping(self):
         return self._send('ping', str(time.time()))
@@ -63,6 +63,18 @@ class ZMQ(Client):
         rv = self._send('search', query)
         return rv
 
+    def filter(self, filters={}, limit=SEARCH_LIMIT):
+        query = {
+            "limit": limit
+        }
+
+        for k in filters:
+            query[k] = filters[k]
+
+        query = json.dumps(query)
+        rv = self._send('search', query)
+        return rv
+
     def submit(self, data):
         if isinstance(data, dict):
             data = self._kv_to_indicator(data)
@@ -71,4 +83,3 @@ class ZMQ(Client):
         return data
 
 Plugin = ZMQ
-

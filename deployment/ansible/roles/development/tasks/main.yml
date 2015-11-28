@@ -1,28 +1,27 @@
 ---
 # tasks file for bearded-avenger-dev
-- name: install deps
-  apt:
-    state: latest
-    pkg: "{{ item }}"
-  with_items:
-    - python-dev
-    - virtualenvwrapper
-    - git
-    - build-essential
-    - python-support
-    - python-pytest
-    - python-pip
-    - python-virtualenv
 - name: setup virtualenv
-  shell: /usr/bin/virtualenv /home/vagrant/.virtualenvs/cif
-  sudo_user: vagrant
-- name: update pip
-  shell: /home/vagrant/.virtualenvs/cif/bin/pip install pip --upgrade
-  sudo_user: vagrant
-- name: setup deps
-  shell: /home/vagrant/.virtualenvs/cif/bin/pip install -r /vagrant/requirements.txt
-  sudo_user: vagrant
-- name: setup env
-  shell: /home/vagrant/.virtualenvs/cif/bin/python /vagrant/setup.py develop
-  sudo_user: vagrant
+  shell: /usr/bin/virtualenv "{{ venv_path }}"
+  become: yes
+  become_user: "{{ venv_user }}"
 
+- name: update pip
+  pip: name="{{ item }}" virtualenv="{{ venv_path }}" extra_args="--upgrade"
+  with_items: [ requests pip cython ] # requests first, old version conflicts with new pip
+  become: yes
+  become_user: "{{ venv_user }}"
+
+- name: install requirements
+  pip: requirements="{{ venv_source_path }}/requirements.txt" virtualenv="{{ venv_path }}"
+  become_user: "{{ venv_user }}"
+  become: yes
+
+- name: install pyinstaller
+  pip: name="git+https://github.com/pyinstaller/pyinstaller.git@f5c305452cfec603d7bf6940437607567144372a#egg=PyInstaller" virtualenv="{{ venv_path }}"
+  become: yes
+  become_user: "{{ venv_user }}"
+
+- name: setup develop
+  shell: "cd {{ venv_source_path }}; {{ venv_path }}/bin/python setup.py develop"
+  become_user: "{{ venv_user }}"
+  become: yes

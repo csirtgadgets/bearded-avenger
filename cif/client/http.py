@@ -36,7 +36,7 @@ class HTTP(Client):
                 err = body.content
 
             self.logger.error(err)
-            raise RuntimeWarning(err)
+            raise RuntimeError(err)
 
         return json.loads(body.content)
 
@@ -61,14 +61,19 @@ class HTTP(Client):
                     err = body.content
 
                 self.logger.error(err)
-                raise RuntimeWarning(err)
+                raise RuntimeError(err)
 
         self.logger.debug(body.content)
         body = json.loads(body.content)
         return body
 
     def search(self, q, filters={}, limit=None):
-        rv = self._get('/search', params={ 'q': q, 'filters': filters, 'limit': limit})
+        rv = self._get('/search', params={'q': q, 'filters': filters, 'limit': limit})
+        return rv['data']
+
+    def filter(self, filters={}, limit=None):
+        filters['limit'] = limit
+        rv = self._get('/indicators', params=filters)
         return rv['data']
 
     def submit(self, **data):

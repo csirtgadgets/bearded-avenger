@@ -10,7 +10,7 @@ DB_FILE = 'cif.db'
 Base = declarative_base()
 
 
-class indicator(Base):
+class Indicator(Base):
     __tablename__ = "indicators"
 
     id = Column(Integer, primary_key=True)
@@ -70,7 +70,7 @@ class Tag(Base):
 
     indicator_id = Column(Integer, ForeignKey('indicators.id'))
     indicator = relationship(
-        indicator,
+        Indicator,
         backref=backref('indicators',
                          uselist=True,
                          cascade='delete,all'))
@@ -95,7 +95,7 @@ class SQLite(Store):
 
         Base.metadata.create_all(self.engine)
 
-        self.logger.debug(self.path)
+        self.logger.debug('database path: {}'.format(self.path))
 
     def _as_dict(self, obj):
         #return dict((col.name, getattr(obj, col.name))
@@ -112,13 +112,20 @@ class SQLite(Store):
 
     def _search(self, filters):
         return [self._as_dict(x)
-                for x in self.handle().query(indicator).filter(indicator.indicator == filters["indicator"]).all()]
+                for x in self.handle().query(Indicator).filter(Indicator.indicator == filters["indicator"]).all()]
 
+    # TODO - normalize this out into filters
     def search(self, filters):
         self.logger.debug('running search')
-        return [self._as_dict(x)
-                for x in self.handle().query(indicator).filter(indicator.indicator == filters["indicator"]).all()]
 
+        if filters.get('indicator'):
+            return [self._as_dict(x)
+                    for x in self.handle().query(Indicator).filter(Indicator.indicator == filters["indicator"]).all()]
+        else:
+            # something non-ascii is coming back through
+            self.logger.debug('running filter of itype')
+            return [self._as_dict(x)
+                    for x in self.handle().query(Indicator).filter(Indicator.itype == 'ipv4').all()]
 
     def submit(self, data):
         if type(data) == dict:
@@ -127,7 +134,7 @@ class SQLite(Store):
         s = self.handle()
 
         for d in data:
-            o = indicator(**d)
+            o = Indicator(**d)
 
             s.add(o)
 

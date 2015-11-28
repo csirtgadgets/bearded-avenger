@@ -1,0 +1,11 @@
+---
+# defaults file for centos
+firewall_allowed_tcp_ports:
+  - "22"
+  - "443"
+  - '5000'
+firewall_allowed_udp_ports: []
+firewall_forwarded_tcp_ports: []
+firewall_forwarded_udp_ports: []
+firewall_additional_rules: []
+firewall_log_dropped_packets: true

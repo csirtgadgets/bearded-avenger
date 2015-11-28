@@ -1,20 +1,19 @@
 [supervisord]
-nodaemon = true
-loglevel = DEBUG 
+loglevel = ERROR
 
 
 [program:cif-router]
-command = cif-router -d
+command = cif-router
 autostart = true
-stderr_logfile = cif-router.log
+stderr_logfile = "{{ shared_path/log }}/cif-router.log
 
 [program:cif-storage]
-command = cif-storage -d --store sqlite
+command = cif-storage
 autostart = true
 stderr_logfile = cif-storage.log
 
 [program:cif-httpd]
-command = cif-httpd -d
+command = cif-httpd
 autostart = true
 stderr_logfile = cif-httpd.log
 
@@ -23,7 +22,7 @@ command = cif-hunter
 autostart = true
 stderr_logfile = cif-hunter.log
 
-#[program:cif-smrt]
-#command = cif-smrt -d
-#autostart = true
-#stderr_logfile = cif-smrt.log
+[program:cif-smrt]
+command = cif-smrt
+autostart = true
+stderr_logfile = cif-smrt.log
