@@ -17,6 +17,7 @@ $ make vagrant
 $ vagrant ssh
 $ workon cif
 $ cd /vagrant; supervisord
+$ cif-smrt -r rules/default -d --test
 ```
 
 ### CentOS 7.1
@@ -25,6 +26,7 @@ $ make vagrant-centos7
 $ workon cif
 $ cd /vagrant; supervisord
 $ supervisord
+$ cif-smrt -r rules/default -d --test
 ```
 
 ## Clean Install
