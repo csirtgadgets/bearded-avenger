@@ -15,9 +15,6 @@
 - name: install EPEL
   yum: name=epel-release state=latest
 
-- name: upgrade all packages
-  yum: name=* state=latest
-
 - name: install deps
   yum:
     state: present
@@ -31,4 +28,13 @@
     - bzip2-devel
     - python-virtualenvwrapper
 
+
+- name: checking python version
+  command: python --version
+  register: python_version
+
 - include: python27.yml
+  when: python_version.stdout.find('2.7.10') != -1
+
+- name: install virtualenvwrapper
+  pip: name=virtualenvwrapper
