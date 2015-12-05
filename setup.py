@@ -32,7 +32,6 @@ setup(
               'cif-gatherer=cif.gatherer:main',
               'cif-httpd=cif.httpd:main',
               'cif-storage=cif.storage:main',
-              'cifd=supervisor.supervisord:main'
               ]
       },
 )
