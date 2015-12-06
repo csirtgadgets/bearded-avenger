@@ -9,13 +9,16 @@ RUNTIME_PATH = os.path.join(os.path.expanduser("~"), ".cif")
 # Logging stuff
 LOG_FORMAT = '%(asctime)s - %(levelname)s - %(name)s[%(lineno)s] - %(message)s'
 
+LOGLEVEL = 'INFO'
+LOGLEVEL = os.environ.get('CIF_LOGLEVEL', LOGLEVEL).upper()
+
 # address stuff
 TEMP_DIR = os.path.join(tempfile.gettempdir())
 REMOTE_ADDR = 'http://localhost:5000'
 REMOTE_ADDR = os.environ.get('CIF_REMOTE_ADDR', REMOTE_ADDR)
 
-FRONTEND_ADDR = "ipc://{}".format(os.path.join(TEMP_DIR, 'frontend.ipc'))
-FRONTEND_ADDR = os.environ.get('CIF_FRONTEND_ADDR', FRONTEND_ADDR)
+ROUTER_ADDR = "ipc://{}".format(os.path.join(TEMP_DIR, 'router.ipc'))
+ROUTER_ADDR = os.environ.get('CIF_ROUTER_ADDR', ROUTER_ADDR)
 
 STORAGE_ADDR = 'ipc://{}'.format(os.path.join(TEMP_DIR, 'storage.ipc'))
 STORAGE_ADDR = os.environ.get('CIF_STORAGE_ADDR', STORAGE_ADDR)

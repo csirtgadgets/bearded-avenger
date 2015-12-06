@@ -1,13 +1,13 @@
 import pkgutil
 import logging
-from cif.constants import LOG_FORMAT, RUNTIME_PATH
+from cif.constants import LOG_FORMAT, RUNTIME_PATH, LOGLEVEL
 from argparse import ArgumentParser
+import signal
 import cif.color
 
 
 def get_argument_parser():
     BasicArgs = ArgumentParser(add_help=False)
-    BasicArgs.add_argument("-v", "--verbose", action="count", help="increase the verbosity")
     BasicArgs.add_argument('-d', '--debug', dest='debug', action="store_true")
     BasicArgs.add_argument(
         "--runtime-directory", help="specify the runtime path [default %(default)s]", default=RUNTIME_PATH
@@ -26,9 +26,8 @@ def load_plugin(path, plugin):
 
 
 def setup_logging(args):
-    loglevel = logging.WARNING
-    if args.verbose:
-        loglevel = logging.INFO
+    loglevel = logging.getLevelName(LOGLEVEL)
+
     if args.debug:
         loglevel = logging.DEBUG
 
@@ -36,3 +35,13 @@ def setup_logging(args):
     logging.getLogger('').setLevel(loglevel)
     console.setFormatter(logging.Formatter(LOG_FORMAT))
     logging.getLogger('').addHandler(console)
+
+
+def setup_signals(name):
+    logger = logging.getLogger(__name__)
+
+    def sigterm_handler(_signo, _stack_frame):
+        logger.info('SIGTERM Caught for {}, shutting down...'.format(name))
+        raise SystemExit
+
+    signal.signal(signal.SIGTERM, sigterm_handler)

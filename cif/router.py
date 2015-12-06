@@ -4,14 +4,14 @@ from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 import logging
 import textwrap
-from cif.constants import CTRL_ADDR, FRONTEND_ADDR, STORAGE_ADDR, HUNTER_ADDR
+from cif.constants import CTRL_ADDR, ROUTER_ADDR, STORAGE_ADDR, HUNTER_ADDR
 
 from pprint import pprint
 import zmq
 from zmq.eventloop import ioloop
 import json
 import time
-from cif.utils import setup_logging, get_argument_parser
+from cif.utils import setup_logging, get_argument_parser, setup_signals
 
 
 class Router(object):
@@ -22,7 +22,7 @@ class Router(object):
     def __exit__(self, type, value, traceback):
         self.stop()
 
-    def __init__(self, frontend=FRONTEND_ADDR, hunter=HUNTER_ADDR, storage=STORAGE_ADDR):
+    def __init__(self, listen=ROUTER_ADDR, hunter=HUNTER_ADDR, storage=STORAGE_ADDR):
         self.logger = logging.getLogger(__name__)
 
         self.context = zmq.Context.instance()
@@ -34,7 +34,7 @@ class Router(object):
         self.poller = zmq.Poller()
 
         self.ctrl.bind(CTRL_ADDR)
-        self.frontend.bind(frontend)
+        self.frontend.bind(listen)
         self.hunters.bind(hunter)
         self.storage.bind(storage)
 
@@ -105,6 +105,11 @@ class Router(object):
     def stop(self):
         return self
 
+import signal
+import sys
+
+
+
 
 def main():
     p = get_argument_parser()
@@ -118,7 +123,7 @@ def main():
         parents=[p]
     )
 
-    p.add_argument('--frontend', help='address to listen on [default: %(default)s]', default=FRONTEND_ADDR)
+    p.add_argument('--listen', help='address to listen on [default: %(default)s]', default=ROUTER_ADDR)
     p.add_argument('--hunter', help='address hunters listen on on [default: %(default)s]', default=HUNTER_ADDR)
     p.add_argument("--storage", help="specify a storage address [default: %(default)s]",
                    default=STORAGE_ADDR)
@@ -126,13 +131,18 @@ def main():
     args = p.parse_args()
     setup_logging(args)
     logger = logging.getLogger(__name__)
+    logger.info('loglevel is: {}'.format(logging.getLevelName(logger.getEffectiveLevel())))
 
-    with Router(frontend=args.frontend, hunter=args.hunter, storage=args.storage) as r:
+    setup_signals(__name__)
+
+    with Router(listen=args.listen, hunter=args.hunter, storage=args.storage) as r:
         try:
             logger.info('starting router..')
             r.run()
         except KeyboardInterrupt:
             logger.info('shutting down...')
+
+    logger.info('Shutting down')
 
 if __name__ == "__main__":
     main()

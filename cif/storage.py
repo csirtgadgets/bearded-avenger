@@ -14,7 +14,7 @@ import ujson as json
 from pprint import pprint
 from cif.errors import CIFConnectionError, StorageSubmissionFailed
 import inspect
-from cif.utils import setup_logging, get_argument_parser
+from cif.utils import setup_logging, get_argument_parser, setup_signals
 
 MOD_PATH = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 
@@ -152,6 +152,9 @@ def main():
 
     setup_logging(args)
     logger = logging.getLogger(__name__)
+    logger.info('loglevel is: {}'.format(logging.getLevelName(logger.getEffectiveLevel())))
+
+    setup_signals(__name__)
 
     with Storage(router=args.router, store=args.store) as s:
         try:

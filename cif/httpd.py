@@ -7,12 +7,12 @@ import logging
 import textwrap
 import re
 import os
-from cif.utils import get_argument_parser, setup_logging
+from cif.utils import get_argument_parser, setup_logging, setup_signals
 
 from pprint import pprint
 
 
-from cif.constants import FRONTEND_ADDR
+from cif.constants import ROUTER_ADDR
 from cif.client.zeromq import ZMQ as Client
 TOKEN = os.environ.get('CIF_TOKEN', None)
 TOKEN = os.environ.get('CIF_HTTPD_TOKEN', TOKEN)
@@ -28,7 +28,7 @@ FILTERS = ['itype', 'confidence', 'provider']
 # https://github.com/mitsuhiko/flask/blob/master/examples/minitwit/minitwit.py
 
 app = Flask(__name__)
-remote = FRONTEND_ADDR
+remote = ROUTER_ADDR
 logger = logging.getLogger(__name__)
 
 def pull_token():
@@ -162,7 +162,7 @@ def main():
         parents=[p]
     )
 
-    p.add_argument("--router", help="specify router frontend [default %(default)s]", default=FRONTEND_ADDR)
+    p.add_argument("--router", help="specify router frontend [default %(default)s]", default=ROUTER_ADDR)
     p.add_argument('--token', help="specify cif-httpd token [default %(default)s]", default=TOKEN)
     p.add_argument('--listen', help='specify the interface to listen on [default %(default)s]', default=HTTP_LISTEN)
     p.add_argument('--listen-port', help='specify the port to listen on [default %(default)s]',
@@ -173,6 +173,9 @@ def main():
     args = p.parse_args()
     setup_logging(args)
     logger = logging.getLogger(__name__)
+    logger.info('loglevel is: {}'.format(logging.getLevelName(logger.getEffectiveLevel())))
+
+    setup_signals(__name__)
 
     try:
         logger.info('pinging router...')

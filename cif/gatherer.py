@@ -7,7 +7,7 @@ import textwrap
 import cif.generic
 from cif.constants import GATHER_ADDR
 import zmq
-from cif.utils import setup_logging, get_argument_parser
+from cif.utils import setup_logging, get_argument_parser, setup_signals
 
 
 class Gatherer(cif.generic.Generic):
@@ -40,9 +40,11 @@ def main():
     p.add_argument("--remote", dest="remote", help="specify the cif-router publishing channel [default: %(default)s",
                    default=GATHER_ADDR)
 
-
     args = p.parse_args()
     logger = setup_logging(args)
+    logger.info('loglevel is: {}'.format(logging.getLevelName(logger.getEffectiveLevel())))
+
+    setup_signals(__name__)
 
     with Gatherer() as r:
         logger.info('staring gatherer...')

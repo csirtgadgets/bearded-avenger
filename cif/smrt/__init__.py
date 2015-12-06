@@ -8,7 +8,7 @@ from cif.constants import REMOTE_ADDR
 import os.path
 from cif.rule import Rule
 from cif.smrt.fetcher import Fetcher
-from cif.utils import setup_logging, get_argument_parser, load_plugin
+from cif.utils import setup_logging, get_argument_parser, load_plugin, setup_signals
 from random import randint
 from time import sleep
 import signal
@@ -119,6 +119,9 @@ def main():
 
     setup_logging(args)
     logger = logging.getLogger(__name__)
+    logger.info('loglevel is: {}'.format(logging.getLevelName(logger.getEffectiveLevel())))
+
+    setup_signals(__name__)
 
     stop = False
 

@@ -8,7 +8,7 @@ import logging
 import json
 
 from cif.constants import HUNTER_ADDR
-from cif.utils import setup_logging, get_argument_parser
+from cif.utils import setup_logging, get_argument_parser, setup_signals
 from pprint import pprint
 from cif.indicator import Indicator
 from cif.format.table import Table
@@ -67,6 +67,9 @@ def main():
     setup_logging(args)
 
     logger = logging.getLogger(__name__)
+    logger.info('loglevel is: {}'.format(logging.getLevelName(logger.getEffectiveLevel())))
+
+    setup_signals(__name__)
 
     with Hunter(remote=args.remote) as h:
         try:
