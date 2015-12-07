@@ -90,6 +90,11 @@ def main():
     p = get_argument_parser()
     p = ArgumentParser(
         description=textwrap.dedent('''\
+        Env Variables:
+            CIF_RUNTIME_PATH
+            CIF_HTTP_ADDR
+            CIF_TOKEN
+
         example usage:
             $ cif-smrt -v --rules rules/default
             $ cif-smrt --rules rules/default/drg.yml --feed ssh

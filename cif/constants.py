@@ -6,7 +6,8 @@ VERSION = get_versions()['version']
 del get_versions
 
 TEMP_DIR = os.path.join(tempfile.gettempdir())
-RUNTIME_PATH = os.path.join(TEMP_DIR, 'cif')
+RUNTIME_PATH = os.environ.get('CIF_RUNTIME_PATH', TEMP_DIR)
+RUNTIME_PATH = os.path.join(RUNTIME_PATH)
 
 # Logging stuff
 LOG_FORMAT = '%(asctime)s - %(levelname)s - %(name)s[%(lineno)s] - %(message)s'

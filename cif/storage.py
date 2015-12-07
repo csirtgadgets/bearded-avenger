@@ -134,6 +134,10 @@ def main():
     p = get_argument_parser()
     p = ArgumentParser(
         description=textwrap.dedent('''\
+         Env Variables:
+            CIF_RUNTIME_PATH
+            CIF_STORAGE_ADDR
+
         example usage:
             $ cif-storage -d
         '''),
@@ -142,8 +146,8 @@ def main():
         parents=[p]
     )
 
-    p.add_argument("--router", help="specify the storage address [default: %(default)s]",
-                   default=STORAGE_ADDR)
+    p.add_argument("--storage-address", help="specify the storage address cif-router is listening on[default: %("
+                                             "default)s]", default=STORAGE_ADDR)
 
     p.add_argument("--store", help="specify a store type {} [default: %(default)s]".format(', '.join(STORE_PLUGINS)),
                    default=STORE_DEFAULT)

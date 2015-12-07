@@ -110,8 +110,14 @@ def main():
     p = get_argument_parser()
     p = ArgumentParser(
         description=textwrap.dedent('''\
+        Env Variables:
+            CIF_RUNTIME_PATH
+            CIF_ROUTER_ADDR
+            CIF_HUNTER_ADDR
+            CIF_STORAGE_ADDR
+
         example usage:
-            $ cif-router -d
+            $ cif-router --listen 0.0.0.0 -d
         '''),
         formatter_class=RawDescriptionHelpFormatter,
         prog='cif-router',

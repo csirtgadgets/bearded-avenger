@@ -4,9 +4,11 @@ from sqlalchemy.ext.declarative import declarative_base
 from cif.store import Store
 import logging
 import arrow
+import os
+from cif.constants import RUNTIME_PATH
 from pprint import pprint
 
-DB_FILE = 'cif.db'
+DB_FILE = os.path.join(RUNTIME_PATH, 'cif.sqlite')
 Base = declarative_base()
 
 

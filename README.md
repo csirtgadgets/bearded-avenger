@@ -7,7 +7,7 @@ See: http://bearded-avenger.readthedocs.org
 ```
 $ mkvirtualenv cif
 $ python setup.py develop
-$ supervisord
+$ supervisord -c hacking/develop.conf
 ```
 
 ## Vagrant
@@ -16,7 +16,7 @@ $ supervisord
 $ make vagrant
 $ vagrant ssh
 $ workon cif
-$ cd /vagrant; supervisord
+$ cd /vagrant; supervisord -c hacking/develop.conf
 $ cif-smrt -r rules/default -d --test
 ```
 
@@ -25,8 +25,7 @@ $ cif-smrt -r rules/default -d --test
 $ export VAGRANT_VAGRANT_FILE=Vagrantfile.centos7
 $ make vagrant-centos7
 $ workon cif
-$ cd /vagrant; supervisord
-$ supervisord
+$ cd /vagrant; supervisord -c hacking/develop.conf
 $ cif-smrt -r rules/default -d --test
 ```
 
@@ -59,5 +58,3 @@ If you've never worked on a GitHub project, [this is a good piece](https://guide
 Copyright (C) 2015 [the CSIRT Gadgets Foundation](http://csirtgadgets.org)
 
 Free use of this software is granted under the terms of the GNU Lesser General Public License (LGPLv3). For details see the files `COPYING` included with the distribution.
-
-
