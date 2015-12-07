@@ -1,0 +1,2 @@
+'cif' export-subst
+cif/_version.py export-subst

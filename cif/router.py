@@ -105,11 +105,6 @@ class Router(object):
     def stop(self):
         return self
 
-import signal
-import sys
-
-
-
 
 def main():
     p = get_argument_parser()
