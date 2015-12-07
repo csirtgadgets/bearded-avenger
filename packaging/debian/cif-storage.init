@@ -34,6 +34,8 @@ SUPERVISORCTL=/usr/bin/supervisorctl
 NAME=cif-storage
 DESC=cif-storage
 
+RUNTIME_PATH=/var/lib/cif
+
 test -x $DAEMON || exit 0
 
 LOGDIR=/var/log/cif
