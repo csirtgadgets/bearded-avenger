@@ -1,6 +1,6 @@
 from cif.smrt.parser import Parser
+from cif.indicator import Indicator
 
-from pprint import pprint
 class Delim(Parser):
 
     def __init__(self, *args, **kwargs):
@@ -28,9 +28,14 @@ class Delim(Parser):
                         obs[col] = m[idx]
                 obs.pop("values", None)
 
-                r = self.client.submit(**obs)
-                self.logger.debug(str(obs))
-                rv.append(r)
+                try:
+                    obs = Indicator(**obs)
+                except NotImplementedError as e:
+                    self.logger.error(e)
+                    self.logger.info('skipping: {}'.format(obs['indicator']))
+                else:
+                    r = self.client.submit(obs)
+                    rv.append(r)
 
             if self.limit:
                 self.limit -= 1

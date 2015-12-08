@@ -14,7 +14,3 @@
 
 - name: Ensure .cifrc is linked to .profile
   lineinfile: dest="{{ app_user_home }}/.profile" line="source ~/.cifrc"
-
-## TODO cif-tokens CIF_TOKEN / CIF_SMRT_TOKEN etc...
-#- name: Add vars to app env
-#  lineinfile: dest="{{ app_user_home }}/.profile" line="export RAILS_ENV={{ app_rails_env }}"

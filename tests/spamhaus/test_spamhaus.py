@@ -14,7 +14,6 @@ s = Smrt(REMOTE_ADDR, 1234, client='dummy')
 def test_spamhaus_drop():
     rule.feeds['drop']['remote'] = 'tests/spamhaus/drop.txt'
     x = s.process(rule, feed="drop")
-    pprint(x)
     assert len(x) > 0
 
 

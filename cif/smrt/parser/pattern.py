@@ -4,6 +4,7 @@ from pprint import pprint
 import copy
 import sys
 import logging
+from cif.indicator import Indicator
 
 
 class Pattern(Parser):
@@ -47,8 +48,15 @@ class Pattern(Parser):
                     if col is not None:
                         obs[col] = m[idx]
 
-                r = self.client.submit(**obs)
-                rv.append(r)
+                try:
+                    obs = Indicator(**obs)
+                except NotImplementedError as e:
+                    self.logger.error(e)
+                    self.logger.info('skipping: {}'.format(obs['indicator']))
+                else:
+                    pprint(obs)
+                    r = self.client.submit(obs)
+                    rv.append(r)
 
             if self.limit:
                 self.limit -= 1

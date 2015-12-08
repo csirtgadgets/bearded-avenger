@@ -19,7 +19,7 @@ class Dummy(Client):
     def _post(self, uri, data):
         return data
 
-    def submit(self, **data):
+    def submit(self, data):
         if isinstance(data, dict):
             data = self._kv_to_indicator(data)
 

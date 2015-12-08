@@ -70,7 +70,6 @@ class Indicator(object):
         if lasttime:
             self.lasttime = arrow.get(lasttime).datetime
 
-
         if asn and asn.lower() == 'na':
             asn = None
 

@@ -76,9 +76,8 @@ class HTTP(Client):
         rv = self._get('/indicators', params=filters)
         return rv['data']
 
-    def submit(self, **data):
-        if isinstance(data, dict):
-            data = str(self._kv_to_indicator(data))
+    def submit(self, data):
+        data = str(data)
 
         uri = "{0}/indicators".format(self.remote)
         self.logger.debug(uri)

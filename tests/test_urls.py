@@ -19,6 +19,20 @@ def test_urls_fqdn():
     _not(data)
 
 
+def test_urls_not_ok():
+    data = [
+        'http://wp-content/plugins/tinymce-advanced/mce/emoticons/img/Yahoo-login/yahoo.html'
+    ]
+
+    for d in data:
+        try:
+            d = Indicator(d)
+        except NotImplementedError as e:
+            pass
+        else:
+            raise NotImplementedError
+
+
 def test_urls_ok():
     data = [
         'http://192.168.1.1/1.html',

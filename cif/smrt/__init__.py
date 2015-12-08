@@ -121,6 +121,7 @@ def main():
 
     p.add_argument('--test', action='store_true')
     p.add_argument('--sleep', default=60)
+    p.add_argument('--ignore-unknown', action='store_true')
 
     args = p.parse_args()
 
@@ -156,9 +157,13 @@ def main():
             logger.error(e)
             if str(e).startswith('submission failed'):
                 stop = True
+            else:
+                logging.exception('Got exception on main handler')
         except KeyboardInterrupt:
             logger.info('shutting down')
             stop = True
+
+        logger.info('completed')
 
 if __name__ == "__main__":
     main()
