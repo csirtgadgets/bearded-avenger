@@ -12,43 +12,25 @@
 #- name: Pull latest release
 #  get_url: url={{ latest_release_url }} dest="{{ app_user_home }}/bearded-avenger"
 
-- name: create dest directory
-  file: path={{ app_user_home }}/bearded-avenger mode=0770 owner="{{ app_user }}" group="{{ app_user }}" state=directory
+#- name: create dest directory
+#  file: path={{ app_user_home }}/bearded-avenger mode=0770 owner="{{ app_user }}" group="{{ app_user }}" state=directory
+#  become: yes
+#  become_user: "{{ app_user }}"
+
+- name: build sdist
+  command: python setup.py sdist chdir="{{ app_src_path }}"
+
+- name: set dist
+  shell: "ls -c {{ app_src_path }}/dist | head -n 1"
+  register: dist_version
+
+- name: copy sdist
+  copy: src="{{ app_src_path }}/dist/{{ dist_version.stdout }}" dest="{{ app_user_home }}"
+
+- name: untar sdist
+  command: tar -zxvf {{ dist_version.stdout }} chdir={{ app_user_home }}
   become: yes
   become_user: "{{ app_user }}"
-
-- name: rsync files
-  synchronize:
-    dest: "{{ app_user_home }}/bearded-avenger"
-    src: "{{ app_src_path }}/{{ item }}"
-    rsync_opts:
-        - '--exclude=.vagrant'
-        - '--exclude=.idea'
-        - '--exclude=.cache'
-        - '--exclude=.git'
-        - '--exclude=tmp'
-        - '--exclude=log'
-        - '--exclude=*.box'
-        - '--exclude=*.pyc'
-        - '--exclude=*.sqlite'
-        - '--exclude=build'
-  with_items:
-      - LICENSE
-      - MANIFEST.in
-      - Makefile
-      - README.md
-      - cif
-      - contributing.md
-      - deployment
-      - docs
-      - hacking
-      - packaging
-      - requirements.txt
-      - rules
-      - setup.cfg
-      - setup.py
-      - tests
-      - versioneer.py
 
 - name: Create RUNTIME_PATH
   file: path="{{ app_runtime_path }}" state=directory recurse=true mode=0770 owner="{{ app_user }}" group="{{ app_user }}"
@@ -57,11 +39,11 @@
   file: path="{{ app_log_path }}" state=directory recurse=true mode=0770 owner="{{ app_user }}" group="{{ app_user }}"
 
 - name: install requirements
-  pip: requirements="{{ app_user_home }}/bearded-avenger/requirements.txt"
+  pip: requirements="{{ app_user_home }}/{{ dist_version.stdout | regex_replace('.tar.gz$', '') }}/requirements.txt"
   sudo: true
 
 - name: setup
-  shell: python setup.py install chdir="{{ app_user_home }}/bearded-avenger/"
+  command: python setup.py install chdir="{{ app_user_home }}/{{ dist_version.stdout | regex_replace('.tar.gz$', '') }}"
   sudo: true
 
 - name: setup the rules directory
