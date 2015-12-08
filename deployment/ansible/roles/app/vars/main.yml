@@ -8,3 +8,4 @@ app_user_home: '/home/cif'
 app_runtime_path: /var/lib/cif
 app_rules_path: /etc/cif
 app_log_path: /var/log/cif
+app_src_path: ../../

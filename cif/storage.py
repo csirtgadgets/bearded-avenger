@@ -14,7 +14,8 @@ import ujson as json
 from pprint import pprint
 from cif.errors import CIFConnectionError, StorageSubmissionFailed
 import inspect
-from cif.utils import setup_logging, get_argument_parser, setup_signals
+from cif.utils import setup_logging, get_argument_parser, setup_signals, load_plugin
+import cif.store
 
 MOD_PATH = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 
@@ -23,7 +24,7 @@ RCVTIMEO = 5000
 SNDTIMEO = 2000
 LINGER = 3
 STORE_DEFAULT = 'dummy'
-STORE_PLUGINS = ['dummy', 'sqlite', 'elasticsearch', 'rdflib']
+STORE_PLUGINS = ['cif.store.dummy', 'cif.store.sqlite', 'cif.store.elasticsearch', 'cif.store.rdflib']
 
 
 class Storage(object):
@@ -33,17 +34,21 @@ class Storage(object):
     def __exit__(self, type, value, traceback):
         self.stop()
 
-    def __init__(self, store=STORE_DEFAULT, router=STORAGE_ADDR, *args, **kv):
+    def __init__(self, store=STORE_DEFAULT, storage_address=STORAGE_ADDR, *args, **kv):
         self.logger = logging.getLogger(__name__)
         self.context = zmq.Context()
         self.router = self.context.socket(zmq.ROUTER)
-        self.router_addr = router
+        self.storage_addr = storage_address
         self.connected = False
         self.ctrl = None
         self.loop = ioloop.IOLoop.instance()
+        self.store = 'cif.store.{}'.format(store)
 
-        for loader, modname, is_pkg in pkgutil.iter_modules([STORE_PATH]):
-            if modname == store:
+        # TODO replace with cif.utils.load_plugin
+        self.logger.debug('store is: {}'.format(self.store))
+        for loader, modname, is_pkg in pkgutil.iter_modules(cif.store.__path__, 'cif.store.'):
+            self.logger.debug('testing store plugin: {}'.format(modname))
+            if modname == self.store:
                 self.logger.debug('Loading plugin: {0}'.format(modname))
                 self.store = loader.find_module(modname).load_module(modname)
                 self.store = self.store.Plugin(*args, **kv)
@@ -65,7 +70,7 @@ class Storage(object):
             else:
                 self.connected = True
 
-        self.router.connect(STORAGE_ADDR)
+        self.router.connect(self.storage_addr)
 
         self.loop.add_handler(self.router, self.handle_message, zmq.POLLIN)
         self.loop.start()
@@ -160,7 +165,7 @@ def main():
 
     setup_signals(__name__)
 
-    with Storage(router=args.router, store=args.store) as s:
+    with Storage(storage_address=args.storage_address, store=args.store) as s:
         try:
             logger.info('starting up...')
             s.start()

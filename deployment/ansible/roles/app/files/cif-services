@@ -13,7 +13,6 @@
 ### END INIT INFO
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-PATH=/home/vagrant/.virtualenvs/cif/bin:$PATH
 NAME=cif-services
 DESC="cif-services"
 

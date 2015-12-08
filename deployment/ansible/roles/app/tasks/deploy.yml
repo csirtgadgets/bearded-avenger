@@ -1,9 +1,54 @@
 ---
-- name: Update code
-  git: repo={{ git_url }} dest={{ app_user_home }}/bearded-avenger version={{ git_version }} accept_hostkey=yes
-  register: git
+#- name: Update code
+#  git: repo={{ git_url }} dest={{ app_user_home }}/bearded-avenger version={{ git_version }} accept_hostkey=yes
+#  register: git
+#  become: yes
+#  become_user: "{{ app_user }}"
+#
+#- name: register latest release
+#  command: curl -s https://api.github.com/repos/csirtgadgets/bearded-avenger/releases | grep browser_download_url | head -n 1 | cut -d '"' -f 4
+#  register: latest_release_url
+#
+#- name: Pull latest release
+#  get_url: url={{ latest_release_url }} dest="{{ app_user_home }}/bearded-avenger"
+
+- name: create dest directory
+  file: path={{ app_user_home }}/bearded-avenger mode=0770 owner="{{ app_user }}" group="{{ app_user }}" state=directory
   become: yes
   become_user: "{{ app_user }}"
+
+- name: rsync files
+  synchronize:
+    dest: "{{ app_user_home }}/bearded-avenger"
+    src: "{{ app_src_path }}/{{ item }}"
+    rsync_opts:
+        - '--exclude=.vagrant'
+        - '--exclude=.idea'
+        - '--exclude=.cache'
+        - '--exclude=.git'
+        - '--exclude=tmp'
+        - '--exclude=log'
+        - '--exclude=*.box'
+        - '--exclude=*.pyc'
+        - '--exclude=*.sqlite'
+        - '--exclude=build'
+  with_items:
+      - LICENSE
+      - MANIFEST.in
+      - Makefile
+      - README.md
+      - cif
+      - contributing.md
+      - deployment
+      - docs
+      - hacking
+      - packaging
+      - requirements.txt
+      - rules
+      - setup.cfg
+      - setup.py
+      - tests
+      - versioneer.py
 
 - name: Create RUNTIME_PATH
   file: path="{{ app_runtime_path }}" state=directory recurse=true mode=0770 owner="{{ app_user }}" group="{{ app_user }}"

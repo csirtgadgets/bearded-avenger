@@ -158,5 +158,8 @@ class Indicator(object):
         if self.lasttime:
             o['lasttime'] = self.lasttime.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
-        #return json.dumps(o, indent=4, sort_keys=True)
-        return json.dumps(o, sort_keys=True)
+        try:
+            return json.dumps(o, sort_keys=True)
+        except UnicodeDecodeError as e:
+            o['asn_desc'] = unicode(o['asn_desc'].decode('latin-1'))
+            return json.dumps(o, sort_keys=True)

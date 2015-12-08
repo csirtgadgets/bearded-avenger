@@ -1,5 +1,6 @@
 from sqlalchemy.orm import sessionmaker, relationship, backref, class_mapper
-from sqlalchemy import Column, Date, Integer, String, Float, ForeignKey, create_engine, DateTime
+from sqlalchemy import Column, Date, Integer, String, Float, ForeignKey, create_engine, DateTime, UnicodeText, \
+    Binary, Text
 from sqlalchemy.ext.declarative import declarative_base
 from cif.store import Store
 import logging
@@ -16,13 +17,13 @@ class Indicator(Base):
     __tablename__ = "indicators"
 
     id = Column(Integer, primary_key=True)
-    indicator = Column(String)
+    indicator = Column(Text)
     group = Column(String)
     itype = Column(String)
     tlp = Column(String)
     provider = Column(String)
     portlist = Column(String)
-    asn_desc = Column(String)
+    asn_desc = Column(UnicodeText)
     asn = Column(Float)
     cc = Column(String)
     protocol = Column(Integer)

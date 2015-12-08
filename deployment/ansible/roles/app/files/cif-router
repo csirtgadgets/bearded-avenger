@@ -28,8 +28,8 @@
 . /lib/lsb/init-functions
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-DAEMON=/usr/bin/supervisord
-SUPERVISORCTL=/usr/bin/supervisorctl
+DAEMON=/usr/local/bin/supervisord
+SUPERVISORCTL=/usr/local/bin/supervisorctl
 NAME=cif-router
 DESC=cif-router
 

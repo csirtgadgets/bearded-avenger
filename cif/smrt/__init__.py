@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 import logging
 import textwrap
-from cif.constants import REMOTE_ADDR
+from cif.constants import REMOTE_ADDR, SMRT_RULES_PATH, SMRT_CACHE
 import os.path
 from cif.rule import Rule
 from cif.smrt.fetcher import Fetcher
@@ -13,10 +13,10 @@ from random import randint
 from time import sleep
 import signal
 from pprint import pprint
+import cif.smrt.parser
+import cif.client
 
-PARSERS_PATH = os.path.join("cif", "smrt", "parser")
-FETCHERS_PATH = os.path.join("cif", "smrt", "fetcher")
-CLIENTS_PATH = os.path.join("cif", "client")
+
 
 PARSER_DEFAULT = "pattern"
 TOKEN = os.environ.get('CIF_TOKEN', None)
@@ -37,14 +37,14 @@ class Smrt(object):
     def __init__(self, remote=REMOTE_ADDR, token=TOKEN, client='http'):
 
         self.logger = logging.getLogger(__name__)
-        self.client = load_plugin(CLIENTS_PATH, client)(remote, token)
+        self.client = load_plugin(cif.client.__path__[0], client)(remote, token)
 
     def _process(self, rule, feed, limit=None):
 
         fetch = Fetcher(rule, feed)
 
         parser = rule.parser or PARSER_DEFAULT
-        parser = load_plugin(PARSERS_PATH, parser)
+        parser = load_plugin(cif.smrt.parser.__path__[0], parser)
 
         self.logger.debug("loading parser: {}".format(parser))
 
@@ -104,13 +104,15 @@ def main():
         parents=[p],
     )
 
-    p.add_argument("-r", "--rule", dest="rule", help="specify the rules directory or specific rules file [default: %("
-                   "default)s", default="rules/default")
+    p.add_argument("-r", "--rule", help="specify the rules directory or specific rules file [default: %(default)s",
+                   default=SMRT_RULES_PATH)
 
-    p.add_argument("-f", "--feed", dest="feed", help="specify the feed to process")
+    p.add_argument("-f", "--feed", help="specify the feed to process")
 
     p.add_argument("--remote", dest="remote", help="specify the remote api url [default: %(default)s",
                    default=REMOTE_ADDR)
+
+    p.add_argument('--cache', help="specify feed cache [default %(default)s]", default=SMRT_CACHE)
 
     p.add_argument("--limit", dest="limit", help="limit the number of records processed [default: %(default)s]",
                    default=None)
