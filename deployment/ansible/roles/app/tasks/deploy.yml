@@ -1,23 +1,23 @@
 ---
-- set_fact: this_release_ts={{ lookup('pipe', 'date +%Y%m%d%H%M%S') }}
-- set_fact: this_release_path={{ releases_path }}/{{ this_release_ts }}
-
-- name: Create new release dir
-  file: path={{ app_path }} state=directory owner={{ app_user }} group={{ app_user }} mode=0770
-
 - name: Update code
-  git: repo={{ git_url }} dest={{ this_release_path }} version={{ git_version }} accept_hostkey=yes
+  git: repo={{ git_url }} dest={{ app_user_home }}/bearded-avenger version={{ git_version }} accept_hostkey=yes
   register: git
   become: yes
   become_user: "{{ app_user }}"
 
-- name: Symlink new release
-  file: src={{ this_release_path }} dest={{ current_release_path }} state=link force=yes
+- name: install requirements
+  pip: requirements="{{ app_user_home }}/bearded-avenger/requirements.txt"
+  sudo: true
 
-- name: fix release directory perms
-  file: path={{ this_release_path }} state=directory owner={{ app_user }} group={{ app_user }} recurse=yes
+- name: setup
+  shell: python setup.py install chdir="{{ app_user_home }}/bearded-avenger/"
+  sudo: true
 
-- name: Cleanup
-  shell: "ls -1t {{ releases_path }}|tail -n +{{ keep_releases + 1 }}|xargs rm -rf"
-  args:
-    chdir: '{{ releases_path }}'
+- name: copy init scripts
+  copy: src="{{ item }}" dest="/etc/init.d/{{ item }}" chmod=0755 backup=yes
+  with_items:
+    - cif-router
+    - cif-smrt
+    - cif-httpd
+    - cif-storage
+    - cif-hunters

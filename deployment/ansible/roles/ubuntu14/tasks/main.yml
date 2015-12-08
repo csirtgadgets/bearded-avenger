@@ -29,7 +29,6 @@
   with_items:
     - build-essential
     - htop
-    - monit
     - git
 
 - include: python27.yml

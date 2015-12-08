@@ -1,13 +1,7 @@
+# ansible-playbook -i "localhost," -c local helloworld.yml
 ---
 # vars file for app
 git_url: https://github.com/csirtgadgets/bearded-avenger.git
 git_version: 'master'
 app_user: cif
 app_user_home: '/home/cif'
-keep_releases: 3
-
-# misc
-app_path: '/opt/{{ app_name }}'
-shared_path: "{{ app_path }}"
-releases_path: '{{ app_path }}/releases'
-current_release_path: '{{ app_path }}/current'
