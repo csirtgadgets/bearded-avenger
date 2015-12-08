@@ -28,7 +28,6 @@
 . /lib/lsb/init-functions
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-PATH=/home/vagrant/.virtualenvs/cif/bin:$PATH
 DAEMON=/usr/bin/supervisord
 SUPERVISORCTL=/usr/bin/supervisorctl
 NAME=cif-router
@@ -53,6 +52,9 @@ if [ -f /etc/default/cif-router ] ; then
 	. /etc/default/cif-router
 fi
 DAEMON_OPTS="-c /etc/cif/cif-router.conf $DAEMON_OPTS"
+
+export CIF_RUNTIME_PATH=$CIF_RUNTIME_PATH
+export CIF_LOGLEVEL=$CIF_LOGLEVEL
 
 set -e
 

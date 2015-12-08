@@ -5,3 +5,6 @@ git_url: https://github.com/csirtgadgets/bearded-avenger.git
 git_version: 'master'
 app_user: cif
 app_user_home: '/home/cif'
+app_runtime_path: /var/lib/cif
+app_rules_path: /etc/cif
+app_log_path: /var/log/cif

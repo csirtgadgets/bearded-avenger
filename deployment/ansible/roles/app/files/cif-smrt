@@ -28,9 +28,8 @@
 . /lib/lsb/init-functions
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-PATH=/home/vagrant/.virtualenvs/cif/bin:$PATH
-DAEMON=/usr/bin/supervisord
-SUPERVISORCTL=/usr/bin/supervisorctl
+DAEMON=/usr/local/bin/supervisord
+SUPERVISORCTL=/usr/local/bin/supervisorctl
 NAME=cif-smrt
 DESC=cif-smrt
 
@@ -55,6 +54,10 @@ if [ -f /etc/default/cif-smrt ] ; then
 	. /etc/default/cif-smrt
 fi
 DAEMON_OPTS="-c /etc/cif/cif-smrt.conf $DAEMON_OPTS"
+
+export CIF_RUNTIME_PATH=$CIF_RUNTIME_PATH
+export CIF_LOGLEVEL=$CIF_LOGLEVEL
+export CIF_RULES_PATH=$CIF_RULES_PATH
 
 set -e
 

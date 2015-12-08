@@ -1,0 +1,3 @@
+CIF_RUNTIME_PATH=/var/lib/cif
+CIF_RULES_PATH=/etc/cif/rules
+LOGLEVEL=INFO

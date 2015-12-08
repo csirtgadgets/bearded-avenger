@@ -5,6 +5,12 @@
   become: yes
   become_user: "{{ app_user }}"
 
+- name: Create RUNTIME_PATH
+  file: path="{{ app_runtime_path }}" state=directory recurse=true mode=0770 owner="{{ app_user }}" group="{{ app_user }}"
+
+- name: Create logging path
+  file: path="{{ app_log_path }}" state=directory recurse=true mode=0770 owner="{{ app_user }}" group="{{ app_user }}"
+
 - name: install requirements
   pip: requirements="{{ app_user_home }}/bearded-avenger/requirements.txt"
   sudo: true
@@ -13,11 +19,30 @@
   shell: python setup.py install chdir="{{ app_user_home }}/bearded-avenger/"
   sudo: true
 
+- name: setup the rules directory
+  file: path="{{ app_rules_path }}/rules/default" state=directory mode=770 owner="{{ app_user }}" group="{{ app_user }}"
+
+- name: copy cif-smrt rules
+  copy: src="../../rules" dest="{{ app_rules_path }}" backup=yes owner="{{ app_user }}" group="{{ app_user }}" mode="u=rw,g=rw,o-rwx"
+
 - name: copy init scripts
-  copy: src="{{ item }}" dest="/etc/init.d/{{ item }}" chmod=0755 backup=yes
+  copy: src="{{ item }}" dest="/etc/init.d/{{ item }}" mode=0755 backup=yes
   with_items:
     - cif-router
     - cif-smrt
     - cif-httpd
     - cif-storage
     - cif-hunters
+    - cif-services
+
+- name: copy supervisord configs
+  copy: src="{{ item }}" dest=/etc/cif/ mode=0660 owner="{{ app_user }}" group="{{ app_user }}"
+  with_items:
+    - cif-router.conf
+    - cif-httpd.conf
+    - cif-smrt.conf
+    - cif-storage.conf
+    - cif-hunters.conf
+
+- name: copy /etc/defaults/cif
+  copy: src=defaults dest=/etc/default/cif mode=0660 owner="{{ app_user }}" group="{{ app_user }}"
