@@ -1,0 +1,19 @@
+[Unit]
+Description=cif-smrt daemon
+
+[Service]
+Type=simple
+User=cif
+Group=cif
+PIDFile=/run/cif-smrt.pid
+ExecStart=/usr/bin/cif-smrt
+KillMode=process
+Restart=on-failure
+KillSignal=SIGINT
+TimeoutStopSec=5
+PrivateTmp=true
+
+EnvironmentFile=/etc/cif.env
+
+[Install]
+WantedBy=multi-user.target

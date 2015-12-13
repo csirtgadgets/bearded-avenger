@@ -1,8 +1,0 @@
----
-# vars file for centos
-is_64bit: "{{ ansible_architecture }}"
-is_centos: "{{ ansible_distribution }}"
-is_centos_version: "{{ ansible_distribution_version }}"
-
-python_tmp: '/tmp/tmp_install_python'
-python_version: '2.7.10'

@@ -1,6 +1,0 @@
----
-# vars file for bearded-avenger-dev
-venv: cif
-venv_user: vagrant
-venv_source_path: '/vagrant'
-venv_path: "/home/{{ venv_user }}/.virtualenvs/{{ venv }}"

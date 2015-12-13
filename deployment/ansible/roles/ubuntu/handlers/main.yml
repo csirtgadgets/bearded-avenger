@@ -1,0 +1,4 @@
+---
+- name: start cif-services
+  command: service cif-services start
+  sudo: true

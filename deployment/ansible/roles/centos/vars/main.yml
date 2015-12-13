@@ -1,0 +1,22 @@
+---
+# vars file for centos
+is_64bit: "{{ ansible_architecture }}"
+is_centos: "{{ ansible_distribution }}"
+is_centos_version: "{{ ansible_distribution_version }}"
+
+development: false
+
+python_tmp: '/tmp/tmp_install_python'
+python_version: '2.7.10'
+
+app_user: cif
+app_user_home: "/home/{{ app_user }}"
+app_runtime_path: "/var/lib/cif"
+app_rules_path: "/etc/cif/rules"
+app_log_path: "/var/log/cif"
+app_src_path: ../../
+
+venv: cif
+venv_user: vagrant
+venv_source_path: '/vagrant'
+venv_path: "/home/{{ venv_user }}/.virtualenvs/{{ venv }}"

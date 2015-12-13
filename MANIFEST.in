@@ -1,7 +1,12 @@
 prune packaging
-include README.md packaging/rpm/bearded-avenger.spec COPYING requirements.txt
+include README.md COPYING requirements.txt
 include Makefile
 include VERSION
 include MANIFEST.ininclude versioneer.py
 include 'cif'
 include cif/_version.py
+recursive-include deployment *
+recursive-include hacking *
+recursive-include docs *
+recursive-include packaging *
+recursive-include rules *

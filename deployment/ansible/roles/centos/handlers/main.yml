@@ -1,0 +1,24 @@
+---
+# handlers file for centos
+- name: restart firewall
+  command: service iptables save
+  command: service firewall restart
+
+- name: reload systemd
+  command: systemctrl daemon-reload
+  sudo: true
+
+- name: start cif-router
+  command: systemctl start cif-router
+
+- name: start cif-storage
+  command: systemctl start cif-storage
+
+- name: start cif-httpd
+  command: systemctl start cif-httpd
+
+- name: start cif-hunters
+  command: systemctl start cif-hunters
+
+- name: start cif-smrt
+  command: systemctl start cif-smrt

@@ -1,5 +1,0 @@
----
-# tasks file for app
-
-- include: user.yml
-- include: deploy.yml

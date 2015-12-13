@@ -1,0 +1,23 @@
+---
+- name: build sdist
+  command: python setup.py sdist chdir="{{ app_src_path }}"
+
+- name: set dist
+  shell: "ls -c {{ app_src_path }}/dist | head -n 1"
+  register: dist_version
+
+- name: copy sdist
+  copy: src="{{ app_src_path }}/dist/{{ dist_version.stdout }}" dest="{{ app_user_home }}"
+
+- name: untar sdist
+  command: tar -zxvf {{ dist_version.stdout }} chdir={{ app_user_home }}
+  become: yes
+  become_user: "{{ app_user }}"
+
+- name: install requirements
+  pip: requirements="{{ app_user_home }}/{{ dist_version.stdout | regex_replace('.tar.gz$', '') }}/requirements.txt"
+  sudo: true
+
+- name: setup
+  command: python setup.py install chdir="{{ app_user_home }}/{{ dist_version.stdout | regex_replace('.tar.gz$', '') }}"
+  sudo: true

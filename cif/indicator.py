@@ -84,6 +84,15 @@ class Indicator(object):
         if not itype:
             self.itype = self.resolve_obj(self.indicator)
 
+    def magic(data):
+        for e in data:
+            try:
+                itype = self.resolve_itype(e)
+                i = Indicator(itype=itype, indicator=e)
+                return i
+            except NotImplementedError:
+                pass
+
     def is_private(self):
         if self.itype and self.itype == 'ipv4':
             if IPV4_PRIVATE.get(self.indicator):

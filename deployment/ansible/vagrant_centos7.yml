@@ -1,8 +1,0 @@
-# https://github.com/whiskerlabs/ansible-python
----
-- name: Install bearded-avenger
-  sudo: True
-  hosts: all
-  roles:
-    - { role: centos7, tags: role-centos7 }
-    - { role: development, tags: role-development }
