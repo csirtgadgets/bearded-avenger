@@ -1,45 +1,9 @@
 ---
-#- name: create remote directory
-#  file: path=bearded-avenger state=directory owner={{ ansible_env.SUDO_USER }} group={{ ansible_env.SUDO_USER }} mode=0770
-#
-## this should only be used for testing
-#- name: sync files
-#  synchronize:
-#    dest: "bearded-avenger"
-#    src: "../../{{ item }}"
-#    rsync_opts:
-#      - '--exclude .vagrant'
-#      - '--exclude tmp'
-#      - '--exclude log'
-#      - '--exclude *.pyc'
-#      - '--exclude build'
-#      - '--exclude .cache'
-#      - '--exclude .idea'
-#      - '--exclude temp'
-#  with_items:
-#    - .git
-#    - LICENSE
-#    - MANIFEST.in
-#    - README.txt
-#    - README.md
-#    - cif
-#    - deployment
-#    - docs
-#    - hacking
-#    - packaging
-#    - requirements.txt
-#    - rules
-#    - setup.cfg
-#    - setup.py
-#    - tests
-#    - versioneer.py
-
 - name: register mypath
   shell: pwd
   register: mypath
 
 - name: install requirements
-  # { dist_version.stdout | regex_replace('.tar.gz$', '') }}
   pip: requirements="requirements.txt" chdir="{{ mypath.stdout }}/../../"
 
 - name: build
