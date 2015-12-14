@@ -2,6 +2,9 @@
 
 See: http://bearded-avenger.readthedocs.org
 
+# Latest Release
+See the [releases](https://github.com/csirtgadgets/bearded-avenger/releases) to checkout out the latest release
+
 # Getting Started
 ## QuickStart
 ```
