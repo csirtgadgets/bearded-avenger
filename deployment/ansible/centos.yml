@@ -1,4 +1,5 @@
 # https://github.com/whiskerlabs/ansible-python
+# https://monkeyswithbuttons.wordpress.com/2014/04/03/multi-os-support-in-ansible/
 ---
 - name: Install bearded-avenger for CentOS
   hosts: all

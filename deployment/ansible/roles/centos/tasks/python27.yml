@@ -48,7 +48,7 @@
     path: "/home/{{ ansible_env.SUDO_USER }}/.profile"
     state: touch
     owner: "{{ ansible_env.SUDO_USER }}"
-    group: "{{ansible_env.SUDO_USER }}"
+    group: "{{ ansible_env.SUDO_USER }}"
     mode: 0660
 
 - name: Add vars to app env

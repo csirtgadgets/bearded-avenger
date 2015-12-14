@@ -16,6 +16,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.provision "ansible" do |ansible|
     ansible.playbook = "deployment/ansible/centos.yml"
     ansible.extra_vars = { development: 'true' }
+#    ansible.verbose = 'vvv'
   end
 
   if File.file?(VAGRANTFILE_LOCAL)

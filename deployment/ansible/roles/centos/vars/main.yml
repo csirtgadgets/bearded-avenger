@@ -14,7 +14,7 @@ app_user_home: "/home/{{ app_user }}"
 app_runtime_path: "/var/lib/cif"
 app_rules_path: "/etc/cif/rules"
 app_log_path: "/var/log/cif"
-app_src_path: ../../
+app_src_path: "{{ app_user_home }}/bearded-avenger"
 
 venv: cif
 venv_user: vagrant

@@ -5,20 +5,25 @@
   command: service firewall restart
 
 - name: reload systemd
-  command: systemctrl daemon-reload
+  command: systemctl daemon-reload
   sudo: true
 
 - name: start cif-router
   command: systemctl start cif-router
+  sudo: true
 
 - name: start cif-storage
   command: systemctl start cif-storage
+  sudo: true
 
 - name: start cif-httpd
   command: systemctl start cif-httpd
+  sudo: true
 
 - name: start cif-hunters
   command: systemctl start cif-hunters
+  sudo: true
 
 - name: start cif-smrt
   command: systemctl start cif-smrt
+  sudo: true

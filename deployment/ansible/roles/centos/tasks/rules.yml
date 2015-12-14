@@ -3,4 +3,4 @@
   file: path="{{ app_rules_path }}/rules/default" state=directory mode=770 owner="{{ app_user }}" group="{{ app_user }}"
 
 - name: copy cif-smrt rules
-  copy: src="../../rules" dest="{{ app_rules_path }}" backup=yes owner="{{ app_user }}" group="{{ app_user }}" mode="u=rw,g=rw,o-rwx"
+  copy: src="../../rules/" dest="{{ app_rules_path }}" backup=yes owner="{{ app_user }}" group="{{ app_user }}"  mode="u=rw,g=rw,o-rwx"

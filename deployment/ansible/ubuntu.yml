@@ -4,4 +4,4 @@
   hosts: all
   sudo: true
   roles:
-    - { role: ubuntu, tags: ubuntu }
+    - { role: ubuntu, tags: role-ubuntu }

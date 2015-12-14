@@ -22,7 +22,7 @@
 
 - include: rules.yml
   tags: configuration
-  when: development
+  when: not development
 
 - include: sdist.yml
   tags: package

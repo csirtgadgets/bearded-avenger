@@ -1,5 +1,5 @@
 prune packaging
-include README.md COPYING requirements.txt
+include README.md COPYING requirements.txt LICENSE
 include Makefile
 include VERSION
 include MANIFEST.ininclude versioneer.py

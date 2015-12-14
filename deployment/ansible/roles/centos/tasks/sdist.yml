@@ -1,23 +1,48 @@
 ---
-- name: build sdist
-  command: python setup.py sdist chdir="{{ app_src_path }}"
+- name: create remote directory
+  file: path=bearded-avenger state=directory owner={{ ansible_env.SUDO_USER }} group={{ ansible_env.SUDO_USER }} mode=0770
 
-- name: set dist
-  shell: "ls -c {{ app_src_path }}/dist | head -n 1"
-  register: dist_version
-
-- name: copy sdist
-  copy: src="{{ app_src_path }}/dist/{{ dist_version.stdout }}" dest="{{ app_user_home }}"
-
-- name: untar sdist
-  command: tar -zxvf {{ dist_version.stdout }} chdir={{ app_user_home }}
-  become: yes
-  become_user: "{{ app_user }}"
+# this should only be used for testing
+- name: sync files
+  synchronize:
+    dest: "bearded-avenger"
+    src: "../../{{ item }}"
+    rsync_opts:
+      - '--exclude .vagrant'
+      - '--exclude tmp'
+      - '--exclude log'
+      - '--exclude *.pyc'
+      - '--exclude build'
+      - '--exclude .cache'
+      - '--exclude .idea'
+      - '--exclude temp'
+  with_items:
+    - .git
+    - LICENSE
+    - MANIFEST.in
+    - README.txt
+    - README.md
+    - cif
+    - deployment
+    - docs
+    - hacking
+    - packaging
+    - requirements.txt
+    - rules
+    - setup.cfg
+    - setup.py
+    - tests
+    - versioneer.py
 
 - name: install requirements
-  pip: requirements="{{ app_user_home }}/{{ dist_version.stdout | regex_replace('.tar.gz$', '') }}/requirements.txt"
-  sudo: true
+  # { dist_version.stdout | regex_replace('.tar.gz$', '') }}
+  pip: requirements="/home/{{ ansible_env.SUDO_USER }}/bearded-avenger/requirements.txt"
 
-- name: setup
-  command: python setup.py install chdir="{{ app_user_home }}/{{ dist_version.stdout | regex_replace('.tar.gz$', '') }}"
-  sudo: true
+- name: build
+  command: python setup.py build chdir="/home/{{ ansible_env.SUDO_USER }}/bearded-avenger"
+
+- name: test
+  command: /usr/local/bin/py.test -s chdir="/home/{{ ansible_env.SUDO_USER }}/bearded-avenger"
+
+- name: install
+  command: python setup.py install chdir="/home/{{ ansible_env.SUDO_USER }}/bearded-avenger"
