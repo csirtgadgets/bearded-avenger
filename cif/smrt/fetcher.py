@@ -49,10 +49,14 @@ class Fetcher(object):
 
     def process(self, split="\n", limit=0):
         if self.fetcher == 'http':
-            # using wget until we can find a better way to mirror files in python
-            subprocess.check_call([
-                'wget', '--header', self.ua,  '-q', self.remote, '-N', '-O', self.cache
-            ])
+            # catch network error
+            try:
+                # using wget until we can find a better way to mirror files in python
+                subprocess.check_call([
+                    'wget', '--header', self.ua,  '-q', self.remote, '-N', '-O', self.cache
+                ])
+            except Exception, e:
+                pass
         else:
             if self.fetcher == 'file':
                 self.cache = self.remote
