@@ -1,0 +1,11 @@
+language: python
+python:
+    - 3.4
+    - 2.7
+
+script: py.test
+
+notifications:
+    email:
+        on_success: never
+        on_failure: never
