@@ -55,13 +55,13 @@ class Indicator(Base):
         self.reference = reference
         self.reference_tlp = reference_tlp
 
-        if self.reporttime and isinstance(self.reporttime, basestring):
+        if self.reporttime and isinstance(self.reporttime, str):
             self.reporttime = arrow.get(self.reporttime).datetime
 
-        if self.lasttime and isinstance(self.lasttime, basestring):
+        if self.lasttime and isinstance(self.lasttime, str):
             self.lasttime = arrow.get(self.lasttime).datetime
 
-        if self.firsttime and isinstance(self.firsttime, basestring):
+        if self.firsttime and isinstance(self.firsttime, str):
             self.firsttime = arrow.get(self.firsttime).datetime
 
 
@@ -142,7 +142,7 @@ class SQLite(Store):
             s.add(o)
 
             tags = d.get("tags", [])
-            if isinstance(tags, basestring):
+            if isinstance(tags, str):
                 tags = tags.split(',')
 
             for t in tags:

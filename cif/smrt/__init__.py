@@ -56,7 +56,7 @@ class Smrt(object):
 
     def process(self, rule, feed=None, limit=None):
         rv = []
-        if isinstance(rule, basestring) and os.path.isdir(rule):
+        if isinstance(rule, str) and os.path.isdir(rule):
             for f in os.listdir(rule):
                 if not f.startswith('.'):
                     self.logger.debug("processing {0}/{1}".format(rule, f))
@@ -70,7 +70,7 @@ class Smrt(object):
         else:
             self.logger.debug("processing {0}".format(rule))
             r = rule
-            if isinstance(rule, basestring):
+            if isinstance(rule, str):
                 r = Rule(path=rule)
 
             if not r.feeds:

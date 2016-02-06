@@ -59,7 +59,7 @@ class Fetcher(object):
             else:
                 raise NotImplementedError
 
-        ftype = magic.from_file(self.cache, mime=True)
+        ftype = magic.from_file(self.cache, mime=True).decode('utf-8')
         self.logger.debug(ftype)
 
         if ftype.startswith('text'):

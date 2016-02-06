@@ -22,7 +22,7 @@ class Pattern(Parser):
     def process(self):
         cols = self.rule.defaults['values']
 
-        if isinstance(cols, basestring):
+        if isinstance(cols, str):
             cols = cols.split(',')
 
         rv = []
@@ -32,7 +32,7 @@ class Pattern(Parser):
                 continue
             try:
                 m = self.pattern.search(l).groups()
-                if isinstance(m, basestring):
+                if isinstance(m, str):
                     m = [m]
             except ValueError:
                 continue

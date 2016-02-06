@@ -20,7 +20,7 @@ class Delim(Parser):
 
             if len(cols):
                 obs = {}
-                for k, v in defaults.iteritems():
+                for k, v in defaults.items():
                     obs[k] = v
 
                 for idx, col in enumerate(cols):

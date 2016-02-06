@@ -7,7 +7,7 @@ import socket
 from pprint import pprint
 import sys
 if sys.version_info > (3,):
-    from urllib import parse as urlparse
+    from urllib.parse import urlparse
 else:
     from urlparse import urlparse
 import arrow
@@ -46,7 +46,7 @@ class Indicator(object):
                  provider=None,  protocol=None, portlist=None,  asn=None, firsttime=None, lasttime=None,
                  asn_desc=None, cc=None, application=None, reference=None, reference_tlp=None, confidence=None):
 
-        if isinstance(tags, basestring):
+        if isinstance(tags, str):
             tags = tags.split(",")
 
         self.indicator = indicator
@@ -65,7 +65,7 @@ class Indicator(object):
         self.firsttime = firsttime
         self.lasttime = lasttime
 
-        if reporttime and isinstance(reporttime, basestring):
+        if reporttime and isinstance(reporttime, str):
             self.reporttime = arrow.get(reporttime).datetime
 
         if firsttime:

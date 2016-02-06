@@ -6,7 +6,7 @@ from argparse import ArgumentParser, RawDescriptionHelpFormatter
 import textwrap
 import logging
 import json
-
+import sys
 from cif.constants import HUNTER_ADDR
 from cif.utils import setup_logging, get_argument_parser, setup_signals
 from pprint import pprint
@@ -27,7 +27,10 @@ class Hunter(object):
         self.logger = logging.getLogger(__name__)
         self.context = zmq.Context.instance()
         self.socket = self.context.socket(zmq.SUB)
-        self.socket.setsockopt(zmq.SUBSCRIBE, '')
+        if sys.version_info > (3,):
+            self.socket.setsockopt_string(zmq.SUBSCRIBE, '')
+        else:
+            self.socket.setsockopt(zmq.SUBSCRIBE, '')
         self.loop = ioloop.IOLoop.instance()
         self.loop.add_handler(self.socket, callback, zmq.POLLIN)
 
