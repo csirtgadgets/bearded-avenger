@@ -19,7 +19,7 @@ pytricia==0.1
 pyzmq==14.7.0
 requests==2.6.0
 tailer==0.3
-ujson==1.33
+ujson==1.35
 urllib3==1.10.2
 wsgiref==0.1.2
 pytest==2.8.0
