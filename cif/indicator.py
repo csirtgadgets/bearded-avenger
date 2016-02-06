@@ -5,7 +5,11 @@ import re
 import pytricia
 import socket
 from pprint import pprint
-from urlparse import urlparse
+import sys
+if sys.version_info > (3,):
+    from urllib import parse as urlparse
+else:
+    from urlparse import urlparse
 import arrow
 
 TLP = "green"
