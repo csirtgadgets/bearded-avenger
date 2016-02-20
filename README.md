@@ -1,10 +1,3 @@
-# Documentation
-
-See: http://bearded-avenger.readthedocs.org
-
-# Latest Release
-See the [releases](https://github.com/csirtgadgets/bearded-avenger/releases) to checkout out the latest release
-
 # Getting Started
 ## QuickStart
 ```
@@ -12,6 +5,18 @@ $ mkvirtualenv cif
 $ python setup.py develop
 $ supervisord -c hacking/develop.conf
 ```
+
+## Getting Help
+ * [the Wiki](https://github.com/csirtgadgets/bearded-avenger/wiki)
+ * [Known Issues](https://github.com/csirtgadgets/bearded-avenger/issues?labels=bug&state=open) 
+ * [FAQ](https://github.com/csirtgadgets/bearded-avenger/issues?labels=faq)
+
+# Documentation
+
+See: http://bearded-avenger.readthedocs.org
+
+# Latest Release
+See the [releases](https://github.com/csirtgadgets/bearded-avenger/releases) to checkout out the latest release
 
 # Getting Involved
 There are many ways to get involved with the project. If you have a new and exciting feature, or even a simple bugfix, simply [fork the repo](https://help.github.com/articles/fork-a-repo), create some simple test cases, [generate a pull-request](https://help.github.com/articles/using-pull-requests) and give yourself credit!
