@@ -1,0 +1,12 @@
+---
+- name: Install bearded-avenger
+  hosts: localhost
+  sudo: true
+  vars:
+    GH_TOKEN: "{{ lookup('env', 'GH_TOKEN') }}"
+  pre_tasks:
+    - name: Add GH token to profile
+      lineinfile: dest="/home/centos/.profile" line="GH_TOKEN={{ GH_TOKEN }}"
+  roles:
+    - { role: centos71-check, tags: role-centos71-check }
+    - { role: bearded-avenger, tags: role-bearded-avenger }

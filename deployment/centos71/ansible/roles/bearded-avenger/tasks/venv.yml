@@ -10,7 +10,7 @@
 
 - name: update pip
   pip: name="{{ item }}" virtualenv="{{ venv_path }}" extra_args="--upgrade"
-  with_items: [ requests pip cython ] # requests first, old version conflicts with new pip
+  with_items: [ requests pip cython vex ] # requests first, old version conflicts with new pip
   become: yes
   become_user: "{{ venv_user }}"
 
@@ -28,3 +28,18 @@
   shell: "cd {{ venv_source_path }}; {{ venv_path }}/bin/python setup.py develop"
   become_user: "{{ venv_user }}"
   become: yes
+
+- name: Ensure app user has a .profile
+  file: path="{{ venv_home }}/.profile" state=touch owner={{ venv_user }} group={{ venv_user }} mode=0660
+
+- name: Ensure app user has a .cifrc
+  template: src=cifrc.j2 dest="{{ venv_home }}/.cifrc" owner={{ venv_user }} group={{ venv_user }} mode=0660
+
+- name: Ensure .cifrc is linked to .profile
+  lineinfile: dest="{{ venv_home }}/.profile" line=". ~/.cifrc"
+
+- name: install ansible tools
+  pip: name='ansible==1.9.4'
+
+- name: install supervisord
+  pip: name='supervisor==3.2.1'

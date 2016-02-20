@@ -1,34 +1,14 @@
 ---
 # tasks file for centos
-- include: check.yml
-  tags: configuration
-
-- include: firewall.yml
-  tags: configuration
-
-- include: deps.yml
-  tags: configuration
-
-- name: checking python version
-  command: python --version
-  register: python_version
-
-- include: python27.yml
-  when: python_version.stdout.find('2.7.10') != -1
 
 - include: user.yml
   tags: configuration
 
 - include: paths.yml
   tags: configuration
-  when: not development
 
 - include: rules.yml
   tags: configuration
-  when: not development
-
-- include: sdist.yml
-  tags: package
   when: not development
 
 - include: venv.yml
