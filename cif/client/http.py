@@ -49,7 +49,7 @@ class HTTP(Client):
             err = body.content
 
             if body.status_code == 401:
-                err = 'unauthroized'
+                err = 'unauthorized'
                 raise RuntimeError(err)
             elif body.status_code == 404:
                 err = 'not found'
