@@ -1,0 +1,40 @@
+---
+- name: Add python repo
+  apt_repository: repo='ppa:fkrull/deadsnakes-python2.7'
+
+- name: Add apt HTTPS support
+  apt: name=apt-transport-https state=present
+
+- name: Update apt cache if needed.
+  apt: update_cache=yes cache_valid_time=3600
+  when: development
+
+- name: Update apt cache if needed.
+  apt: update_cache=yes cache_valid_time=3600 upgrade=yes
+  when: not development
+
+- name: install deps
+  apt:
+    state: latest
+    pkg: "{{ item }}"
+  with_items:
+    - build-essential
+    - htop
+    - git
+    - python2.7
+    - python-support
+    - python-pytest
+    - python-pip
+    - python-dev
+    - virtualenvwrapper
+    - python-virtualenv
+
+- name: update pip
+  pip: name="{{ item }}" extra_args="--upgrade"
+  with_items: [ requests pip ] # requests first, old version conflicts with new pip
+
+- name: install ansible tools
+  pip: name='ansible==1.9.4'
+
+- name: install supervisord
+  pip: name='supervisor==3.2.1'

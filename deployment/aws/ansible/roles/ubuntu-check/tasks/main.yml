@@ -1,0 +1,10 @@
+---
+
+- include: check.yml
+  tags: configuration
+
+- include: firewall.yml
+  tags: configuration
+
+- include: deps.yml
+  tags: configuration

@@ -1,0 +1,7 @@
+---
+- name: register latest release
+  command: curl -s https://api.github.com/repos/csirtgadgets/bearded-avenger/releases | grep browser_download_url | head -n 1 | cut -d '"' -f 4
+  register: latest_release_url
+
+- name: install install bearded-avenger via pip
+  pip: name={{ latest_release_url.stdout }}

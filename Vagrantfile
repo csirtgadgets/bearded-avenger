@@ -13,11 +13,15 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     vb.customize ["modifyvm", :id, "--cpus", "2", "--ioapic", "on", "--memory", "512" ]
   end
 
-  config.vm.provision "ansible" do |ansible|
-    ansible.playbook = "deployment/ansible/ubuntu.yml"
-    ansible.extra_vars = { development: 'true' }
+  config.vm.provision "shell", inline: <<-END
+    echo GH_TOKEN=#{ENV['GH_TOKEN']} >> /home/vagrant/.profile
+  END
+
+#  config.vm.provision "ansible" do |ansible|
+#    ansible.playbook = "deployment/ubuntu14/ansible/vagrant.yml"
+#    ansible.extra_vars = { development: 'true' }
 #    #ansible.verbose = 'vvv'
-  end
+#  end
 
   if File.file?(VAGRANTFILE_LOCAL)
     external = File.read VAGRANTFILE_LOCAL

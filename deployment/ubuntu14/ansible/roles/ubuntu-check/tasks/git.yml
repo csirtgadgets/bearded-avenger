@@ -1,0 +1,10 @@
+---
+- name: setup git
+  shell: git config --global credential.helper store
+  become: yes
+  become_user: "{{ app_user }}"
+
+- name: setup git tokens
+  shell: echo "https://{{ GH_TOKEN }}:x-oauth-basic@github.com" > ~/.git-credentials
+  become: yes
+  become_user: "{{ app_user }}"

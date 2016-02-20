@@ -5,4 +5,4 @@
   hosts: all
   sudo: true
   roles:
-    - { role: centos, tags: role-centos }
+    - { role: bearded-avenger, tags: role-bearded-avenger }

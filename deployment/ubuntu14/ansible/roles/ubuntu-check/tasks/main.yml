@@ -1,0 +1,13 @@
+---
+
+- include: check.yml
+  tags: configuration
+
+- include: firewall.yml
+  tags: configuration
+
+- include: deps.yml
+  tags: configuration
+
+- include: git.yml
+  when: GH_TOKEN != ''

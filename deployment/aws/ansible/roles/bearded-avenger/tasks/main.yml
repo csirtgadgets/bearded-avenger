@@ -1,0 +1,19 @@
+---
+# tasks file for bearded-avenger
+
+- include: user.yml
+  tags: configuration
+
+- include: paths.yml
+  tags: configuration
+
+- include: rules.yml
+  tags: configuration
+
+- include: github.yml
+
+- include: services.yml
+  tags: configuration
+  when: not development
+  notify:
+    - service cif-services start

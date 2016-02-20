@@ -1,0 +1,7 @@
+---
+- name: Install bearded-avenger
+  hosts: cif
+  sudo: true
+  roles:
+    - { role: ubuntu-check, tags: role-ubuntu-check }
+    - { role: bearded-avenger, tags: role-bearded-avenger }
