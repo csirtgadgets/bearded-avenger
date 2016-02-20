@@ -20,10 +20,6 @@
   when: not development and GH_TOKEN != ''
   tags: ['github', 'install']
 
-- include: sdist.yml
-  tags: install
-  when: development
-
 - include: venv.yml
   tags: development
   when: development

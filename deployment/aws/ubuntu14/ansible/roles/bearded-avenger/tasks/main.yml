@@ -11,6 +11,12 @@
   tags: configuration
 
 - include: github.yml
+  tags: ['github', 'install']
+  when: not development and GH_TOKEN == ''
+
+- include: github_with_token.yml
+  when: not development and GH_TOKEN != ''
+  tags: ['github', 'install']
 
 - include: services.yml
   tags: configuration

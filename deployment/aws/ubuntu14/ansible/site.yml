@@ -19,7 +19,7 @@
         key_name: "{{ aws_keyname }}"
         wait: True
         image: "{{ base_ami }}"
-        instance_type: t2.small
+        instance_type: t2.micro
         instance_tags:
           Name: bearded-avenger
         vpc_subnet_id: "{{ subnet_name }}"
@@ -38,10 +38,6 @@
   become: True
   vars:
     ami_name: 'bearded-avenger'
-  pre_tasks:
-    - name: Update apt cache if needed and perform upgrade.
-      apt: update_cache=yes cache_valid_time=3600
-
   roles:
     - { role: ubuntu-check, tags: role-ubuntu-check }
     - { role: bearded-avenger, tags: role-bearded-avenger }

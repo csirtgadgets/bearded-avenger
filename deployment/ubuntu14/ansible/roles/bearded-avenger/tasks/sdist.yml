@@ -1,16 +1,12 @@
 ---
-- name: register mypath
-  shell: pwd
-  register: mypath
-
 - name: install requirements
-  pip: requirements="requirements.txt" chdir="{{ mypath.stdout }}/../../../"
+  pip: requirements="requirements.txt" chdir="{{ app_src_path }}"
 
 - name: build
-  command: python setup.py build chdir="{{ mypath.stdout }}/../../../"
+  command: python setup.py build chdir="{{ app_src_path }}"
 
 - name: test
-  command: /usr/local/bin/py.test -s chdir="{{ mypath.stdout }}/../../../"
+  command: /usr/local/bin/py.test -s chdir="{{ app_src_path }}"
 
 - name: install
-  command: python setup.py install chdir="{{ mypath.stdout }}/../../../"
+  command: python setup.py install chdir="{{ app_src_path }}"

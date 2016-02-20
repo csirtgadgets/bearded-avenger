@@ -1,4 +1,5 @@
 ---
 - name: start cif-services
   command: service cif-services start
-  sudo: true
+  become: yes
+  become_user: sudo

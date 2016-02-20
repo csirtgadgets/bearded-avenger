@@ -1,6 +1,7 @@
 ---
 development: false
 cif_version: master
+GH_TOKEN: ''
 
 app_user: cif
 app_user_home: "/home/{{ app_user }}"
