@@ -72,7 +72,10 @@ class Storage(object):
 
         self.router.connect(self.storage_addr)
 
+        self.logger.info('connected')
         self.loop.add_handler(self.router, self.handle_message, zmq.POLLIN)
+
+        self.logger.debug('staring loop')
         self.loop.start()
 
     def stop(self):

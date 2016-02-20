@@ -88,7 +88,7 @@ class Indicator(object):
         if not itype:
             self.itype = self.resolve_obj(self.indicator)
 
-    def magic(data):
+    def magic(self, data):
         for e in data:
             try:
                 itype = self.resolve_itype(e)
@@ -150,7 +150,6 @@ class Indicator(object):
             "indicator": self.indicator,
             "itype": self.itype,
             "tlp": self.tlp,
-            "reporttime": self.reporttime.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
             "provider": self.provider,
             "portlist": self.portlist,
             "protocol": self.protocol,
@@ -164,11 +163,20 @@ class Indicator(object):
             "application": self.application
         }
 
-        if self.firsttime:
-            o['firsttime'] = self.firsttime.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        if self.reporttime and isinstance(self.reporttime, datetime):
+            o['reporttime'] = self.reporttime.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        else:
+            o['reporttime'] = self.reporttime
 
-        if self.lasttime:
+        if self.firsttime and isinstance(self.firsttime, datetime):
+            o['firsttime'] = self.firsttime.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        else:
+            o['firsttime'] = self.firsttime
+
+        if self.lasttime and isinstance(self.lasttime, datetime):
             o['lasttime'] = self.lasttime.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        else:
+            o['lasttime'] = self.lasttime
 
         try:
             return json.dumps(o, sort_keys=True)

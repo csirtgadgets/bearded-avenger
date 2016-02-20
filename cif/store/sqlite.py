@@ -55,13 +55,15 @@ class Indicator(Base):
         self.reference = reference
         self.reference_tlp = reference_tlp
 
-        if self.reporttime and isinstance(self.reporttime, str):
+        ## TODO - cleanup for py3
+
+        if self.reporttime and isinstance(self.reporttime, str) or isinstance(self.reporttime, unicode):
             self.reporttime = arrow.get(self.reporttime).datetime
 
-        if self.lasttime and isinstance(self.lasttime, str):
+        if self.lasttime and isinstance(self.lasttime, str) or isinstance(self.lasttime, unicode):
             self.lasttime = arrow.get(self.lasttime).datetime
 
-        if self.firsttime and isinstance(self.firsttime, str):
+        if self.firsttime and isinstance(self.firsttime, str) or isinstance(self.firsttime, unicode):
             self.firsttime = arrow.get(self.firsttime).datetime
 
 

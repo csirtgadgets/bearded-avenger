@@ -33,7 +33,13 @@ class Router(object):
 
         self.poller = zmq.Poller()
 
-        self.ctrl.bind(CTRL_ADDR)
+        try:
+            self.ctrl.bind(CTRL_ADDR)
+        except zmq.error.ZMQError as e:
+            self.logger.error('unable to bind to: {}'.format(CTRL_ADDR))
+            self.logger.error(e)
+            raise SystemExit
+
         self.frontend.bind(listen)
         self.hunters.bind(hunter)
         self.storage.bind(storage)
