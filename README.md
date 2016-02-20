@@ -3,6 +3,8 @@
 ```
 $ python setup.py develop
 $ supervisord -c hacking/develop.conf
+$ cif-smrt -r rules/default -d
+$ cif --itype ipv4 --limit 15 -d
 ```
 
 ## Getting Help
