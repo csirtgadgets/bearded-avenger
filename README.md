@@ -12,13 +12,6 @@ $ cif --itype ipv4 --limit 15 -d
  * [Known Issues](https://github.com/csirtgadgets/bearded-avenger/issues?labels=bug&state=open) 
  * [FAQ](https://github.com/csirtgadgets/bearded-avenger/issues?labels=faq)
 
-# Documentation
-
-See: http://bearded-avenger.readthedocs.org
-
-# Latest Release
-See the [releases](https://github.com/csirtgadgets/bearded-avenger/releases) to checkout out the latest release
-
 # Getting Involved
 There are many ways to get involved with the project. If you have a new and exciting feature, or even a simple bugfix, simply [fork the repo](https://help.github.com/articles/fork-a-repo), create some simple test cases, [generate a pull-request](https://help.github.com/articles/using-pull-requests) and give yourself credit!
 
@@ -29,7 +22,7 @@ If you've never worked on a GitHub project, [this is a good piece](https://guide
 * [Project Page](http://csirtgadgets.org/collective-intelligence-framework/)
 
 # Development
-Some of the tools we use:
+## Some of the tools we use:
 
 * [PyCharm](https://www.jetbrains.com/pycharm/)
 * [VirtualenvWrapper](https://virtualenvwrapper.readthedocs.org/en/latest/)
@@ -37,7 +30,7 @@ Some of the tools we use:
 * [Vagrant](https://www.vagrantup.com/)
 * [Docker](https://docker.io)
 
-Some useful books:
+## Some useful books:
 
 * [Ansible Up & Running](http://www.amazon.com/Ansible-Up-Running-Lorin-Hochstein/dp/1491915323/ref=sr_1_1?ie=UTF8&qid=1450109562&sr=8-1&keywords=ansible+up+and+running)
 * [Vagrant Up & Running](http://www.amazon.com/Vagrant-Up-Running-Mitchell-Hashimoto/dp/1449335837/ref=sr_1_3?ie=UTF8&qid=1450109562&sr=8-3&keywords=ansible+up+and+running)
