@@ -1,7 +1,6 @@
 # Getting Started
 ## QuickStart
 ```
-$ mkvirtualenv cif
 $ python setup.py develop
 $ supervisord -c hacking/develop.conf
 ```
