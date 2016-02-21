@@ -46,3 +46,55 @@ def setup_signals(name):
         raise SystemExit
 
     signal.signal(signal.SIGTERM, sigterm_handler)
+
+import socket
+import re
+import sys
+if sys.version_info > (3,):
+    from urllib.parse import urlparse
+else:
+    from urlparse import urlparse
+RE_IPV4 = re.compile('^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}')
+# http://stackoverflow.com/a/17871737
+RE_IPV6 = re.compile('(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))')
+# http://goo.gl/Cztyn2 -- probably needs more work
+RE_FQDN = re.compile('^((xn--)?(--)?[a-zA-Z0-9-_]+(-[a-zA-Z0-9]+)*\.)+[a-zA-Z]{2,}(--p1ai)?$')
+RE_URI_SCHEMES = re.compile('^(https?|ftp)$')
+
+
+def resolve_itype(indicator):
+    def _ipv6(s):
+        try:
+            socket.inet_pton(socket.AF_INET6, s)
+        except socket.error:
+            if not re.match(RE_IPV6, s):
+                return False
+
+        return True
+
+    def _ipv4(s):
+        try:
+            socket.inet_pton(socket.AF_INET, s)
+        except socket.error:
+            if not re.match(RE_IPV4, s):
+                return False
+        return True
+
+    def _fqdn(s):
+        if RE_FQDN.match(s):
+            return 1
+
+    def _url(s):
+        u = urlparse(s)
+        if re.match(RE_URI_SCHEMES, u.scheme):
+            if _fqdn(u.netloc) or _ipv4(u.netloc) or _ipv6(u.netloc):
+                return True
+
+    if _fqdn(indicator):
+        return 'fqdn'
+    elif _ipv6(indicator):
+        return 'ipv6'
+    elif _ipv4(indicator):
+        return 'ipv4'
+    elif _url(indicator):
+        return 'url'

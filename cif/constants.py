@@ -40,3 +40,6 @@ SMRT_CACHE = os.environ.get('CIF_SMRT_CACHE', SMRT_CACHE)
 
 SMRT_RULES_PATH = os.path.join(RUNTIME_PATH, 'smrt', 'rules')
 SMRT_RULES_PATH = os.environ.get('CIF_SMRT_RULES_PATH', SMRT_RULES_PATH)
+
+SEARCH_LIMIT = os.environ.get('CIF_SEARCH_LIMIT', 500)
+SEARCH_CONFIDENCE = os.environ.get('CIF_SEARCH_CONFIDENCE', 50)

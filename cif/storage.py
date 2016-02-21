@@ -122,6 +122,8 @@ class Storage(object):
                 rv = {"status": "success", "data": rv}
             except Exception as e:
                 self.logger.error(e)
+                import traceback
+                traceback.print_exc()
                 rv = {"status": "failed"}
 
             rv = json.dumps(rv)
@@ -136,6 +138,10 @@ class Storage(object):
 
     def handle_submission(self, token, data):
         return self.store.submit(data)
+
+    def handle_ping(self):
+        self.logger.debug('handling ping message')
+        return self.store.ping()
 
 
 def main():
@@ -168,12 +174,19 @@ def main():
 
     setup_signals(__name__)
 
+    # from cif.reloader import ModuleWatcher
+    # mw = ModuleWatcher()
+    # mw.watch_module('cif.storage')
+    # mw.start_watching()
+
     with Storage(storage_address=args.storage_address, store=args.store) as s:
         try:
             logger.info('starting up...')
             s.start()
         except KeyboardInterrupt:
             logger.info('shutting down...')
+
+    # mw.stop_watching()
 
 if __name__ == "__main__":
     main()

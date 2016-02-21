@@ -67,13 +67,8 @@ class HTTP(Client):
         body = json.loads(body.content)
         return body
 
-    def search(self, q, filters={}, limit=None):
-        rv = self._get('/search', params={'q': q, 'filters': filters, 'limit': limit})
-        return rv['data']
-
-    def filter(self, filters={}, limit=None):
-        filters['limit'] = limit
-        rv = self._get('/indicators', params=filters)
+    def search(self, filters):
+        rv = self._get('/search', params=filters)
         return rv['data']
 
     def submit(self, data):

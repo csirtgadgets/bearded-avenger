@@ -6,11 +6,15 @@ from cif.store import Store
 import logging
 import arrow
 import os
-from cif.constants import RUNTIME_PATH
+from cif.constants import RUNTIME_PATH, SEARCH_CONFIDENCE
 from pprint import pprint
+from cif.utils import resolve_itype
+
 
 DB_FILE = os.path.join(RUNTIME_PATH, 'cif.sqlite')
 Base = declarative_base()
+
+
 
 
 class Indicator(Base):
@@ -110,27 +114,45 @@ class SQLite(Store):
             d[col.name] = getattr(obj, col.name)
             if d[col.name] and col.name.endswith('time'):
                 d[col.name] = getattr(obj, col.name).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-
-            d[col.name] = str(d[col.name])  # unicode?
+            d[col.name] = d[col.name]
 
         return d
 
-    def _search(self, filters):
-        return [self._as_dict(x)
-                for x in self.handle().query(Indicator).filter(Indicator.indicator == filters["indicator"]).all()]
+    def _log_search(self, d):
+        self.submit({
+            'indicator': d,
+            'reporttime': arrow.utcnow().datetime,
+            'tlp': 'green',
+            'tags': ['search'],
+            'itype': resolve_itype(d),
+            'confidence': SEARCH_CONFIDENCE
+        })
+        return True
 
     # TODO - normalize this out into filters
-    def search(self, filters):
+    def search(self, filters, limit=5):
         self.logger.debug('running search')
 
-        if filters.get('indicator'):
-            return [self._as_dict(x)
-                    for x in self.handle().query(Indicator).filter(Indicator.indicator == filters["indicator"]).all()]
+        if filters.get('limit'):
+            limit = filters['limit']
+            del filters['limit']
+
+        if filters.get('nolog'):
+            del filters['nolog']
         else:
-            # something non-ascii is coming back through
-            self.logger.debug('running filter of itype')
-            return [self._as_dict(x)
-                    for x in self.handle().query(Indicator).filter(Indicator.itype == 'ipv4').all()]
+            if filters.get('indicator'):
+                self._log_search(filters['indicator'])
+
+        sql = []
+        for k in filters:
+            if filters[k] is not None:
+                sql.append("{} = '{}'".format(k, filters[k]))
+
+        sql = ' AND '.join(sql)
+
+        self.logger.debug('running filter of itype')
+        return [self._as_dict(x)
+                for x in self.handle().query(Indicator).filter(sql).limit(limit)]
 
     def submit(self, data):
         if type(data) == dict:
@@ -155,5 +177,7 @@ class SQLite(Store):
         self.logger.debug('oid: {}'.format(o.id))
         return o.id
 
+    def ping(self):
+        return True
 
 Plugin = SQLite

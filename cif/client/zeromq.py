@@ -50,29 +50,8 @@ class ZMQ(Client):
     def ping(self):
         return self._send('ping', str(time.time()))
 
-    def search(self, q, limit=SEARCH_LIMIT, filters={}):
-        query = {
-            "indicator": q,
-            "limit": limit
-        }
-
-        for k, v in filters:
-            query[k] = v
-
-        query = json.dumps(query)
-        rv = self._send('search', query)
-        return rv
-
-    def filter(self, filters={}, limit=SEARCH_LIMIT):
-        query = {
-            "limit": limit
-        }
-
-        for k in filters:
-            query[k] = filters[k]
-
-        query = json.dumps(query)
-        rv = self._send('search', query)
+    def search(self, filters):
+        rv = self._send('search', json.dumps(filters))
         return rv
 
     def submit(self, data):

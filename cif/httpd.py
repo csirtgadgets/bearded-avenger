@@ -64,6 +64,7 @@ def help():
         'POST /indicators': 'post indicators to the router',
     })
 
+
 @app.route("/ping", methods=['GET'])
 def ping():
     """
@@ -77,27 +78,35 @@ def ping():
         "data": r
     })
 
+
 # http://flask.pocoo.org/docs/0.10/api/#flask.Request
 @app.route("/search", methods=["GET"])
 def search():
     """
     Search controller
 
-    :param q: query term (ex: example.org, 1.2.3.4, 1.2.3.0/24)
-    :param limit: limit search results (reporttime desc)
+    :param str q: query term (ex: example.org, 1.2.3.4, 1.2.3.0/24)
+    :param dict filters: query filters
+    :param int limit: limit search results (reporttime desc)
 
     :return: { 'message': 'success', 'data': [] }
     """
-    q = request.args.get('q')
-    limit = request.args.get('limit')
-    filters = request.args.get('filters') or {}
 
-    r = Client(remote, pull_token()).search(str(q), limit=limit, filters=filters)
+    filters = {}
+    for k in ['indicator', 'itype', 'application', 'limit']:
+        if request.args.get(k):
+            filters[k] = request.args.get(k)
+
+    if request.args.get('q'):
+        filters['indicator'] = request.args.get('q')
+
+    r = Client(remote, pull_token()).search(filters)
 
     return jsonify({
         "message": "success",
         "data": r
     })
+
 
 @app.route("/indicators", methods=["GET", "POST"])
 def indicators():

@@ -9,7 +9,7 @@ import os.path
 from cif.format.table import Table
 from pprint import pprint
 from cif.indicator import Indicator
-from cif.constants import REMOTE_ADDR
+from cif.constants import REMOTE_ADDR, SEARCH_LIMIT
 from cif.utils import setup_logging, get_argument_parser
 
 TOKEN = os.environ.get('CIF_TOKEN', None)
@@ -53,7 +53,8 @@ def main():
     p.add_argument('-q', '--search', help="search")
     p.add_argument('--itype', help='filter by indicator type')  ## need to fix sqlite for non-ascii stuff first
     p.add_argument("--submit", action="store_true", help="submit an indicator")
-    p.add_argument('--limit', help='limit results')
+    p.add_argument('--limit', help='limit results [default %(default)s]', default=SEARCH_LIMIT)
+    p.add_argument('--nolog', help='do not log search', default=False)
 
     p.add_argument('--indicator')
     p.add_argument('--tags', nargs='+')
@@ -86,15 +87,16 @@ def main():
                 raise RuntimeError
     elif options.get('search'):
         logger.info("searching for {0}".format(options.get("search")))
-        rv = cli.search(options.get("search"))
-        print(Table(data=rv))
-    elif options.get('itype'):
-        logger.info('filtering by itype {}'.format(options['itype']))
         try:
-            rv = cli.filter(filters={
-                'itype': options['itype'],
-            })
+            rv = cli.search({
+                    'indicator': options['search'],
+                    'limit': options['limit'],
+                    'nolog': options['nolog']
+                }
+            )
         except RuntimeError as e:
+            import traceback
+            traceback.print_exc()
             logger.error(e)
         else:
             print(Table(data=rv))
