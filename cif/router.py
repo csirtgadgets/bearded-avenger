@@ -50,6 +50,10 @@ class Router(object):
         return 1
 
     def handle_ctrl(self, s, e):
+        """
+
+        :rtype: object
+        """
         self.logger.debug('ctrl msg recieved')
         id, mtype, data = s.recv_multipart()
 

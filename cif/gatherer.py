@@ -10,6 +10,14 @@ import zmq
 from cif.utils import setup_logging, get_argument_parser, setup_signals
 
 
+# http://martyalchin.com/2008/jan/10/simple-plugin-framework/
+# http://wehart.blogspot.com/2009/01/python-plugin-frameworks.html
+# http://yapsy.sourceforge.net/
+# http://stackoverflow.com/questions/932069/building-a-minimal-plugin-architecture-in-python
+# https://www.reddit.com/r/Python/comments/1qaepq/very_basic_plugin_system/
+# http://stackoverflow.com/questions/4309607/whats-the-preferred-way-to-implement-a-hook-or-callback-in-python
+
+
 class Gatherer(cif.generic.Generic):
     """
     Gatherers gather data about incoming indicators (geoip, asn, cc, etc...)
