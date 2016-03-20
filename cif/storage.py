@@ -1,21 +1,22 @@
 #!/usr/bin/env python
 
+import inspect
+import logging
+import os
+import pkgutil
+import textwrap
+import time
+import ujson as json
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
-import logging
-import textwrap
-from cif.constants import CTRL_ADDR, STORAGE_ADDR
-import pkgutil
-import os
-import time
+
 import zmq
 from zmq.eventloop import ioloop
-import ujson as json
-from pprint import pprint
-from cif.errors import CIFConnectionError, StorageSubmissionFailed
-import inspect
-from cif.utils import setup_logging, get_argument_parser, setup_signals, load_plugin
+
 import cif.store
+from cif.constants import CTRL_ADDR, STORAGE_ADDR
+from cif.errors import CIFConnectionError
+from cif.utils import setup_logging, get_argument_parser, setup_signals
 
 MOD_PATH = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 

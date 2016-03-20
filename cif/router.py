@@ -1,16 +1,16 @@
 #!/usr/bin/env python
 
-from argparse import ArgumentParser
-from argparse import RawDescriptionHelpFormatter
+import json
 import logging
 import textwrap
-from cif.constants import CTRL_ADDR, ROUTER_ADDR, STORAGE_ADDR, HUNTER_ADDR
+import time
+from argparse import ArgumentParser
+from argparse import RawDescriptionHelpFormatter
 
-from pprint import pprint
 import zmq
 from zmq.eventloop import ioloop
-import json
-import time
+
+from cif.constants import CTRL_ADDR, ROUTER_ADDR, STORAGE_ADDR, HUNTER_ADDR
 from cif.utils import setup_logging, get_argument_parser, setup_signals
 
 

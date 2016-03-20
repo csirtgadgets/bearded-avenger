@@ -1,22 +1,19 @@
 #!/usr/bin/env python
 
+import logging
+import os.path
+import textwrap
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
-import logging
-import textwrap
-from cif.constants import REMOTE_ADDR, SMRT_RULES_PATH, SMRT_CACHE
-import os.path
-from cif.rule import Rule
-from cif.smrt.fetcher import Fetcher
-from cif.utils import setup_logging, get_argument_parser, load_plugin, setup_signals
 from random import randint
 from time import sleep
-import signal
-from pprint import pprint
-import cif.smrt.parser
+
 import cif.client
-
-
+import cif.smrt.parser
+from cif.constants import REMOTE_ADDR, SMRT_RULES_PATH, SMRT_CACHE
+from cif.rule import Rule
+from cif.smrt.fetcher import Fetcher
+from cif.utils.utils import setup_logging, get_argument_parser, load_plugin, setup_signals
 
 PARSER_DEFAULT = "pattern"
 TOKEN = os.environ.get('CIF_TOKEN', None)

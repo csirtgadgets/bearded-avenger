@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 
+import logging
+import os.path
+import select
+import textwrap
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
-import logging
-import textwrap
-import select
-import os.path
-from cif.format.table import Table
-from pprint import pprint
-from cif.indicator import Indicator
+
 from cif.constants import REMOTE_ADDR, SEARCH_LIMIT
+from cif.format.table import Table
+from cif.indicator import Indicator
 from cif.utils import setup_logging, get_argument_parser
 
 TOKEN = os.environ.get('CIF_TOKEN', None)

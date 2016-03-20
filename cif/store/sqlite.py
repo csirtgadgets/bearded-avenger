@@ -1,15 +1,15 @@
-from sqlalchemy.orm import sessionmaker, relationship, backref, class_mapper
-from sqlalchemy import Column, Date, Integer, String, Float, ForeignKey, create_engine, DateTime, UnicodeText, \
-    Binary, Text
-from sqlalchemy.ext.declarative import declarative_base
-from cif.store import Store
 import logging
-import arrow
 import os
-from cif.constants import RUNTIME_PATH, SEARCH_CONFIDENCE
-from pprint import pprint
-from cif.utils import resolve_itype
 
+import arrow
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, create_engine, DateTime, UnicodeText, \
+    Text
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, relationship, backref, class_mapper
+
+from cif.constants import RUNTIME_PATH, SEARCH_CONFIDENCE
+from cif.store import Store
+from cif.utils import resolve_itype
 
 DB_FILE = os.path.join(RUNTIME_PATH, 'cif.sqlite')
 Base = declarative_base()

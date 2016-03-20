@@ -1,13 +1,13 @@
+import logging
+import os
+import tempfile
+from argparse import Namespace
+
 import py.test
 
+from cif.indicator import Indicator
 from cif.storage import Storage
 from cif.utils import setup_logging
-import logging
-from argparse import Namespace
-from pprint import pprint
-import tempfile
-import os
-from cif.indicator import Indicator
 
 args = Namespace(debug=True, verbose=None)
 setup_logging(args)

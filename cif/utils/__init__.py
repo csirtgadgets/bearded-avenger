@@ -98,3 +98,16 @@ def resolve_itype(indicator):
         return 'ipv4'
     elif _url(indicator):
         return 'url'
+
+import dns.resolver
+from dns.resolver import NoAnswer, NXDOMAIN
+def resolve_ns(data, t='A'):
+    try:
+        answers = dns.resolver.query(data, t)
+        resp = []
+        for rdata in answers:
+            resp.append(rdata)
+    except (NoAnswer, NXDOMAIN):
+        return None
+
+    return resp

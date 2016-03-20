@@ -1,19 +1,18 @@
 #!/usr/bin/env python
 
-from flask import Flask, request, jsonify
+import logging
+import os
+import re
+import textwrap
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
-import logging
-import textwrap
-import re
-import os
+
+from flask import Flask, request, jsonify
+
+from cif.client.zeromq import ZMQ as Client
+from cif.constants import ROUTER_ADDR
 from cif.utils import get_argument_parser, setup_logging, setup_signals
 
-from pprint import pprint
-
-
-from cif.constants import ROUTER_ADDR
-from cif.client.zeromq import ZMQ as Client
 TOKEN = os.environ.get('CIF_TOKEN', None)
 TOKEN = os.environ.get('CIF_HTTPD_TOKEN', TOKEN)
 
