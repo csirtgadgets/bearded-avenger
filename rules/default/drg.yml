@@ -5,7 +5,7 @@ defaults:
   provider: dragonresearchgroup.org
   reference_tlp: white
   tlp: green
-  confidence: 85
+  confidence: 9
   values:
     - asn
     - asn_desc

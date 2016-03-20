@@ -8,11 +8,10 @@ import logging
 import json
 import sys
 from cif.constants import HUNTER_ADDR
-from cif.utils import setup_logging, get_argument_parser, setup_signals
+from cif.utils import setup_logging, get_argument_parser, setup_signals, load_plugin
 from pprint import pprint
 from cif.indicator import Indicator
-from cif.format.table import Table
-
+import cif.hunter
 
 class Hunter(object):
 
@@ -22,7 +21,7 @@ class Hunter(object):
         m = Indicator(**m)
         print(m)
 
-    def __init__(self, remote=HUNTER_ADDR, callback=handle_message):
+    def __init__(self, remote=HUNTER_ADDR, callback=handle_message, *args, **kv):
 
         self.logger = logging.getLogger(__name__)
         self.context = zmq.Context.instance()
@@ -33,6 +32,15 @@ class Hunter(object):
             self.socket.setsockopt(zmq.SUBSCRIBE, '')
         self.loop = ioloop.IOLoop.instance()
         self.loop.add_handler(self.socket, callback, zmq.POLLIN)
+
+        self.plugins = []
+
+        import pkgutil
+        self.logger.debug('loading plugins...')
+        for loader, modname, is_pkg in pkgutil.iter_modules(cif.hunter.__path__, 'cif.hunter.'):
+            p = loader.find_module(modname).load_module(modname)
+            self.plugin.append(p.Plugin(*args, **kv))
+            self.logger.debug('plugin loaded: {}'.format(modname))
 
         self.hunters = remote
 

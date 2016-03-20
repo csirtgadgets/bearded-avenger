@@ -1,6 +1,6 @@
 defaults:
   provider: spamhaus.org
-  confidence: 95
+  confidence: 9 
   tlp: green
   reference_tlp: white
   tags:

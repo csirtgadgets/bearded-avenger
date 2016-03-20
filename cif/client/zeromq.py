@@ -58,6 +58,9 @@ class ZMQ(Client):
         if isinstance(data, dict):
             data = self._kv_to_indicator(data)
 
+        if not isinstance(data, str):
+            data = str(data)
+
         data = self._send("submission", data)
         return data
 

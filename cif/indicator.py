@@ -43,7 +43,8 @@ class Indicator(object):
 
     def __init__(self, indicator=None, itype=None, tlp=TLP, tags=[], group=GROUP,
                  reporttime=arrow.get(datetime.utcnow()).datetime,
-                 provider=None,  protocol=None, portlist=None,  asn=None, firsttime=None, lasttime=None,
+                 provider=None,  protocol=None, portlist=None,  asn=None,
+                 firsttime=arrow.get(datetime.utcnow()).datetime, lasttime=arrow.get(datetime.utcnow()).datetime,
                  asn_desc=None, cc=None, application=None, reference=None, reference_tlp=None, confidence=None):
 
         if isinstance(tags, str):
@@ -153,14 +154,15 @@ class Indicator(object):
             "provider": self.provider,
             "portlist": self.portlist,
             "protocol": self.protocol,
-            "tags": ",".join(self.tags),
+            "tags": self.tags,
             "asn": self.asn,
             "asn_desc": self.asn_desc,
             "cc": self.cc,
             "group": self.group,
             "reference": self.reference,
             "reference_tlp": self.reference_tlp,
-            "application": self.application
+            "application": self.application,
+            'confidence': self.confidence
         }
 
         if self.reporttime and isinstance(self.reporttime, datetime):
