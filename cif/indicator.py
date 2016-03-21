@@ -46,7 +46,7 @@ class Indicator(object):
                  provider=None,  protocol=None, portlist=None,  asn=None,
                  firsttime=arrow.get(datetime.utcnow()).datetime, lasttime=arrow.get(datetime.utcnow()).datetime,
                  asn_desc=None, cc=None, application=None, reference=None, reference_tlp=None, confidence=None,
-                 peers=None):
+                 peers=None, city=None):
 
         if isinstance(tags, str):
             tags = tags.split(",")
@@ -165,7 +165,8 @@ class Indicator(object):
             "reference_tlp": self.reference_tlp,
             "application": self.application,
             'confidence': self.confidence,
-            'peers': self.peers
+            'peers': self.peers,
+            'city': self.city
         }
 
         if self.reporttime and isinstance(self.reporttime, datetime):
