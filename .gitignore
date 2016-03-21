@@ -1,3 +1,4 @@
+*.mmdb
 *.log.*
 supervisord.log.*
 cif.db
