@@ -46,7 +46,7 @@ class Indicator(object):
                  provider=None,  protocol=None, portlist=None,  asn=None,
                  firsttime=arrow.get(datetime.utcnow()).datetime, lasttime=arrow.get(datetime.utcnow()).datetime,
                  asn_desc=None, cc=None, application=None, reference=None, reference_tlp=None, confidence=None,
-                 peers=None, city=None):
+                 peers=None, city=None, longitude=None, latitude=None, timezone=None):
 
         if isinstance(tags, str):
             tags = tags.split(",")
@@ -67,6 +67,13 @@ class Indicator(object):
         self.firsttime = firsttime
         self.lasttime = lasttime
         self.peers = peers
+        self.longitude = longitude
+        self.latitude = latitude
+        self.city = city
+        self.timezone = timezone
+
+        if timezone:
+            self.timezone = timezone.lower()
 
         if reporttime and isinstance(reporttime, str):
             self.reporttime = arrow.get(reporttime).datetime
@@ -166,8 +173,13 @@ class Indicator(object):
             "application": self.application,
             'confidence': self.confidence,
             'peers': self.peers,
-            'city': self.city
+            'city': self.city,
+            'longitude': self.longitude,
+            'latitude': self.latitude,
         }
+
+        if self.timezone:
+            o['timezone'] = self.timezone.lower()
 
         if self.reporttime and isinstance(self.reporttime, datetime):
             o['reporttime'] = self.reporttime.strftime("%Y-%m-%dT%H:%M:%S.%fZ")

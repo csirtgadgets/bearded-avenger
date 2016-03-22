@@ -1,7 +1,7 @@
 import dns.resolver
 import logging
 import copy
-from cif.utils.dns import resolve
+from cif.utils import resolve_ns
 from pprint import pprint
 
 
@@ -11,11 +11,11 @@ class Fqdn(object):
         self.logger = logging.getLogger(__name__)
 
     def _resolve_mx(self, data):
-        r = resolve(data, 'MX')
+        r = resolve_ns(data, 'MX')
         return [rr.exchange for rr in r]
 
     def _resolve_ns(self, data):
-        return resolve(data, 'NS')
+        return resolve_ns(data, 'NS')
 
     def process(self, i, router):
         if i.itype == 'fqdn':

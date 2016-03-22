@@ -13,7 +13,7 @@ import cif.smrt.parser
 from cif.constants import REMOTE_ADDR, SMRT_RULES_PATH, SMRT_CACHE
 from cif.rule import Rule
 from cif.smrt.fetcher import Fetcher
-from cif.utils.utils import setup_logging, get_argument_parser, load_plugin, setup_signals
+from cif.utils import setup_logging, get_argument_parser, load_plugin, setup_signals
 
 PARSER_DEFAULT = "pattern"
 TOKEN = os.environ.get('CIF_TOKEN', None)

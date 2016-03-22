@@ -10,8 +10,10 @@ from argparse import RawDescriptionHelpFormatter
 import zmq
 from zmq.eventloop import ioloop
 
-from cif.constants import CTRL_ADDR, ROUTER_ADDR, STORAGE_ADDR, HUNTER_ADDR
+from cif.constants import CTRL_ADDR, ROUTER_ADDR, STORAGE_ADDR, HUNTER_ADDR, GATHER_ADDR
 from cif.utils import setup_logging, get_argument_parser, setup_signals
+import cif.gatherer
+from cif.indicator import Indicator
 
 
 class Router(object):
@@ -27,8 +29,8 @@ class Router(object):
 
         self.context = zmq.Context.instance()
         self.frontend = self.context.socket(zmq.ROUTER)
-        self.storage = self.context.socket(zmq.DEALER)
         self.hunters = self.context.socket(zmq.PUB)
+        self.storage = self.context.socket(zmq.DEALER)
         self.ctrl = self.context.socket(zmq.REP)
 
         self.poller = zmq.Poller()
@@ -40,9 +42,19 @@ class Router(object):
             self.logger.error(e)
             raise SystemExit
 
-        self.frontend.bind(listen)
-        self.hunters.bind(hunter)
+        self._init_gatherers()
         self.storage.bind(storage)
+        self.hunters.bind(hunter)
+        self.frontend.bind(listen)
+
+    def _init_gatherers(self):
+        import pkgutil
+        self.gatherers = []
+        self.logger.debug('loading plugins...')
+        for loader, modname, is_pkg in pkgutil.iter_modules(cif.gatherer.__path__, 'cif.gatherer.'):
+            p = loader.find_module(modname).load_module(modname)
+            self.gatherers.append(p.Plugin())
+            self.logger.debug('plugin loaded: {}'.format(modname))
 
     def auth(self, token):
         if not token:
@@ -100,6 +112,13 @@ class Router(object):
         return self.storage.recv()
 
     def handle_submission(self, token, data):
+        # this needs to be threaded out, badly.
+        data = json.loads(data)
+        i = Indicator(**data)
+        for g in self.gatherers:
+            i = g.process(i)
+
+        data = str(i)
         self.hunters.send(data)
         self.storage.send_multipart(['submission', token, data])
         m = self.storage.recv()
@@ -124,6 +143,7 @@ def main():
             CIF_RUNTIME_PATH
             CIF_ROUTER_ADDR
             CIF_HUNTER_ADDR
+            CIF_GATHERER_ADDR
             CIF_STORAGE_ADDR
 
         example usage:

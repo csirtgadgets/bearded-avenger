@@ -35,11 +35,18 @@ class Indicator(Base):
     firsttime = Column(DateTime)
     lasttime= Column(DateTime)
     confidence = Column(Float)
+    timezone = Column(String)
+    city = Column(String)
+    longitude = Column(String)
+    latitude = Column(String)
+    peers = Column(String)
+
 
     def __init__(self, indicator=None, itype=None, tlp=None, provider=None, portlist=None, asn=None, asn_desc=None,
                  cc=None, protocol=None, firsttime=None, lasttime=None,
                  reporttime=None, group="everyone", tags=[], confidence=None,
-                 reference=None, reference_tlp=None, application=None):
+                 reference=None, reference_tlp=None, application=None, timezone=None, city=None, longitude=None,
+                 latitude=None, peers=None, **kvargs):
 
         self.indicator = indicator
         self.group = group
@@ -58,6 +65,11 @@ class Indicator(Base):
         self.confidence = confidence
         self.reference = reference
         self.reference_tlp = reference_tlp
+        self.timezone = timezone
+        self.city = city
+        self.longitude = longitude
+        self.latitude = latitude
+        self.peers = peers
 
         ## TODO - cleanup for py3
 
@@ -69,6 +81,10 @@ class Indicator(Base):
 
         if self.firsttime and isinstance(self.firsttime, str) or isinstance(self.firsttime, unicode):
             self.firsttime = arrow.get(self.firsttime).datetime
+
+        if self.peers:
+            import json
+            self.peers = json.dumps(self.peers)
 
 
 class Tag(Base):
