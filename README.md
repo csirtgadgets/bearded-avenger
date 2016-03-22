@@ -1,4 +1,7 @@
 # Getting Started
+Current master build status: 
+
+[![Circle CI](https://circleci.com/gh/csirtgadgets/bearded-avenger.svg?style=svg&circle-token=e08a0a7ec010e17feb6724dbbc93ce584b9868cd)](https://circleci.com/gh/csirtgadgets/bearded-avenger)
 ## QuickStart
 ```
 $ python setup.py develop
