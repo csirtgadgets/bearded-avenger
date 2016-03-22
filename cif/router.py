@@ -143,7 +143,6 @@ def main():
             CIF_RUNTIME_PATH
             CIF_ROUTER_ADDR
             CIF_HUNTER_ADDR
-            CIF_GATHERER_ADDR
             CIF_STORAGE_ADDR
 
         example usage:
