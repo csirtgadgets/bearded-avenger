@@ -10,10 +10,11 @@ from argparse import RawDescriptionHelpFormatter
 import zmq
 from zmq.eventloop import ioloop
 
-from cif.constants import CTRL_ADDR, ROUTER_ADDR, STORAGE_ADDR, HUNTER_ADDR, GATHER_ADDR
+from cif.constants import CTRL_ADDR, ROUTER_ADDR, STORAGE_ADDR, HUNTER_ADDR
 from cif.utils import setup_logging, get_argument_parser, setup_signals
 import cif.gatherer
 from cif.indicator import Indicator
+from cif.utils import zhelper
 
 
 class Router(object):
