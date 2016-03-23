@@ -41,6 +41,8 @@ class Geo(object):
 
         if indicator.itype == 'ipv4' or indicator.itype == 'ipv6':
             # https://geoip2.readthedocs.org/en/latest/
+            self.logger.debug(indicator.indicator)
+            self.logger.debug(indicator)
             r = self.db.city(indicator.indicator)
             if r.country.iso_code:
                 indicator.cc = r.country.iso_code

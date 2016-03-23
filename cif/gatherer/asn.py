@@ -24,11 +24,15 @@ class Asn(object):
                 bits = str(answers[0]).replace('"', '').strip().split(' | ')
                 asns = bits[0].split(' ')
 
-                for a in asns:
-                    indicator.asn = a
-                    indicator.prefix = bits[1]
-                    indicator.cc = bits[2]
-                    indicator.rir = bits[3]
+                indicator.asn = asns[0]
+                indicator.prefix = bits[1]
+                indicator.cc = bits[2]
+                indicator.rir = bits[3]
+
+                answers = resolve_ns('as{}.{}'.format(asns[0], 'asn.cymru.com'), t='TXT')
+                bits = str(answers[0]).replace('"', '').strip().split(' | ')
+                if bits[4]:
+                    indicator.asn_desc = bits[4]
 
         # send back to router
         return indicator

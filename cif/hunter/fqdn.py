@@ -10,16 +10,10 @@ class Fqdn(object):
     def __init__(self, *args, **kv):
         self.logger = logging.getLogger(__name__)
 
-    def _resolve_mx(self, data):
-        r = resolve_ns(data, 'MX')
-        return [rr.exchange for rr in r]
-
-    def _resolve_ns(self, data):
-        return resolve_ns(data, 'NS')
-
     def process(self, i, router):
         if i.itype == 'fqdn':
-            r = self._resolve(i.indicator)
+            r = resolve_ns(i.indicator)
+            self.logger.debug(r)
             for rr in r:
                 ip = copy.deepcopy(i)
                 ip.indicator = str(rr)
@@ -28,19 +22,31 @@ class Fqdn(object):
                 x = router.submit(ip)
                 self.logger.debug(x)
 
-            r = self._resolve_ns(i.indicator)
+            r = resolve_ns(i.indicator, t='CNAME')
+            self.logger.debug(r)
             for rr in r:
                 ip = copy.deepcopy(i)
-                ip.indicator = str(rr)
-                ip.itype = 'ipv4'
+                ip.indicator = str(rr).rstrip('.')
+                ip.itype = 'fqdn'
+                ip.confidence = (int(ip.confidence) / 2)
+                x = router.submit(ip)
+                self.logger.debug(x)
+
+            r = resolve_ns(i.indicator, t='NS')
+            self.logger.debug(r)
+            for rr in r:
+                ip = copy.deepcopy(i)
+                ip.indicator = str(rr).rstrip('.')
+                ip.itype = 'fqdn'
                 ip.confidence = (int(ip.confidence) / 3)
                 x = router.submit(ip)
                 self.logger.debug(x)
 
+            r = resolve_ns(i.indicator, t='MX')
             for rr in r:
                 ip = copy.deepcopy(i)
-                ip.indicator = str(rr)
-                ip.itype = 'ipv4'
+                ip.indicator = str(rr).rstrip('.')
+                ip.itype = 'fqdn'
                 ip.confidence = (int(ip.confidence) / 4)
                 x = router.submit(ip)
                 self.logger.debug(x)

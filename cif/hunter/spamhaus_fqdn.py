@@ -2,7 +2,8 @@ import dns.resolver
 import logging
 import copy
 import dns.resolver
-from dns.resolver import NXDOMAIN, NoAnswer
+from dns.resolver import NoAnswer, NXDOMAIN
+from dns.name import EmptyLabel
 from pprint import pprint
 
 CONFIDENCE = 9
@@ -84,6 +85,8 @@ class SpamhausFqdn(object):
                 self.logger.info('no answer...')
             except NXDOMAIN:
                 self.logger.info('nxdomain...')
+            except EmptyLabel:
+                self.logger.error('empty label: {}'.format(i.indicator))
 
 
 Plugin = SpamhausFqdn
