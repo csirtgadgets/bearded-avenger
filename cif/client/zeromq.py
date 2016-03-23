@@ -61,7 +61,17 @@ class ZMQ(Client):
         if not isinstance(data, str):
             data = str(data)
 
-        data = self._send("submission", data)
+        sent = False
+        tries = 5
+        while tries > 0 and not sent:
+            try:
+                data = self._send("submission", data)
+                sent = True
+            except zmq.error.Again:
+                self.logger.warning('timeout... retrying in 5s..')
+                import time
+                tries -= 1
+                time.sleep(5)
         return data
 
 Plugin = ZMQ
