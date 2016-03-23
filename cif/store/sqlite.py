@@ -40,13 +40,14 @@ class Indicator(Base):
     longitude = Column(String)
     latitude = Column(String)
     peers = Column(String)
+    description = Column(UnicodeText)
 
 
     def __init__(self, indicator=None, itype=None, tlp=None, provider=None, portlist=None, asn=None, asn_desc=None,
                  cc=None, protocol=None, firsttime=None, lasttime=None,
                  reporttime=None, group="everyone", tags=[], confidence=None,
                  reference=None, reference_tlp=None, application=None, timezone=None, city=None, longitude=None,
-                 latitude=None, peers=None, **kvargs):
+                 latitude=None, peers=None, description=None, **kvargs):
 
         self.indicator = indicator
         self.group = group
@@ -70,6 +71,7 @@ class Indicator(Base):
         self.longitude = longitude
         self.latitude = latitude
         self.peers = peers
+        self.description = description
 
         ## TODO - cleanup for py3
 

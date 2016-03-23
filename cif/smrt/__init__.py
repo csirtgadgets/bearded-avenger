@@ -40,8 +40,14 @@ class Smrt(object):
 
         fetch = Fetcher(rule, feed)
 
-        parser = rule.parser or PARSER_DEFAULT
-        parser = load_plugin(cif.smrt.parser.__path__[0], parser)
+        parser_name = rule.parser or PARSER_DEFAULT
+        parser = load_plugin(cif.smrt.parser.__path__[0], parser_name)
+
+        if parser is None:
+            self.logger.info('trying z{}'.format(parser_name))
+            parser = load_plugin(cif.smrt.parser.__path__[0], 'z{}'.format(parser_name))
+            if parser is None:
+                raise SystemError('Unable to load parser: {}'.format(parser_name))
 
         self.logger.debug("loading parser: {}".format(parser))
 
