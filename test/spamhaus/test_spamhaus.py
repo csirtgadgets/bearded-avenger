@@ -12,12 +12,12 @@ s = Smrt(REMOTE_ADDR, 1234, client='dummy')
 
 
 def test_spamhaus_drop():
-    rule.feeds['drop']['remote'] = 'tests/spamhaus/drop.txt'
+    rule.feeds['drop']['remote'] = 'test/spamhaus/drop.txt'
     x = s.process(rule, feed="drop")
     assert len(x) > 0
 
 
 def test_spamhaus_edrop():
-    rule.feeds['edrop']['remote'] = 'tests/spamhaus/edrop.txt'
+    rule.feeds['edrop']['remote'] = 'test/spamhaus/edrop.txt'
     x = s.process(rule, feed="edrop")
     assert len(x) > 0

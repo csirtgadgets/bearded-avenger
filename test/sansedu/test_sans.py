@@ -14,7 +14,7 @@ s = Smrt(REMOTE_ADDR, 1234, client='dummy')
 
 def test_sans_low():
     feed = '02_domains_low'
-    rule.feeds[feed]['remote'] = 'tests/sansedu/low.txt'
+    rule.feeds[feed]['remote'] = 'test/sansedu/low.txt'
     x = s.process(rule, feed=feed)
     assert len(x) > 0
 
@@ -23,7 +23,7 @@ def test_sans_low():
 
 def test_sans_block():
     feed = 'block'
-    rule.feeds[feed]['remote'] = 'tests/sansedu/block.txt'
+    rule.feeds[feed]['remote'] = 'test/sansedu/block.txt'
     x = s.process(rule, feed=feed)
 
     assert len(x) > 0
