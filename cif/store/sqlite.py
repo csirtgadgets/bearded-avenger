@@ -155,9 +155,10 @@ class SQLite(Store):
 
         if filters.get('nolog'):
             del filters['nolog']
-        else:
-            if filters.get('indicator'):
-                self._log_search(filters['indicator'])
+        # else:
+        #     if filters.get('indicator'):
+        #         #self._log_search(filters['indicator'])
+        #         pass
 
         sql = []
         for k in filters:

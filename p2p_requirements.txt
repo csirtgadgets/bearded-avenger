@@ -1,0 +1,2 @@
+git+https://github.com/zeromq/pyre@eebce60a6bae60ab7c94223c5f75973cce61cbad#egg=pyre==0.3
+-r requirements.txt

@@ -95,7 +95,7 @@ class Indicator(object):
         self.asn_desc = asn_desc
         self.cc = cc
 
-        if not itype:
+        if self.indicator and not itype:
             self.itype = self.resolve_obj(self.indicator)
 
     def magic(self, data):

@@ -16,6 +16,9 @@ import cif.gatherer
 from cif.indicator import Indicator
 from cif.utils import zhelper
 
+from pprint import pprint
+
+MIN_CONFIDENCE = 3
 
 class Router(object):
 
@@ -24,8 +27,10 @@ class Router(object):
 
     def __exit__(self, type, value, traceback):
         self.stop()
+        if self.p2p:
+            self.p2p.send("$$STOP".encode('utf_8'))
 
-    def __init__(self, listen=ROUTER_ADDR, hunter=HUNTER_ADDR, storage=STORAGE_ADDR):
+    def __init__(self, listen=ROUTER_ADDR, hunter=HUNTER_ADDR, storage=STORAGE_ADDR, p2p=False):
         self.logger = logging.getLogger(__name__)
 
         self.context = zmq.Context.instance()
@@ -33,6 +38,10 @@ class Router(object):
         self.hunters = self.context.socket(zmq.PUB)
         self.storage = self.context.socket(zmq.DEALER)
         self.ctrl = self.context.socket(zmq.REP)
+        self.p2p = p2p
+
+        if self.p2p:
+            self._init_p2p()
 
         self.poller = zmq.Poller()
 
@@ -47,6 +56,13 @@ class Router(object):
         self.storage.bind(storage)
         self.hunters.bind(hunter)
         self.frontend.bind(listen)
+
+    def _init_p2p(self):
+        self.logger.info('enabling p2p..')
+        from cif.p2p import Client as p2pcli
+        self.p2p = p2pcli(channel='CIF')
+        p2p_pipe = zhelper.zthread_fork(self.context, self.p2p.start)
+        self.p2p = p2p_pipe
 
     def _init_gatherers(self):
         import pkgutil
@@ -109,6 +125,21 @@ class Router(object):
         return json.dumps(rv)
 
     def handle_search(self, token, data):
+        # need to send searches through the _submission pipe
+        data = json.loads(data)
+        if data['indicator']:
+            i = Indicator(
+                indicator=data['indicator'],
+                tlp='green',
+                confidence=5,
+                tags=['search']
+            )
+            pprint(i)
+            r = self.handle_submission(token, str(i))
+            if r:
+                self.logger.info('search logged')
+
+        data = json.dumps(data)
         self.storage.send_multipart(['search', token, data])
         return self.storage.recv()
 
@@ -120,7 +151,14 @@ class Router(object):
             i = g.process(i)
 
         data = str(i)
-        self.hunters.send(data)
+
+        if i.confidence >= MIN_CONFIDENCE:
+            if self.p2p:
+                self.logger.info('sending to peers...')
+                self.p2p.send(data.encode('utf-8'))
+
+            self.hunters.send(data)
+
         self.storage.send_multipart(['submission', token, data])
         m = self.storage.recv()
         return m
@@ -159,6 +197,8 @@ def main():
     p.add_argument("--storage", help="specify a storage address [default: %(default)s]",
                    default=STORAGE_ADDR)
 
+    p.add_argument('--p2p', action='store_true', help='enable experimental p2p support')
+
     args = p.parse_args()
     setup_logging(args)
     logger = logging.getLogger(__name__)
@@ -166,7 +206,7 @@ def main():
 
     setup_signals(__name__)
 
-    with Router(listen=args.listen, hunter=args.hunter, storage=args.storage) as r:
+    with Router(listen=args.listen, hunter=args.hunter, storage=args.storage, p2p=args.p2p) as r:
         try:
             logger.info('starting router..')
             r.run()
