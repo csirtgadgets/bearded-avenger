@@ -28,3 +28,4 @@ def test_sans_block():
 
     assert len(x) > 0
     assert len(x[0].indicator) > 4
+
