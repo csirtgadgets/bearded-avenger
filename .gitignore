@@ -1,3 +1,5 @@
+hacking/*.conf
+!hacking/develop.conf
 *.mmdb
 *.log.*
 supervisord.log.*
