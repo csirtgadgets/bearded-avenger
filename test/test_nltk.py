@@ -2,7 +2,7 @@
 import pytest
 
 from pprint import pprint
-from cif.smrt.parser.znltk import Nltk_
+from cif.utils.znltk import text_to_list
 import arrow
 
 vnc = """
@@ -28,10 +28,25 @@ ssh = """
 2860         |  NOS_COMUNICACOES NOS COMUNICAC  |      83.132.9.42  |  2016-03-22 06:19:56  |  sshpwauth
 """
 
-@pytest.mark.xfail
+DROP = """
+; Spamhaus DROP List 2016/03/23 - (c) 2016 The Spamhaus Project
+; http://www.spamhaus.org/drop/drop.txt
+; Last-Modified: Tue, 22 Mar 2016 18:59:56 GMT
+; Expires: Wed, 23 Mar 2016 20:02:02 GMT
+1.4.0.0/17 ; SBL256893
+1.10.16.0/20 ; SBL256894
+1.32.128.0/18 ; SBL286275
+1.116.0.0/14 ; SBL216702
+5.8.37.0/24 ; SBL284078
+5.34.242.0/23 ; SBL194796
+5.101.218.0/24 ; SBL284076
+5.101.221.0/24 ; SBL284077
+5.134.128.0/19 ; SBL270738
+"""
+
+
 def test_nltk_vnc():
-    n = Nltk_(None, None, None, None)
-    x = n.process(None, None, vnc)
+    x = text_to_list(vnc)
 
     ips = set()
     ts = set()
@@ -50,10 +65,9 @@ def test_nltk_vnc():
     assert 'vncprobe' in tags
     assert arrow.get('2015-12-06T21:09:17.000000Z').datetime in ts
 
-@pytest.mark.xfail
+
 def test_nltk_ssh():
-    n = Nltk_(None, None, None, None)
-    x = n.process(None, None, ssh)
+    x = text_to_list(ssh)
 
     ips = set()
     ts = set()
@@ -69,3 +83,14 @@ def test_nltk_ssh():
 
     assert 'sshpwauth' in tags
     assert arrow.get('2016-03-22T06:19:56Z').datetime in ts
+
+
+def test_nltk_drop():
+    x = text_to_list(DROP)
+
+    ips = set()
+
+    for i in x:
+        ips.add(i.indicator)
+
+    assert '5.101.218.0/24' in ips

@@ -4,7 +4,8 @@ from cif.smrt import Smrt
 from cif.rule import Rule
 from cif.constants import REMOTE_ADDR
 from pprint import pprint
-import json
+from cif.utils.znltk import text_to_list
+import arrow
 
 rule = 'rules/default/sans_edu.yml'
 rule = Rule(path=rule)
@@ -28,4 +29,3 @@ def test_sans_block():
 
     assert len(x) > 0
     assert len(x[0].indicator) > 4
-
