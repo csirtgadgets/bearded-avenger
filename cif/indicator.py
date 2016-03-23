@@ -77,7 +77,7 @@ class Indicator(object):
         self.altid_tlp = altid_tlp
 
         if self.description:
-            self.description = self.description.replace('\"', '')
+            self.description = self.description.replace('\"', '').lower()
 
         if timezone:
             self.timezone = timezone.lower()

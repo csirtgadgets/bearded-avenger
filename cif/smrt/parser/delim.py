@@ -16,6 +16,7 @@ class Delim(Parser):
             if l == '' or self.is_comment(l):
                 continue
 
+            l = l.replace('\"', '')
             m = self.pattern.split(l)
 
             if len(cols):
