@@ -72,7 +72,6 @@ def text_to_list(text, known_only=True):
                 if e in top:
                     indicator.tags = [e]
 
-
         if indicator.itype and indicator.indicator:
             ret.append(indicator)
 
