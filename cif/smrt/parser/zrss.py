@@ -3,6 +3,7 @@ from cif.smrt.parser import Parser
 from cif.indicator import Indicator
 import copy
 import re
+from cif.utils import normalize_itype
 
 
 class Rss(Parser):
@@ -54,17 +55,14 @@ class Rss(Parser):
                 continue
 
             try:
-                from cif.utils import normalize_itype
-                from pprint import pprint
                 i = normalize_itype(i)
                 i = Indicator(**i)
                 self.logger.debug(i)
+                r = self.client.submit(i)
+                rv.append(r)
             except NotImplementedError as e:
                 self.logger.error(e)
                 self.logger.info('skipping: {}'.format(i['indicator']))
-            else:
-                r = self.client.submit(i)
-                rv.append(r)
         return rv
 
 Plugin = Rss

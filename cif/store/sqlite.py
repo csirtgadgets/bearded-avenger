@@ -10,11 +10,10 @@ from sqlalchemy.orm import sessionmaker, relationship, backref, class_mapper
 from cif.constants import RUNTIME_PATH, SEARCH_CONFIDENCE
 from cif.store import Store
 from cif.utils import resolve_itype
+import json
 
 DB_FILE = os.path.join(RUNTIME_PATH, 'cif.sqlite')
 Base = declarative_base()
-
-
 
 
 class Indicator(Base):
@@ -41,13 +40,13 @@ class Indicator(Base):
     latitude = Column(String)
     peers = Column(String)
     description = Column(UnicodeText)
-
+    additional_data = Column(UnicodeText)
 
     def __init__(self, indicator=None, itype=None, tlp=None, provider=None, portlist=None, asn=None, asn_desc=None,
                  cc=None, protocol=None, firsttime=None, lasttime=None,
                  reporttime=None, group="everyone", tags=[], confidence=None,
                  reference=None, reference_tlp=None, application=None, timezone=None, city=None, longitude=None,
-                 latitude=None, peers=None, description=None, **kvargs):
+                 latitude=None, peers=None, description=None, additional_data=None, **kvargs):
 
         self.indicator = indicator
         self.group = group
@@ -72,6 +71,7 @@ class Indicator(Base):
         self.latitude = latitude
         self.peers = peers
         self.description = description
+        self.additional_data = additional_data
 
         ## TODO - cleanup for py3
 
@@ -85,8 +85,10 @@ class Indicator(Base):
             self.firsttime = arrow.get(self.firsttime).datetime
 
         if self.peers:
-            import json
             self.peers = json.dumps(self.peers)
+
+        if self.additional_data:
+            self.additional_data = json.dumps(self.additional_data)
 
 
 class Tag(Base):

@@ -119,18 +119,18 @@ def resolve_itype(indicator, test_broken=False):
             if re.match(RE_HASH[h], s):
                 return h
 
-    if _fqdn(indicator):
-        return 'fqdn'
-    elif _ipv6(indicator):
-        return 'ipv6'
-    elif _ipv4(indicator) or _ipv4_cidr(indicator):
-        return 'ipv4'
+    if test_broken and _url_broken(indicator):
+        return 'broken_url'
     elif _url(indicator):
         return 'url'
-    elif test_broken and _url_broken(indicator):
-        return 'broken_url'
     elif _hash(indicator):
         return _hash(indicator)
+    elif _fqdn(indicator):
+        return 'fqdn'
+    elif _ipv4(indicator) or _ipv4_cidr(indicator):
+        return 'ipv4'
+    elif _ipv6(indicator):
+        return 'ipv6'
 
     raise NotImplementedError('unknown itype for "{}"'.format(indicator))
 
