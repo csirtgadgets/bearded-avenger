@@ -64,7 +64,7 @@ class Fetcher(object):
         ftype = magic.from_file(self.cache, mime=True).decode('utf-8')
         self.logger.debug(ftype)
 
-        if ftype.startswith('application/x-gzip'):
+        if ftype.startswith('application/x-gzip') or ftype.startswith('application/gzip'):
             import gzip
             with gzip.open(self.cache, 'rb') as f:
                 for l in f:
