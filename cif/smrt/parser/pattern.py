@@ -20,16 +20,22 @@ class Pattern(Parser):
         self.pattern = re.compile(self.pattern)
 
     def process(self):
-        cols = self.rule.defaults['values']
+        if self.rule.feeds[self.feed].get('values'):
+            cols = self.rule.feeds[self.feed].get('values')
+        else:
+            cols = self.rule.defaults['values']
+        defaults = self._defaults()
 
         if isinstance(cols, str):
             cols = cols.split(',')
 
         rv = []
         for l in self.fetcher.process():
-            self.logger.debug(l)
+            #self.logger.debug(l)
+
             if self.ignore(l):  # comment or skip
                 continue
+
             try:
                 m = self.pattern.search(l).groups()
                 if isinstance(m, str):
@@ -40,22 +46,22 @@ class Pattern(Parser):
                 continue
 
             if len(cols):
-                obs = copy.deepcopy(self.rule.defaults)
-                obs.pop("values", None)
-                obs.pop("pattern", None)
+                i = copy.deepcopy(defaults)
 
                 for idx, col in enumerate(cols):
                     if col is not None:
-                        obs[col] = m[idx]
+                        i[col] = m[idx]
+
+                i.pop("values", None)
+                i.pop("pattern", None)
 
                 try:
-                    obs = Indicator(**obs)
+                    i = Indicator(**i)
                 except NotImplementedError as e:
                     self.logger.error(e)
-                    self.logger.info('skipping: {}'.format(obs['indicator']))
+                    self.logger.info('skipping: {}'.format(i['indicator']))
                 else:
-                    pprint(obs)
-                    r = self.client.submit(obs)
+                    r = self.client.submit(i)
                     rv.append(r)
 
             if self.limit:

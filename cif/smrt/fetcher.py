@@ -75,8 +75,9 @@ class Fetcher(object):
                 for l in f:
                     yield l.strip()
 
-        # if ftype == "application/zip":
-        #     with ZipFile(self.cache) as f:
-        #         for m in f.infolist():
-        #             while True:
-        #                 yield f.read(m.filename).split(split)[0:limit]
+        elif ftype == "application/zip":
+            from zipfile import ZipFile
+            with ZipFile(self.cache) as f:
+                for m in f.infolist():
+                    for l in f.read(m.filename).split(split):
+                        yield l.strip()
