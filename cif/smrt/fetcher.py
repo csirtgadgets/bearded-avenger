@@ -64,7 +64,13 @@ class Fetcher(object):
         ftype = magic.from_file(self.cache, mime=True).decode('utf-8')
         self.logger.debug(ftype)
 
-        if ftype.startswith('text') or ftype.startswith('application/xml'):
+        if ftype.startswith('application/x-gzip') or ftype.startswith('application/gzip'):
+            import gzip
+            with gzip.open(self.cache, 'rb') as f:
+                for l in f:
+                    yield l.strip()
+
+        elif (ftype.startswith('text') or ftype.startswith('application/xml')):
             with open(self.cache) as f:
                 for l in f:
                     yield l.strip()

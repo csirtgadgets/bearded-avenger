@@ -48,7 +48,7 @@ class Indicator(object):
                  firsttime=arrow.get(datetime.utcnow()).datetime, lasttime=arrow.get(datetime.utcnow()).datetime,
                  asn_desc=None, cc=None, application=None, reference=None, reference_tlp=None, confidence=None,
                  peers=None, city=None, longitude=None, latitude=None, timezone=None, description=None, altid=None,
-                 altid_tlp=None):
+                 altid_tlp=None, additional_data=None):
 
         if isinstance(tags, str):
             tags = tags.split(",")
@@ -76,6 +76,7 @@ class Indicator(object):
         self.description = description
         self.altid = altid
         self.altid_tlp = altid_tlp
+        self.additional_data = additional_data
 
         if self.description:
             self.description = self.description.replace('\"', '').lower()
@@ -144,7 +145,8 @@ class Indicator(object):
             'latitude': self.latitude,
             'description': self.description,
             'altid': self.altid,
-            'altid_tlp': self.altid_tlp
+            'altid_tlp': self.altid_tlp,
+            'additional_data': self.additional_data
         }
 
         if self.timezone:
