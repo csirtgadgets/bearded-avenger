@@ -20,7 +20,9 @@ class Fetcher(object):
         self.cache = cache
         self.fetcher = rule.fetcher
 
-        if self.rule.defaults.get('remote'):
+        if self.rule.remote:
+            self.remote = self.rule.remote
+        elif self.rule.defaults.get('remote'):
             self.remote = self.rule.defaults.get('remote')
         else:
             self.remote = self.rule.feeds[feed]['remote']
@@ -62,7 +64,7 @@ class Fetcher(object):
         ftype = magic.from_file(self.cache, mime=True).decode('utf-8')
         self.logger.debug(ftype)
 
-        if ftype.startswith('text'):
+        if ftype.startswith('text') or ftype.startswith('application/xml'):
             with open(self.cache) as f:
                 for l in f:
                     yield l.strip()

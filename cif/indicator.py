@@ -6,6 +6,7 @@ import pytricia
 import socket
 from pprint import pprint
 import sys
+from cif.utils import resolve_itype
 if sys.version_info > (3,):
     from urllib.parse import urlparse
 else:
@@ -103,7 +104,7 @@ class Indicator(object):
         self.cc = cc
 
         if self.indicator and not itype:
-            self.itype = self.resolve_obj(self.indicator)
+            self.itype = resolve_itype(self.indicator)
 
     def magic(self, data):
         for e in data:
@@ -119,48 +120,6 @@ class Indicator(object):
             if IPV4_PRIVATE.get(self.indicator):
                 return True
         return False
-
-    def resolve_itype(self, indicator):
-        return self.resolve_obj(indicator)
-
-    def resolve_obj(self, indicator):
-        def _ipv6(s):
-            try:
-                socket.inet_pton(socket.AF_INET6, s)
-            except socket.error:
-                if not re.match(RE_IPV6, s):
-                    return False
-
-            return True
-
-        def _ipv4(s):
-            try:
-                socket.inet_pton(socket.AF_INET, s)
-            except socket.error:
-                if not re.match(RE_IPV4, s):
-                    return False
-            return True
-
-        def _fqdn(s):
-            if RE_FQDN.match(s):
-                return 1
-
-        def _url(s):
-            u = urlparse(s)
-            if re.match(RE_URI_SCHEMES, u.scheme):
-                if _fqdn(u.netloc) or _ipv4(u.netloc) or _ipv6(u.netloc):
-                    return True
-
-        if _fqdn(indicator):
-            return 'fqdn'
-        elif _ipv6(indicator):
-            return 'ipv6'
-        elif _ipv4(indicator):
-            return 'ipv4'
-        elif _url(indicator):
-            return 'url'
-
-        raise NotImplementedError('unknown itype for "{}"'.format(indicator))
 
     def __repr__(self):
         o = {

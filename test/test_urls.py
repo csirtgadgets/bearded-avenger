@@ -27,7 +27,9 @@ def test_urls_not_ok():
     for d in data:
         try:
             d = Indicator(d)
-        except NotImplementedError as e:
+            from pprint import pprint
+            pprint(d)
+        except NotImplementedError:
             pass
         else:
             raise NotImplementedError
