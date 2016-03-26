@@ -1,3 +1,4 @@
+feedparser==5.2.1
 nltk==3.2
 ipaddr==2.1.11
 maxminddb==1.2.0
