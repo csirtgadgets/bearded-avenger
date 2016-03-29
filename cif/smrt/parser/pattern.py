@@ -32,12 +32,14 @@ class Pattern(Parser):
         rv = []
         for l in self.fetcher.process():
             #self.logger.debug(l)
+            #pprint(l)
 
             if self.ignore(l):  # comment or skip
                 continue
 
             try:
                 m = self.pattern.search(l).groups()
+                #self.logger.debug(m)
                 if isinstance(m, str):
                     m = [m]
             except ValueError:
@@ -49,11 +51,13 @@ class Pattern(Parser):
                 i = copy.deepcopy(defaults)
 
                 for idx, col in enumerate(cols):
-                    if col is not None:
+                    if col:
                         i[col] = m[idx]
 
                 i.pop("values", None)
                 i.pop("pattern", None)
+
+                self.logger.debug(i)
 
                 try:
                     i = Indicator(**i)
@@ -61,6 +65,7 @@ class Pattern(Parser):
                     self.logger.error(e)
                     self.logger.info('skipping: {}'.format(i['indicator']))
                 else:
+                    self.logger.debug(i)
                     r = self.client.submit(i)
                     rv.append(r)
 
