@@ -48,7 +48,7 @@ class Indicator(object):
                  firsttime=arrow.get(datetime.utcnow()).datetime, lasttime=arrow.get(datetime.utcnow()).datetime,
                  asn_desc=None, cc=None, application=None, reference=None, reference_tlp=None, confidence=None,
                  peers=None, city=None, longitude=None, latitude=None, timezone=None, description=None, altid=None,
-                 altid_tlp=None, additional_data=None):
+                 altid_tlp=None, additional_data=None, mask=None):
 
         if isinstance(tags, str):
             tags = tags.split(",")
@@ -77,6 +77,7 @@ class Indicator(object):
         self.altid = altid
         self.altid_tlp = altid_tlp
         self.additional_data = additional_data
+        self.mask = mask
 
         if self.description:
             self.description = self.description.replace('\"', '').lower()
@@ -106,6 +107,9 @@ class Indicator(object):
 
         if self.indicator and not itype:
             self.itype = resolve_itype(self.indicator)
+
+        if self.mask and self.itype == 'ipv4':
+            self.indicator = '{}/{}'.format(self.indicator, int(self.mask))
 
     def magic(self, data):
         for e in data:

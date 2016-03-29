@@ -28,7 +28,7 @@ class Rule(dict):
             self.parser = rule.get('parser')
             self.fetcher = rule.get('fetcher')
             self.skip = rule.get('skip')
-            self.remote = d.get('remote')
+            self.remote = rule.get('remote')
 
     def __repr__(self):
         return json.dumps({

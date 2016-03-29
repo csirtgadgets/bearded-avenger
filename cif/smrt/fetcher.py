@@ -49,7 +49,7 @@ class Fetcher(object):
             else:
                 self.fetcher = 'file'
 
-    def process(self, split="\n", limit=0):
+    def process(self, split="\n", limit=0, rstrip=True):
         if self.fetcher == 'http':
             # using wget until we can find a better way to mirror files in python
             subprocess.check_call([
@@ -68,15 +68,25 @@ class Fetcher(object):
             import gzip
             with gzip.open(self.cache, 'rb') as f:
                 for l in f:
-                    yield l.strip()
+                    if rstrip:
+                        yield l.rstrip()
+                    else:
+                        yield l
 
-        elif (ftype.startswith('text') or ftype.startswith('application/xml')):
+        elif ftype.startswith('text') or ftype.startswith('application/xml'):
             with open(self.cache) as f:
                 for l in f:
-                    yield l.strip()
+                    if rstrip:
+                        yield l.rstrip()
+                    else:
+                        yield l
 
-        # if ftype == "application/zip":
-        #     with ZipFile(self.cache) as f:
-        #         for m in f.infolist():
-        #             while True:
-        #                 yield f.read(m.filename).split(split)[0:limit]
+        elif ftype == "application/zip":
+            from zipfile import ZipFile
+            with ZipFile(self.cache) as f:
+                for m in f.infolist():
+                    for l in f.read(m.filename).split(split):
+                        if rstrip:
+                            yield l.rstrip()
+                        else:
+                            yield l
