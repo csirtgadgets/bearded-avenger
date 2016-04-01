@@ -14,11 +14,14 @@
 
 - include: github.yml
   tags: ['github', 'install']
-  when: not development and GH_TOKEN == ''
+  when: GH_TOKEN == '' and not development and not ci
 
 - include: github_with_token.yml
-  when: not development and GH_TOKEN != ''
+  when: GH_TOKEN != '' and not development and not ci
   tags: ['github', 'install']
+
+- include: sdist.yml
+  when: ci
 
 - include: venv.yml
   tags: development

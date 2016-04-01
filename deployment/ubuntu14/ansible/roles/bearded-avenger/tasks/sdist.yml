@@ -5,8 +5,5 @@
 - name: build
   command: python setup.py build chdir="{{ app_src_path }}"
 
-- name: test
-  command: /usr/local/bin/py.test -s chdir="{{ app_src_path }}"
-
 - name: install
   command: python setup.py install chdir="{{ app_src_path }}"
