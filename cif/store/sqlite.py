@@ -148,7 +148,7 @@ class SQLite(Store):
             'indicator': d,
             'reporttime': arrow.utcnow().datetime,
             'tlp': 'green',
-            'tags': ['search'],
+            'tags': 'search',
             'itype': resolve_itype(d),
             'confidence': SEARCH_CONFIDENCE
         })
@@ -173,16 +173,15 @@ class SQLite(Store):
         sql = ' AND '.join(sql)
 
         self.logger.debug('running filter of itype')
-        rv = [self._as_dict(x)
-              for x in self.handle().query(Indicator).filter(sql).limit(limit)]
 
-        self.logger.debug(rv)
-        return rv
+        return [self._as_dict(x)
+                for x in self.handle().query(Indicator).filter(sql).limit(limit)]
 
     def submit(self, data):
         if type(data) == dict:
             data = [data]
 
+        self.logger.debug(data)
         s = self.handle()
 
         for d in data:
@@ -196,6 +195,9 @@ class SQLite(Store):
             o = Indicator(**d)
 
             s.add(o)
+
+            if type(tags) == str:
+                tags = [tags]
 
             for t in tags:
                 t = Tag(tag=t, indicator=o)

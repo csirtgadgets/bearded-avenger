@@ -132,7 +132,7 @@ class Router(object):
                 indicator=data['indicator'],
                 tlp='green',
                 confidence=5,
-                tags=['search']
+                tags='search'
             )
             r = self.handle_submission(token, str(i))
             if r:
