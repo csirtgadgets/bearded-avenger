@@ -1,2 +1,4 @@
 ---
 # defaults file for ubuntu-check
+app_user: cif
+app_user_home: /home/cif
