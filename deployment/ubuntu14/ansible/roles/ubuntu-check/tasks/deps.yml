@@ -33,8 +33,5 @@
   pip: name="{{ item }}" extra_args="--upgrade"
   with_items: [ requests pip vex ] # requests first, old version conflicts with new pip
 
-- name: install ansible tools
-  pip: name='ansible==1.9.4'
-
 - name: install supervisord
   pip: name='supervisor==3.2.1'
