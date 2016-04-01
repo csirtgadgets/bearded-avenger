@@ -134,7 +134,7 @@ class Indicator(object):
             "provider": self.provider,
             "portlist": self.portlist,
             "protocol": self.protocol,
-            "tags": self.tags,
+            "tags": ','.join(self.tags),
             "asn": self.asn,
             "asn_desc": self.asn_desc,
             "cc": self.cc,

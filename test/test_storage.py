@@ -27,13 +27,14 @@ def test_storage(obs):
         assert x[0]['indicator'] == 'example.com'
 
 
-def test_storage_sqlite(obs):
+def test_storage_sqlite():
     dbfile = tempfile.mktemp()
     with Storage(store='sqlite', dbfile=dbfile) as s:
         ob = [
-            Indicator(indicator='example.com', tags=['botnet'], provider='csirtgadgets.org').__dict__,
-            Indicator(indicator='example2.com', tags=['malware'], provider='csirtgadgets.org').__dict__
+            Indicator(indicator='example.com', tags='botnet', provider='csirtgadgets.org').__dict__,
+            Indicator(indicator='example2.com', tags='malware', provider='csirtgadgets.org').__dict__
         ]
+
         x = s.handle_submission('1234', ob)
 
         assert x > 0

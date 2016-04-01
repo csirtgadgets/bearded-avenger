@@ -13,4 +13,13 @@
         cron_file=geoipupdate month=*
 
 - name: create /etc/geopip.conf
-  file: src=geoip.conf dest=/etc/geoip.conf owner=root group=root mode=0660
+  file: src=GeoIP.conf dest=/etc/GeoIP.conf owner=root group=root mode=0660
+
+- name: create GeoIP path /usr/local/share/GeoIP
+  file: path=/usr/local/share/GeoIP state=directory owner=root group=root mode=0660
+
+- name: download geoip database
+  get_url: url=http://geolite.maxmind.com/download/geoip/database/GeoLite2-City.mmdb.gz dest=/usr/local/share/GeoIP/
+
+- name: decompress geoip database
+  command: gzip -d /usr/local/share/GeoIP/GeoLite2-City.mmdb.gz

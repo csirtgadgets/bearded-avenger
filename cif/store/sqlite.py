@@ -186,13 +186,16 @@ class SQLite(Store):
         s = self.handle()
 
         for d in data:
+            # namespace conflict with related self.tags
+            tags = d.get("tags", [])
+            if len(tags) > 0:
+                if isinstance(tags, str):
+                    tags = tags.split(',')
+
+                del d['tags']
             o = Indicator(**d)
 
             s.add(o)
-
-            tags = d.get("tags", [])
-            if isinstance(tags, str):
-                tags = tags.split(',')
 
             for t in tags:
                 t = Tag(tag=t, indicator=o)
