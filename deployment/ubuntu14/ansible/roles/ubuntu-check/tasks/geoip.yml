@@ -28,4 +28,4 @@
   get_url: url=http://geolite.maxmind.com/download/geoip/database/GeoLite2-City.mmdb.gz dest=/usr/local/share/GeoIP/
 
 - name: decompress geoip database
-  command: gzip -d /usr/local/share/GeoIP/GeoLite2-City.mmdb.gz
+  command: gzip -f -d /usr/local/share/GeoIP/GeoLite2-City.mmdb.gz
