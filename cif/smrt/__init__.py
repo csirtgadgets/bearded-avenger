@@ -69,7 +69,12 @@ class Smrt(object):
                         continue
 
                     for feed in r.feeds:
-                        rv = self._process(r, feed, limit=limit)
+                        try:
+                            rv = self._process(r, feed, limit=limit)
+                        except Exception as e:
+                            self.logger.error('failed to process: {}'.format(feed))
+                            self.logger.error(e)
+
         else:
             self.logger.debug("processing {0}".format(rule))
             r = rule
@@ -81,10 +86,18 @@ class Smrt(object):
                 raise RuntimeError
 
             if feed:
-                rv = self._process(r, feed=feed, limit=limit)
+                try:
+                    rv = self._process(r, feed=feed, limit=limit)
+                except Exception as e:
+                    self.logger.error('failed to process feed: {}'.format(feed))
+                    self.logger.error(e)
             else:
                 for feed in r.feeds:
-                    rv = self._process(Rule(path=rule), feed=feed, limit=limit)
+                    try:
+                        rv = self._process(Rule(path=rule), feed=feed, limit=limit)
+                    except Exception as e:
+                        self.logger.error('failed to process feed: {}'.format(feed))
+                        self.logger.error(e)
 
         return rv
 

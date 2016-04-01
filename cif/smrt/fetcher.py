@@ -51,10 +51,15 @@ class Fetcher(object):
 
     def process(self, split="\n", limit=0, rstrip=True):
         if self.fetcher == 'http':
-            # using wget until we can find a better way to mirror files in python
-            subprocess.check_call([
-                'wget', '--header', self.ua,  '-q', self.remote, '-N', '-O', self.cache
-            ])
+            try:
+                # using wget until we can find a better way to mirror files in python
+                subprocess.check_call([
+                    'wget', '--header', self.ua,  '-q', self.remote, '-N', '-O', self.cache
+                ])
+            except subprocess.CalledProcessError as e:
+                self.logger.error('failure pulling feed: {} to {}'.format(self.remote, self.cache))
+                self.logger.error(e)
+                raise e
         else:
             if self.fetcher == 'file':
                 self.cache = self.remote
