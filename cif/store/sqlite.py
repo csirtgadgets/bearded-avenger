@@ -42,6 +42,8 @@ class Indicator(Base):
     description = Column(UnicodeText)
     additional_data = Column(UnicodeText)
 
+    tags = relationship('Tag', primaryjoin='and_(Indicator.id==Tag.indicator_id)')
+
     def __init__(self, indicator=None, itype=None, tlp=None, provider=None, portlist=None, asn=None, asn_desc=None,
                  cc=None, protocol=None, firsttime=None, lasttime=None,
                  reporttime=None, group="everyone", tags=[], confidence=None,
@@ -100,6 +102,7 @@ class Tag(Base):
     indicator_id = Column(Integer, ForeignKey('indicators.id'))
     indicator = relationship(
         Indicator,
+        cascade='all,delete',
         backref=backref('indicators',
                          uselist=True,
                          cascade='delete,all'))
@@ -136,6 +139,8 @@ class SQLite(Store):
                 d[col.name] = getattr(obj, col.name).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
             d[col.name] = d[col.name]
 
+        d['tags'] = [t.tag for t in obj.tags]
+
         return d
 
     def _log_search(self, d):
@@ -159,10 +164,6 @@ class SQLite(Store):
 
         if filters.get('nolog'):
             del filters['nolog']
-        # else:
-        #     if filters.get('indicator'):
-        #         #self._log_search(filters['indicator'])
-        #         pass
 
         sql = []
         for k in filters:
@@ -172,8 +173,11 @@ class SQLite(Store):
         sql = ' AND '.join(sql)
 
         self.logger.debug('running filter of itype')
-        return [self._as_dict(x)
-                for x in self.handle().query(Indicator).filter(sql).limit(limit)]
+        rv = [self._as_dict(x)
+              for x in self.handle().query(Indicator).filter(sql).limit(limit)]
+
+        self.logger.debug(rv)
+        return rv
 
     def submit(self, data):
         if type(data) == dict:
