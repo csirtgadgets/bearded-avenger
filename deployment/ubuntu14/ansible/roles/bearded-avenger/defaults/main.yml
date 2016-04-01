@@ -1,5 +1,6 @@
 ---
 development: false
+ci: false
 
 app_user: cif
 app_user_home: "/home/{{ app_user }}"

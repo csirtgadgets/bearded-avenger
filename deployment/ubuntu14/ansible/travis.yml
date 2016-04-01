@@ -4,7 +4,7 @@
   sudo: true
   vars:
     GH_TOKEN: "{{ lookup('env', 'GH_TOKEN') }}"
-    development: true
+    ci: true
   pre_tasks:
     - name: Add GH token to profile
       lineinfile: dest="/home/travis/.profile" line="GH_TOKEN={{ GH_TOKEN }}"

@@ -22,7 +22,7 @@
 
 - include: venv.yml
   tags: development
-  when: development
+  when: development and not ci
 
 - include: services.yml
   tags: configuration
