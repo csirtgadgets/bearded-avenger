@@ -1,3 +1,4 @@
+deployment/ubuntu14/ansible/roles/bearded-avenger/files/bearded-avenger3.tar.gz
 hacking/*.conf
 !hacking/develop.conf
 *.mmdb
