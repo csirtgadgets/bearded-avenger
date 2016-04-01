@@ -1,5 +1,10 @@
+import os
 from setuptools import setup, find_packages
 import versioneer
+
+# vagrant doesn't appreciate hard-linking
+if os.environ.get('USER') == 'vagrant' or os.path.isdir('/vagrant'):
+    del os.link
 
 with open('requirements.txt') as f:
     reqs = f.read().splitlines()
