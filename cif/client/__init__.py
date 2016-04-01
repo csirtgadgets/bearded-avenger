@@ -85,6 +85,19 @@ def main():
             else:
                 logger.error('ping failed')
                 raise RuntimeError
+    elif options.get('itype'):
+        logger.info('searching for {}'.format(options['itype']))
+        try:
+            rv = cli.search({
+                'itype': options['itype'],
+                'limit': options['limit'],
+            })
+        except RuntimeError as e:
+            import traceback
+            traceback.print_exc()
+            logger.error(e)
+        else:
+            print(Table(data=rv))
     elif options.get('search'):
         logger.info("searching for {0}".format(options.get("search")))
         try:
