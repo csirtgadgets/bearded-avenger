@@ -9,5 +9,8 @@
 - include: deps.yml
   tags: configuration
 
+- include: user.yml
+  tags: configuration
+
 - include: git.yml
   when: GH_TOKEN != ''
