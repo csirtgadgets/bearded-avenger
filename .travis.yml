@@ -10,6 +10,7 @@ script: py.test
 after_script:
     - sudo pip install ansible==1.9.4
     - ansible-playbook -i "localhost," -c local deployment/ubuntu14/ansible/travis.yml
+    - sudo /etc/init.d/cif-hunters stop
     - cif -d -p
     - cif -d --itype ipv4 --limit 5
     - cif -d --search example.com

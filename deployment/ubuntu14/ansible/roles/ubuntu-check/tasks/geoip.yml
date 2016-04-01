@@ -1,0 +1,16 @@
+---
+- name: install deps
+  apt:
+    state: latest
+    pkg: "{{ item }}"
+  with_items:
+    - geoipupdate
+    - libgeoip-dev
+    - geoip-bin
+
+- name: create geoip update cron
+  cron: name="geoip update" user="root" job="/usr/bin/geoipupdate"
+        cron_file=geoipupdate month=*
+
+- name: create /etc/geopip.conf
+  file: src=geoip.conf dest=/etc/geoip.conf owner=root group=root mode=0660

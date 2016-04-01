@@ -14,3 +14,6 @@
 
 - include: git.yml
   when: GH_TOKEN != ''
+
+- include: geoip.yml
+  tags: configuration
