@@ -5,6 +5,10 @@ python:
 
 script: py.test
 
+after_script:
+    - sudo pip install ansible==1.9.4
+    - ansible-playbook -i "localhost," -c local deployment/ubuntu14/ansible/localhost.yml
+
 notifications:
     email:
         on_success: never
