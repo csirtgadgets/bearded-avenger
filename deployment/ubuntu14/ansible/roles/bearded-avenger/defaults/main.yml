@@ -1,6 +1,8 @@
 ---
 development: false
 ci: false
+bdist: true
+GH_TOKEN: "{{ lookup('env', 'GH_TOKEN') }}"
 
 app_user: cif
 app_user_home: "/home/{{ app_user }}"

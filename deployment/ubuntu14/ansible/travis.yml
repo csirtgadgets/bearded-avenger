@@ -6,9 +6,6 @@
     GH_TOKEN: "{{ lookup('env', 'GH_TOKEN') }}"
     ci: true
     app_user: travis
-  pre_tasks:
-    - name: Add GH token to profile
-      lineinfile: dest="/home/{{ app_user }}/.profile" line="GH_TOKEN={{ GH_TOKEN }}"
   roles:
     - { role: ubuntu-check, tags: role-ubuntu-check }
     - { role: bearded-avenger, tags: role-bearded-avenger }
