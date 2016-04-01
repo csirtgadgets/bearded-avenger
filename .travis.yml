@@ -5,9 +5,8 @@ python:
     - 2.7
 #    - 3.4
 
-script: py.test
-
-after_script:
+script:
+    - py.test
     - sudo pip install ansible==1.9.4
     - ansible-playbook -i "localhost," -c local deployment/ubuntu14/ansible/travis.yml
     - sudo /etc/init.d/cif-hunters stop
