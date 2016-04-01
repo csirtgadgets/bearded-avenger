@@ -127,14 +127,13 @@ class Router(object):
     def handle_search(self, token, data):
         # need to send searches through the _submission pipe
         data = json.loads(data)
-        if data['indicator']:
+        if data.get('indicator'):
             i = Indicator(
                 indicator=data['indicator'],
                 tlp='green',
                 confidence=5,
                 tags=['search']
             )
-            pprint(i)
             r = self.handle_submission(token, str(i))
             if r:
                 self.logger.info('search logged')
