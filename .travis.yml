@@ -7,7 +7,9 @@ python:
 
 script:
     - py.test
-    - sudo pip install ansible==1.9.4
+    - python setup.py sdist
+    - cp -f dist/bearded-avenger-*.tar.gz deployment/ubuntu14/ansible/roles/bearded-avenger/files/bearded-avenger3.tar.gz
+    - sudo pip install ansible==1.9.4 versoneer
     - ansible-playbook -i "localhost," -c local deployment/ubuntu14/ansible/travis.yml
     - sudo /etc/init.d/cif-hunters stop
     - cif -d -p
