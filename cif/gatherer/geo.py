@@ -39,11 +39,13 @@ class Geo(object):
         if not self.db:
             return indicator
 
-        if (indicator.itype == 'ipv4' or indicator.itype == 'ipv6') and not indicator.is_private:
+        if (indicator.itype == 'ipv4' or indicator.itype == 'ipv6') and not indicator.is_private():
             # https://geoip2.readthedocs.org/en/latest/
             self.logger.debug(indicator.indicator)
             self.logger.debug(indicator)
             r = self.db.city(indicator.indicator)
+
+            self.logger.debug(r)
             if r.country.iso_code:
                 indicator.cc = r.country.iso_code
 
