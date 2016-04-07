@@ -8,3 +8,9 @@
 
 - include: deps.yml
   tags: configuration
+
+- include: user.yml
+  tags: configuration
+
+- include: geoip.yml
+  tags: configuration

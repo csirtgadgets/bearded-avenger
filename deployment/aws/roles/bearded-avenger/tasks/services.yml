@@ -20,5 +20,15 @@
 
 - name: copy /etc/defaults/cif
   copy: src=defaults dest=/etc/default/cif mode=0660 owner="{{ app_user }}" group="{{ app_user }}"
-  notify:
-    - start cif-services
+
+- name: enable cif-services
+  service: name=cif-services enabled=yes
+
+- name: start cif-services
+  command: service cif-services start
+
+- name: test connectivity
+  command: cif -d -p
+
+- name: test query
+  command: cif -d -q example.com

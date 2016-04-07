@@ -2,4 +2,4 @@
 - name: start cif-services
   command: service cif-services start
   become: yes
-  become_user: sudo
+  become_user: root

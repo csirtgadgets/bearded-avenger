@@ -1,0 +1,28 @@
+---
+- name: Add python repo
+  apt_repository: repo='ppa:maxmind/ppa'
+
+- name: Update apt cache if needed.
+  apt: update_cache=yes
+
+- name: install deps
+  apt:
+    state: latest
+    pkg: "{{ item }}"
+  with_items:
+    - geoipupdate
+    - libgeoip-dev
+    - geoip-bin
+
+- name: create geoip update cron
+  cron: name="geoip update" user="root" job="/usr/bin/geoipupdate"
+        cron_file=geoipupdate day=01
+
+- name: create /etc/geopip.conf
+  template: src=GeoIP.conf.j2 dest=/etc/GeoIP.conf owner=root group=root mode=0660
+
+- name: create GeoIP path /usr/local/share/GeoIP
+  file: path=/usr/local/share/GeoIP state=directory owner=root group=root mode=0666
+
+- name: update geoip databases
+  command: geoipupdate
