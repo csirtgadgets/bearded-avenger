@@ -4,13 +4,16 @@
   tags: configuration
 
 - include: firewall.yml
-  tags: configuration
+  tags: ['configuration', 'firewall']
 
 - include: deps.yml
-  tags: configuration
+  tags: ['configuration', 'deps']
+
+- include: bind.yml
+  tags: ['bind', 'configuration']
 
 - include: user.yml
-  tags: configuration
+  tags: ['user', 'configuration']
 
 - include: geoip.yml
-  tags: configuration
+  tags: ['configuration', 'geoip']

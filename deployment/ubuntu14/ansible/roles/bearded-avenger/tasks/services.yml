@@ -6,7 +6,7 @@
     - cif-smrt
     - cif-httpd
     - cif-storage
-    - cif-hunters
+    - cif-hunter
     - cif-services
 
 - name: copy supervisord configs
@@ -16,7 +16,7 @@
     - cif-httpd.conf
     - cif-smrt.conf
     - cif-storage.conf
-    - cif-hunters.conf
+    - cif-hunter.conf
 
 - name: copy /etc/defaults/cif
   copy: src=defaults dest=/etc/default/cif mode=0660 owner="{{ app_user }}" group="{{ app_user }}"

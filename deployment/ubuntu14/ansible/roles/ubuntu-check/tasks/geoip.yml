@@ -16,22 +16,13 @@
 
 - name: create geoip update cron
   cron: name="geoip update" user="root" job="/usr/bin/geoipupdate"
-        cron_file=geoipupdate month=*
+        cron_file=geoipupdate day=01
 
 - name: create /etc/geopip.conf
-  file: src=GeoIP.conf dest=/etc/GeoIP.conf owner=root group=root mode=0660
+  template: src=GeoIP.conf.j2 dest=/etc/GeoIP.conf owner=root group=root mode=0660
 
 - name: create GeoIP path /usr/local/share/GeoIP
   file: path=/usr/local/share/GeoIP state=directory owner=root group=root mode=0666
 
-- name: check for existing geoip database
-  stat: path=/usr/local/share/GeoIP/GeoLite2-City.mmdb
-  register: geoip_db
-
-- name: download geoip database
-  get_url: url=http://geolite.maxmind.com/download/geoip/database/GeoLite2-City.mmdb.gz dest=/usr/local/share/GeoIP/
-  when: not geoip_db.stat.exists
-
-- name: decompress geoip database
-  command: gzip -f -d /usr/local/share/GeoIP/GeoLite2-City.mmdb.gz
-  when: not geoip_db.stat.exists
+- name: update geoip databases
+  command: geoipupdate

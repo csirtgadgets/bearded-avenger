@@ -9,6 +9,9 @@
 - include: deps.yml
   tags: configuration
 
+- include: bind.yml
+  tags: ['configuration', 'bind']
+
 - include: user.yml
   tags: configuration
 

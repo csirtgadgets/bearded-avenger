@@ -16,7 +16,7 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 NAME=cif-services
 DESC="cif-services"
 
-CIF_SERVICES="cif-router cif-storage cif-httpd cif-hunters cif-smrt"
+CIF_SERVICES="cif-router cif-storage cif-httpd cif-hunter cif-smrt"
 
 if [ `id -u` -ne 0 ]; then
     echo "You need root privileges to run this script"

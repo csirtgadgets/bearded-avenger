@@ -15,13 +15,13 @@
 # Version:	@(#)skeleton  1.9  26-Feb-2001  miquels@cistron.nl
 #
 ### BEGIN INIT INFO
-# Provides:          cif-hunters
+# Provides:          cif-hunter
 # Required-Start:    $remote_fs $network $named
 # Required-Stop:     $remote_fs $network $named
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: Start/stop cif-hunters
-# Description:       Start/stop cif-hunters daemon and its configured
+# Short-Description: Start/stop cif-hunter
+# Description:       Start/stop cif-hunter daemon and its configured
 #                    subprocesses.
 ### END INIT INFO
 
@@ -30,8 +30,8 @@
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 DAEMON=/usr/local/bin/supervisord
 SUPERVISORCTL=/usr/local/bin/supervisorctl
-NAME=cif-hunters
-DESC=cif-hunters
+NAME=cif-hunter
+DESC=cif-hunter
 
 test -x $DAEMON || exit 0
 
@@ -47,11 +47,11 @@ if [ -f /etc/default/cif ] ; then
 	. /etc/default/cif
 fi
 
-# Include cif-hunters defaults if available
-if [ -f /etc/default/cif-hunters ] ; then
-	. /etc/default/cif-hunters
+# Include cif-hunter defaults if available
+if [ -f /etc/default/cif-hunter ] ; then
+	. /etc/default/cif-hunter
 fi
-DAEMON_OPTS="-c /etc/cif/cif-hunters.conf $DAEMON_OPTS"
+DAEMON_OPTS="-c /etc/cif/cif-hunter.conf $DAEMON_OPTS"
 
 export CIF_RUNTIME_PATH=$CIF_RUNTIME_PATH
 export CIF_LOGLEVEL=$CIF_LOGLEVEL
