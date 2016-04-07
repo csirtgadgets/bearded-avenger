@@ -8,7 +8,7 @@ Url:       https://github.com/csirtgadgets/bearded-avenger
 Summary:   The smartest way to consume threat intelligence.
 License:   GPLv3
 Group:     Development/Libraries
-Source:    http://releases.ansible.com/ansible/%{name}-%{version}.tar.gz
+Source:    https://github.com/csirtgadgets/bearded-avenger/archive/%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 
 BuildArch: noarch
