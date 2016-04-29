@@ -1,7 +1,6 @@
 # Getting Started
-Current master build status: 
+Current master build status: [![Circle CI](https://circleci.com/gh/csirtgadgets/bearded-avenger.svg?style=svg&circle-token=e08a0a7ec010e17feb6724dbbc93ce584b9868cd)](https://circleci.com/gh/csirtgadgets/bearded-avenger)
 
-[![Circle CI](https://circleci.com/gh/csirtgadgets/bearded-avenger.svg?style=svg&circle-token=e08a0a7ec010e17feb6724dbbc93ce584b9868cd)](https://circleci.com/gh/csirtgadgets/bearded-avenger)
 ## QuickStart
 ```
 $ pip install -r requirements.txt supervisor==3.2.1
