@@ -33,6 +33,16 @@ def test_ipv4_ok():
     for d in data:
         assert Indicator(indicator=d).itype is 'ipv4'
 
+def test_ipv4_nok():
+    data = ['127.0.0.0/1', '128.205.0.0/8']
+    for d in data:
+        try:
+            Indicator(indicator=d)
+        except NotImplementedError as e:
+            pass
+        else:
+            raise SystemError('mis-handled network')
+
 
 def test_ipv4_private():
     data = ['128.205.1.0/24', '2001:1608:10:147::21', '2001:4860::8888/64']
