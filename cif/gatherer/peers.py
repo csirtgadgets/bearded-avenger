@@ -9,7 +9,7 @@ class Peer(object):
         self.logger = logging.getLogger(__name__)
 
     def process(self, indicator):
-        if indicator.itype == 'ipv4' and not indicator.is_private:
+        if indicator.itype == 'ipv4' and not indicator.is_private():
             i = '.'.join(reversed(indicator.indicator.split('.')))
             answers = resolve_ns('{}.{}'.format(i, 'peer.asn.cymru.com'), t='TXT')
             if len(answers) > 0:

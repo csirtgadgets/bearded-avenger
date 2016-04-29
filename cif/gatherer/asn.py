@@ -1,6 +1,7 @@
 
 from cif.utils import resolve_ns
 import logging
+import re
 
 
 class Asn(object):
@@ -9,8 +10,13 @@ class Asn(object):
         self.logger = logging.getLogger(__name__)
 
     def process(self, indicator):
-        if indicator.itype == 'ipv4' and not indicator.is_private:
-            i = '.'.join(reversed(indicator.indicator.split('.')))
+        if indicator.itype == 'ipv4' and not indicator.is_private():
+            i = indicator.indicator
+            match = re.search('^(\S+)\/\d+$', i)
+            if match:
+                i = match.group(1)
+
+            i = '.'.join(reversed(i.split('.')))
 
             answers = resolve_ns('{}.{}'.format(i, 'origin.asn.cymru.com'), t='TXT')
 

@@ -147,7 +147,11 @@ class Router(object):
         data = json.loads(data)
         i = Indicator(**data)
         for g in self.gatherers:
-            i = g.process(i)
+            try:
+                i = g.process(i)
+            except Exception as e:
+                self.logger.error('gatherer failed: %s' % g)
+                self.logger.error(e)
 
         data = str(i)
 

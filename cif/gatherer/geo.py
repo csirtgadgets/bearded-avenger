@@ -3,6 +3,7 @@
 import logging
 import os
 import geoip2.database
+import re
 from pprint import pprint
 
 DB_SEARCH_PATHS = [
@@ -41,9 +42,13 @@ class Geo(object):
 
         if (indicator.itype == 'ipv4' or indicator.itype == 'ipv6') and not indicator.is_private():
             # https://geoip2.readthedocs.org/en/latest/
-            self.logger.debug(indicator.indicator)
-            self.logger.debug(indicator)
-            r = self.db.city(indicator.indicator)
+            i = indicator.indicator
+            match = re.search('^(\S+)\/\d+$', i)
+            if match:
+                i = match.group(1)
+
+            self.logger.debug('looking up: %s' % i)
+            r = self.db.city(i)
 
             self.logger.debug(r)
             if r.country.iso_code:
@@ -60,7 +65,6 @@ class Geo(object):
 
             if r.location.time_zone:
                 indicator.timezone = r.location.time_zone
-
 
         return indicator
 
