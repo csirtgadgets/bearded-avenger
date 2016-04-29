@@ -4,10 +4,12 @@ Current master build status:
 [![Circle CI](https://circleci.com/gh/csirtgadgets/bearded-avenger.svg?style=svg&circle-token=e08a0a7ec010e17feb6724dbbc93ce584b9868cd)](https://circleci.com/gh/csirtgadgets/bearded-avenger)
 ## QuickStart
 ```
+$ pip install -r requirements.txt supervisor==3.2.1
 $ python setup.py develop
 $ supervisord -c hacking/develop.conf
-$ cif-smrt -r rules/default -d
-$ cif --itype ipv4 --limit 15 -d
+$ cif-smrt -r rules/default -d --token 1234 --test
+$ cif -d -p
+$ cif -q bigclarks.com -d
 ```
 
 ## Getting Help
