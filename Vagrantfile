@@ -18,7 +18,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   END
 
   #config.vm.provision "ansible" do |ansible|
-  #  ansible.playbook = "deployment/ubuntu14/ansible/vagrant.yml"
+  #  ansible.playbook = "deployment/ubuntu14/vagrant.yml"
   #  ansible.extra_vars = { development: 'true' }
   #  #ansible.verbose = 'vvv'
   #end

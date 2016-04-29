@@ -8,9 +8,9 @@ python:
 script:
     - py.test
     - python setup.py sdist
-    - cp -f dist/bearded-avenger-*.tar.gz deployment/ubuntu14/ansible/roles/bearded-avenger/files/bearded-avenger3.tar.gz
-    - sudo pip install ansible==1.9.4
-    - ansible-playbook -i "localhost," -c local deployment/ubuntu14/ansible/travis.yml
+    - cp -f dist/bearded-avenger-*.tar.gz deployment/ubuntu14/roles/bearded-avenger/files/bearded-avenger3.tar.gz
+    - sudo pip install 'ansible==2.0.2.0'
+    - ansible-playbook -i "localhost," -c local deployment/ubuntu14/travis.yml
     - cif -d -p
     - cif -d --itype ipv4 --limit 5
     - cif -d --search example.com

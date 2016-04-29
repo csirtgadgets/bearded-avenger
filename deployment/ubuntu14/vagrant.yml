@@ -1,7 +1,7 @@
 ---
 - name: Install bearded-avenger
   hosts: all
-  sudo: true
+  become: true
   vars:
     app_runtime_path: '/tmp/cif'
     app_rules_path: '/vagrant/rules'

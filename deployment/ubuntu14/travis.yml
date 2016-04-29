@@ -1,7 +1,7 @@
 ---
 - name: Install bearded-avenger
   hosts: localhost
-  sudo: true
+  become: true
   vars:
     GH_TOKEN: "{{ lookup('env', 'GH_TOKEN') }}"
     ci: true
