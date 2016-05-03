@@ -33,6 +33,7 @@ def test_ipv4_ok():
     for d in data:
         assert Indicator(indicator=d).itype is 'ipv4'
 
+
 def test_ipv4_nok():
     data = ['127.0.0.0/1', '128.205.0.0/8']
     for d in data:
