@@ -8,6 +8,8 @@ from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 
 from flask import Flask, request, jsonify
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 from cif.client.zeromq import ZMQ as Client
 from cif.constants import ROUTER_ADDR
@@ -24,11 +26,23 @@ HTTP_LISTEN_PORT = os.environ.get('CIF_HTTP_LISTEN_PORT', HTTP_LISTEN_PORT)
 
 FILTERS = ['itype', 'confidence', 'provider']
 
+LIMIT_DAY = os.environ.get('CIF_LIMIT_DAY', 5000)
+LIMIT_HOUR = os.environ.get('CIF_LIMIT_HOUR', 500)
+
 # https://github.com/mitsuhiko/flask/blob/master/examples/minitwit/minitwit.py
 
 app = Flask(__name__)
 remote = ROUTER_ADDR
 logger = logging.getLogger(__name__)
+limiter = Limiter(
+    app,
+    key_func=get_remote_address,  # TODO change this to pull_token
+    global_limits=[
+        '{} per day'.format(LIMIT_DAY),
+        '{} per hour'.format(LIMIT_HOUR)
+    ]
+)
+
 
 def pull_token():
     token = None
@@ -65,6 +79,7 @@ def help():
 
 
 @app.route("/ping", methods=['GET'])
+#@limiter.limit("1 per day")
 def ping():
     """
     Ping the router interface
