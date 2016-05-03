@@ -1,4 +1,5 @@
 import arrow
+import datetime
 import re
 from pprint import pprint
 
@@ -7,6 +8,8 @@ def parse_timestamp(ts):
     try:
         t = arrow.get(ts)
         if t.year < 1980:
+            if type(ts) == datetime.datetime:
+                ts = str(ts)
             if len(ts) == 8:
                 ts = '{}T00:00:00Z'.format(ts)
                 t = arrow.get(ts, 'YYYYMMDDTHH:mm:ss')

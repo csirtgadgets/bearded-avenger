@@ -12,6 +12,7 @@ if sys.version_info > (3,):
 else:
     from urlparse import urlparse
 import arrow
+from cif.utils.zarrow import parse_timestamp
 
 TLP = "green"
 GROUP = "everyone"
@@ -86,13 +87,13 @@ class Indicator(object):
             self.timezone = timezone.lower()
 
         if reporttime and isinstance(reporttime, str):
-            self.reporttime = arrow.get(reporttime).datetime
+            self.reporttime = parse_timestamp(reporttime).datetime
 
         if firsttime:
-            self.firsttime = arrow.get(firsttime).datetime
+            self.firsttime = parse_timestamp(firsttime).datetime
 
         if lasttime:
-            self.lasttime = arrow.get(lasttime).datetime
+            self.lasttime = parse_timestamp(lasttime).datetime
 
         if asn and asn.lower() == 'na':
             asn = None

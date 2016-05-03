@@ -1,4 +1,3 @@
-import logging
 from cif.utils.zarrow import parse_timestamp
 import py.test
 from pprint import pprint
