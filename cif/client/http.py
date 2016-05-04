@@ -41,7 +41,34 @@ class HTTP(Client):
         return json.loads(body.content)
 
     def _post(self, uri, data):
-        body = self.session.post(uri, data=data)
+        body = self.session.post(uri, data=json.dumps(data))
+
+        if body.status_code > 303:
+            err = 'request failed: %s' % str(body.status_code)
+            self.logger.debug(err)
+            err = body.content
+
+            if body.status_code == 401:
+                err = 'unauthorized'
+                raise RuntimeError(err)
+            elif body.status_code == 404:
+                err = 'not found'
+                raise RuntimeError(err)
+            else:
+                try:
+                    err = json.loads(err).get('message')
+                except ValueError as e:
+                    err = body.content
+
+                self.logger.error(err)
+                raise RuntimeError(err)
+
+        self.logger.debug(body.content)
+        body = json.loads(body.content)
+        return body
+
+    def _delete(self, uri, data):
+        body = self.session.delete(uri, data=json.dumps(data))
 
         if body.status_code > 303:
             err = 'request failed: %s' % str(body.status_code)
@@ -87,5 +114,18 @@ class HTTP(Client):
         t1 = (time.time() - t0)
         self.logger.debug('return time: %.15f' % t1)
         return t1
+
+    def tokens_search(self, filters):
+        rv = self._get('{}/tokens'.format(self.remote), params=filters)
+        return rv['data']
+
+    def tokens_delete(self, token):
+        rv = self._delete('{}/tokens'.format(self.remote), {'token': token})
+        return rv['data']
+
+    def tokens_create(self, data):
+        self.logger.debug(data)
+        rv = self._post('{}/tokens'.format(self.remote), data)
+        return rv['data']
 
 Plugin = HTTP

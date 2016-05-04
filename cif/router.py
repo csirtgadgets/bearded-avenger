@@ -166,6 +166,18 @@ class Router(object):
         m = self.storage.recv()
         return m
 
+    def handle_tokens_create(self, token, data):
+        self.storage.send_multipart(['tokens_create', token, data])
+        return self.storage.recv()
+
+    def handle_tokens_delete(self, token, data):
+        self.storage.send_multipart(['tokens_delete', token, data])
+        return self.storage.recv()
+
+    def handle_tokens_search(self, token, data):
+        self.storage.send_multipart(['tokens_search', token, data])
+        return self.storage.recv()
+
     def run(self):
         self.logger.debug('starting loop')
         loop = ioloop.IOLoop.instance()

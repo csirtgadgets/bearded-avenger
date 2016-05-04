@@ -39,6 +39,7 @@ setup(
             'cif-gatherer=cif.gatherer:main',
             'cif-httpd=cif.httpd:main',
             'cif-storage=cif.storage:main',
+            'cif-tokens=cif.client.tokens:main'
         ]
     },
 )

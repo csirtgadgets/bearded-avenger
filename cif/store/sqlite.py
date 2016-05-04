@@ -3,7 +3,7 @@ import os
 
 import arrow
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, create_engine, DateTime, UnicodeText, \
-    Text
+    Text, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, backref, class_mapper
 
@@ -11,9 +11,24 @@ from cif.constants import RUNTIME_PATH, SEARCH_CONFIDENCE
 from cif.store import Store
 from cif.utils import resolve_itype
 import json
+from pprint import pprint
 
 DB_FILE = os.path.join(RUNTIME_PATH, 'cif.sqlite')
 Base = declarative_base()
+
+
+class Token(Base):
+    __tablename__ = 'tokens'
+    id = Column(Integer, primary_key=True)
+    username = Column(UnicodeText)
+    token = Column(String)
+    expires = Column(DateTime)
+    read = Column(Boolean)
+    write = Column(Boolean)
+    revoked = Column(Boolean)
+    acl = Column(UnicodeText)
+    groups = Column(UnicodeText)
+    admin = Column(Boolean)
 
 
 class Indicator(Base):
@@ -155,59 +170,131 @@ class SQLite(Store):
         return True
 
     # TODO - normalize this out into filters
-    def search(self, filters, limit=5):
-        self.logger.debug('running search')
+    def search(self, token, filters, limit=5):
+        if self.token_read(token):
+            self.logger.debug('running search')
 
-        if filters.get('limit'):
-            limit = filters['limit']
-            del filters['limit']
+            if filters.get('limit'):
+                limit = filters['limit']
+                del filters['limit']
 
-        if filters.get('nolog'):
-            del filters['nolog']
+            if filters.get('nolog'):
+                del filters['nolog']
 
-        sql = []
-        for k in filters:
-            if filters[k] is not None:
-                sql.append("{} = '{}'".format(k, filters[k]))
+            sql = []
+            for k in filters:
+                if filters[k] is not None:
+                    sql.append("{} = '{}'".format(k, filters[k]))
 
-        sql = ' AND '.join(sql)
+            sql = ' AND '.join(sql)
 
-        self.logger.debug('running filter of itype')
+            self.logger.debug('running filter of itype')
 
-        return [self._as_dict(x)
-                for x in self.handle().query(Indicator).filter(sql).limit(limit)]
+            return [self._as_dict(x)
+                    for x in self.handle().query(Indicator).filter(sql).limit(limit)]
+        else:
+            self.logger.info('invalid token')
+            return []
 
-    def submit(self, data):
-        if type(data) == dict:
-            data = [data]
+    def submit(self, token, data):
+        if self.token_write(token):
+            if type(data) == dict:
+                data = [data]
 
-        self.logger.debug(data)
+            self.logger.debug(data)
+            s = self.handle()
+
+            for d in data:
+                # namespace conflict with related self.tags
+                tags = d.get("tags", [])
+                if len(tags) > 0:
+                    if isinstance(tags, str):
+                        tags = tags.split(',')
+
+                    del d['tags']
+                o = Indicator(**d)
+
+                s.add(o)
+
+                if type(tags) == str:
+                    tags = [tags]
+
+                for t in tags:
+                    t = Tag(tag=t, indicator=o)
+                    s.add(t)
+
+            s.commit()
+            self.logger.debug('oid: {}'.format(o.id))
+            return o.id
+        else:
+            self.logger.info('invalid token: {}'.format(token))
+            return 0
+
+    def token_admin(self, token):
+        x = self.handle().query(Token)\
+            .filter_by(token=str(token))\
+            .filter_by(admin=True)\
+            .filter(Token.revoked is not True)
+        if x.count():
+            return True
+
+    def tokens_create(self, data):
+        groups = data.get('groups')
+        if type(groups) == list:
+            groups = ','.join(groups)
+
+        acl = data.get('acl')
+        if type(acl) == list:
+            acl = ','.join(acl)
+
+        t = Token(
+            username=data.get('username'),
+            token=self._token_generate(),
+            groups=groups,
+            acl=acl,
+            read=data.get('read'),
+            write=data.get('write'),
+            expires=data.get('expires'),
+            admin=data.get('admin')
+        )
         s = self.handle()
-
-        for d in data:
-            # namespace conflict with related self.tags
-            tags = d.get("tags", [])
-            if len(tags) > 0:
-                if isinstance(tags, str):
-                    tags = tags.split(',')
-
-                del d['tags']
-            o = Indicator(**d)
-
-            s.add(o)
-
-            if type(tags) == str:
-                tags = [tags]
-
-            for t in tags:
-                t = Tag(tag=t, indicator=o)
-                s.add(t)
-
+        s.add(t)
         s.commit()
-        self.logger.debug('oid: {}'.format(o.id))
-        return o.id
+        return t.token
 
-    def ping(self):
-        return True
+    def tokens_admin_exists(self):
+        rv = self.handle().query(Token).filter_by(admin=True)
+        if rv.count():
+            return rv.first().token
+
+    def tokens_search(self, data):
+        rv = self.handle().query(Token)\
+            .filter_by(token=data.get('token'))
+        if rv:
+            return True
+
+    # http://stackoverflow.com/questions/1484235/replace-delete-field-using-sqlalchemy
+    def tokens_delete(self, token):
+        s = self.handle()
+        rv = s.query(Token).filter_by(token=token).delete()
+        if rv:
+            s.commit()
+            return True
+
+    def token_read(self, token):
+        x = self.handle().query(Token)\
+            .filter_by(token=token)\
+            .filter_by(read=True) \
+            .filter(Token.revoked is not True)
+        if x.count():
+            return True
+
+    def token_write(self, token):
+        x = self.handle().query(Token)\
+            .filter_by(token=token)\
+            .filter_by(write=True) \
+            .filter(Token.revoked is not True)
+        if x.count():
+            return True
 
 Plugin = SQLite

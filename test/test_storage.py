@@ -18,28 +18,33 @@ logger = logging.getLogger(__name__)
 def obs():
     return Indicator(indicator='example.com', tags=['botnet'], provider='csirtgadgets.org')
 
-def test_storage(obs):
+
+def test_storage_dummy(obs):
     with Storage(store='dummy') as s:
-        x = s.handle_search('1234', obs.__dict__)
+        t = s.store.tokens_admin_exists()
+
+        x = s.handle_search(t, obs.__dict__)
         assert x[0]['indicator'] == 'example.com'
 
-        x = s.handle_submission('1234', obs.__dict__)
+        x = s.handle_submission(t, obs.__dict__)
         assert x[0]['indicator'] == 'example.com'
 
 
 def test_storage_sqlite():
     dbfile = tempfile.mktemp()
     with Storage(store='sqlite', dbfile=dbfile) as s:
+        t = s.store.tokens_admin_exists()
+
         ob = [
             Indicator(indicator='example.com', tags='botnet', provider='csirtgadgets.org').__dict__,
             Indicator(indicator='example2.com', tags='malware', provider='csirtgadgets.org').__dict__
         ]
 
-        x = s.handle_submission('1234', ob)
+        x = s.handle_submission(t, ob)
 
         assert x > 0
 
-        x = s.handle_search('1234', {
+        x = s.handle_search(t, {
             'indicator': 'example.com'
         })
 

@@ -74,4 +74,14 @@ class ZMQ(Client):
                 time.sleep(5)
         return data
 
+    def tokens_search(self, filters={}):
+        rv = self._send('tokens_search', json.dumps(filters))
+        return rv
+
+    def tokens_create(self, data):
+        return self._send('tokens_create', data)
+
+    def tokens_delete(self, data):
+        return self._send('tokens_delete', data)
+
 Plugin = ZMQ

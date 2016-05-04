@@ -61,6 +61,10 @@ def main():
 
     p.add_argument("--zmq", dest="zmq", help="use zmq as a transport instead of http", action="store_true")
 
+    p.add_argument('--tokens', help='list tokens (requires admin token)')
+    p.add_argument('--tokens-create', help='create token (requires admin token')
+    p.add_argument('--tokens-delete', help='delete token (requires admin token)')
+
     args = p.parse_args()
 
     setup_logging(args)
