@@ -11,6 +11,7 @@ from cif.constants import REMOTE_ADDR, SEARCH_LIMIT
 from cif.format.table import Table
 from cif.indicator import Indicator
 from cif.utils import setup_logging, get_argument_parser
+from cif.exceptions import AuthError
 
 TOKEN = os.environ.get('CIF_TOKEN', None)
 REMOTE_ADDR = os.environ.get('CIF_REMOTE', REMOTE_ADDR)
@@ -96,6 +97,8 @@ def main():
                 'itype': options['itype'],
                 'limit': options['limit'],
             })
+        except AuthError as e:
+            logger.error('unauthorized')
         except RuntimeError as e:
             import traceback
             traceback.print_exc()
@@ -115,6 +118,8 @@ def main():
             import traceback
             traceback.print_exc()
             logger.error(e)
+        except AuthError as e:
+            logger.error('unauthorized')
         else:
             print(Table(data=rv))
     elif options.get("submit"):

@@ -1,6 +1,7 @@
 import time
 import json
 from cif.client import Client
+from cif.exceptions import AuthError
 
 from pprint import pprint
 
@@ -42,10 +43,12 @@ class ZMQ(Client):
 
         if data.get('status') == 'success':
             return data.get('data')
+        elif data.get('message') == 'unauthorized':
+            raise AuthError('unauthorized')
         else:
             self.logger.error(data.get('status'))
             self.logger.error(data.get('data'))
-            raise RuntimeError(data.get('status'))
+            raise RuntimeError(data.get('message'))
 
     def ping(self):
         return self._send('ping', str(time.time()))

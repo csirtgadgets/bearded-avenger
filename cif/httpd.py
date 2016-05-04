@@ -15,6 +15,7 @@ from cif.client.zeromq import ZMQ as Client
 from cif.constants import ROUTER_ADDR
 from cif.utils import get_argument_parser, setup_logging, setup_signals
 from pprint import pprint
+from cif.exceptions import AuthError
 
 TOKEN = os.environ.get('CIF_TOKEN', None)
 TOKEN = os.environ.get('CIF_HTTPD_TOKEN', TOKEN)
@@ -122,13 +123,22 @@ def search():
     if request.args.get('q'):
         filters['indicator'] = request.args.get('q')
 
-    r = Client(remote, pull_token()).search(filters)
+    try:
+        r = Client(remote, pull_token()).search(filters)
+        response = jsonify({
+            "message": "success",
+            "data": r
+        })
+        response.status_code = 200
+    except AuthError as e:
+        response = jsonify({
+            'message': 'unauthorized',
+            'data': [],
+            'status': 'failed'
+        })
+        response.status_code = 401
 
-    return jsonify({
-        "message": "success",
-        "data": r
-    })
-
+    return response
 
 @app.route("/indicators", methods=["GET", "POST"])
 def indicators():

@@ -2,7 +2,7 @@ import logging
 import requests
 import time
 import json
-
+from cif.exceptions import AuthError
 from pprint import pprint
 
 from cif.client import Client
@@ -30,13 +30,19 @@ class HTTP(Client):
         if body.status_code > 303:
             err = 'request failed: %s' % str(body.status_code)
             self.logger.debug(err)
-            try:
-                err = json.loads(body.content).get('message')
-            except ValueError as e:
-                err = body.content
 
-            self.logger.error(err)
-            raise RuntimeError(err)
+            if body.status_code == 401:
+                raise AuthError('invalid token')
+            elif body.status_code == 404:
+                err = 'not found'
+                raise RuntimeError(err)
+            else:
+                try:
+                    err = json.loads(body.content).get('message')
+                except ValueError as e:
+                    err = body.content
+                    self.logger.error(err)
+                    raise RuntimeError(err)
 
         return json.loads(body.content)
 
@@ -49,8 +55,7 @@ class HTTP(Client):
             err = body.content
 
             if body.status_code == 401:
-                err = 'unauthorized'
-                raise RuntimeError(err)
+                raise AuthError('invalid token')
             elif body.status_code == 404:
                 err = 'not found'
                 raise RuntimeError(err)
@@ -76,8 +81,7 @@ class HTTP(Client):
             err = body.content
 
             if body.status_code == 401:
-                err = 'unauthorized'
-                raise RuntimeError(err)
+                raise AuthError('invalid token')
             elif body.status_code == 404:
                 err = 'not found'
                 raise RuntimeError(err)

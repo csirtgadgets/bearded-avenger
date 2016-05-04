@@ -11,13 +11,14 @@ from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 import traceback
 from pprint import pprint
+import arrow
 
 import zmq
 from zmq.eventloop import ioloop
 
 import cif.store
 from cif.constants import CTRL_ADDR, STORAGE_ADDR
-from cif.errors import CIFConnectionError
+from cif.exceptions import CIFConnectionError, AuthError
 from cif.utils import setup_logging, get_argument_parser, setup_signals
 
 MOD_PATH = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -140,41 +141,51 @@ class Storage(object):
             try:
                 rv = handler(token, data)
                 rv = {"status": "success", "data": rv}
+                self.store.token_last_activity_at(token, timestamp=arrow.utcnow())
+            except AuthError as e:
+                self.logger.error(e)
+                rv = {'status': 'failed', 'message': 'unauthorized'}
             except Exception as e:
                 self.logger.error(e)
-                self.logger.debug(traceback.print_exc())
+                # traceback.print_exc()
                 rv = {"status": "failed"}
 
-            rv = json.dumps(rv)
-            self.router.send_multipart([id, rv])
+            self.router.send_multipart([id, json.dumps(rv).encode('utf-8')])
         else:
             self.logger.error('message type {0} unknown'.format(mtype))
             self.router.send_multipart([id, '0'])
 
-    def handle_search(self, token, data):
-        self.logger.debug('searching')
-        return self.store.search(token, data)
-
-    def handle_submission(self, token, data):
-        return self.store.submit(token, data)
-
     def handle_ping(self):
         self.logger.debug('handling ping message')
         return self.store.ping()
+
+    def handle_search(self, token, data):
+        if self.store.token_read(token):
+            self.logger.debug('searching')
+            return self.store.search(token, data)
+        else:
+            raise AuthError('invalid token')
+
+    # TODO group check
+    def handle_submission(self, token, data):
+        if self.store.token_write(token):
+            return self.store.submit(token, data)
+        else:
+            raise AuthError('invalid token')
 
     def handle_tokens_search(self, token, data):
         if self.store.token_admin(token):
             self.logger.debug('tokens_search')
             return self.store.tokens_search(data)
         else:
-            self.logger.error('token: {} is not admin'.format(token))
+            raise AuthError('invalid token')
 
     def handle_tokens_create(self, token, data):
         if self.store.token_admin(token):
             self.logger.debug('tokens_create')
             return self.store.tokens_create(data)
         else:
-            self.logger.error('token: {} is not admin'.format(token))
+            raise AuthError('invalid token')
 
     def handle_tokens_delete(self, token, data):
         if self.store.token_admin(token):
@@ -184,7 +195,7 @@ class Storage(object):
             else:
                 self.logger.error('missing token')
         else:
-            self.logger.error('token: %s is not admin' % token)
+            raise AuthError('invalid token')
 
 
 def main():

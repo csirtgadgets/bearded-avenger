@@ -37,4 +37,7 @@ class Dummy(Store):
     def submit(self, token, data):
         return [data]
 
+    def token_last_activity_at(self, token, timestamp=None):
+        return timestamp
+
 Plugin = Dummy

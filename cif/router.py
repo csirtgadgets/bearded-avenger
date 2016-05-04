@@ -20,6 +20,7 @@ from pprint import pprint
 
 MIN_CONFIDENCE = 3
 
+
 class Router(object):
 
     def __enter__(self):
@@ -73,11 +74,6 @@ class Router(object):
             self.gatherers.append(p.Plugin())
             self.logger.debug('plugin loaded: {}'.format(modname))
 
-    def auth(self, token):
-        if not token:
-            return 0
-        return 1
-
     def handle_ctrl(self, s, e):
         """
 
@@ -95,16 +91,9 @@ class Router(object):
         id, null, token, mtype, data = m
         self.logger.debug("mtype: {0}".format(mtype))
 
-        if self.auth(token):
-            handler = getattr(self, "handle_" + mtype)
-            self.logger.debug('handler: {}'.format(handler))
-            rv = handler(token, data)
-        else:
-            self.logger.debug('auth failed...')
-            rv = json.dumps({
-                "status": "failed",
-                "data": "unauthorized"
-            })
+        handler = getattr(self, "handle_" + mtype)
+        self.logger.debug('handler: {}'.format(handler))
+        rv = handler(token, data)
 
         self.logger.debug("replying {}".format(rv))
         self.frontend.send_multipart([id, '', mtype, rv])

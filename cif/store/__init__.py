@@ -49,6 +49,10 @@ class Store(object):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def token_last_activity_at(self, token, timestamp=None):
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def search(self, token, data):
         raise NotImplementedError
 

@@ -11,6 +11,7 @@ from cif.constants import RUNTIME_PATH, SEARCH_CONFIDENCE
 from cif.store import Store
 from cif.utils import resolve_itype
 import json
+from cif.exceptions import AuthError
 from pprint import pprint
 
 DB_FILE = os.path.join(RUNTIME_PATH, 'cif.sqlite')
@@ -29,6 +30,7 @@ class Token(Base):
     acl = Column(UnicodeText)
     groups = Column(UnicodeText)
     admin = Column(Boolean)
+    last_activity_at = Column(DateTime)
 
 
 class Indicator(Base):
@@ -171,30 +173,26 @@ class SQLite(Store):
 
     # TODO - normalize this out into filters
     def search(self, token, filters, limit=5):
-        if self.token_read(token):
-            self.logger.debug('running search')
+        self.logger.debug('running search')
 
-            if filters.get('limit'):
-                limit = filters['limit']
-                del filters['limit']
+        if filters.get('limit'):
+            limit = filters['limit']
+            del filters['limit']
 
-            if filters.get('nolog'):
-                del filters['nolog']
+        if filters.get('nolog'):
+            del filters['nolog']
 
-            sql = []
-            for k in filters:
-                if filters[k] is not None:
-                    sql.append("{} = '{}'".format(k, filters[k]))
+        sql = []
+        for k in filters:
+            if filters[k] is not None:
+                sql.append("{} = '{}'".format(k, filters[k]))
 
-            sql = ' AND '.join(sql)
+        sql = ' AND '.join(sql)
 
-            self.logger.debug('running filter of itype')
+        self.logger.debug('running filter of itype')
 
-            return [self._as_dict(x)
-                    for x in self.handle().query(Indicator).filter(sql).limit(limit)]
-        else:
-            self.logger.info('invalid token')
-            return []
+        return [self._as_dict(x)
+                for x in self.handle().query(Indicator).filter(sql).limit(limit)]
 
     def submit(self, token, data):
         if self.token_write(token):
@@ -227,8 +225,7 @@ class SQLite(Store):
             self.logger.debug('oid: {}'.format(o.id))
             return o.id
         else:
-            self.logger.info('invalid token: {}'.format(token))
-            return 0
+            raise AuthError('invalid token')
 
     def token_admin(self, token):
         x = self.handle().query(Token)\
@@ -296,5 +293,18 @@ class SQLite(Store):
             .filter(Token.revoked is not True)
         if x.count():
             return True
+
+    def token_last_activity_at(self, token, timestamp=None):
+        s = self.handle()
+        if timestamp:
+            x = s.query(Token).filter_by(token=token).update({Token.last_activity_at: timestamp.datetime})
+            s.commit()
+            if x:
+                return timestamp.datetime
+        else:
+            x = s.query(Token).filter_by(token=token)
+            if x.count():
+                return x.first().last_activity_at
+
 
 Plugin = SQLite
