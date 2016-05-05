@@ -35,14 +35,14 @@ class Storage(object):
     def __exit__(self, type, value, traceback):
         self.stop()
 
-    def __init__(self, store=STORE_DEFAULT, storage_address=STORAGE_ADDR, *args, **kv):
+    def __init__(self, store=STORE_DEFAULT, storage_address=STORAGE_ADDR, loop=ioloop.IOLoop.instance(), *args, **kv):
         self.logger = logging.getLogger(__name__)
         self.context = zmq.Context()
         self.router = self.context.socket(zmq.ROUTER)
         self.storage_addr = storage_address
         self.connected = False
         self.ctrl = None
-        self.loop = ioloop.IOLoop.instance()
+        self.loop = loop
         self.store = 'cif.store.{}'.format(store)
 
         # TODO replace with cif.utils.load_plugin

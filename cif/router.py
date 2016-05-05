@@ -111,7 +111,6 @@ class Router(object):
         self.frontend.send_multipart([id, '', mtype, rv])
 
     def handle_ping(self, token, data):
-        self.logger.info('sending to hunters..')
         rv = {
             "status": "success",
             "data": str(time.time())
