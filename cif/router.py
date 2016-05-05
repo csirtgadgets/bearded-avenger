@@ -20,6 +20,7 @@ from pprint import pprint
 
 MIN_CONFIDENCE = 3
 
+
 class Router(object):
 
     def __enter__(self):
@@ -166,9 +167,9 @@ class Router(object):
         m = self.storage.recv()
         return m
 
-    def run(self):
+    def run(self, loop=ioloop.IOLoop.instance()):
         self.logger.debug('starting loop')
-        loop = ioloop.IOLoop.instance()
+        #loop = ioloop.IOLoop.instance()
         loop.add_handler(self.frontend, self.handle_message, zmq.POLLIN)
         loop.add_handler(self.ctrl, self.handle_ctrl, zmq.POLLIN)
         loop.start()

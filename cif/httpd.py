@@ -79,7 +79,6 @@ def help():
 
 
 @app.route("/ping", methods=['GET'])
-#@limiter.limit("1 per day")
 def ping():
     """
     Ping the router interface
