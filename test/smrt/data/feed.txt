@@ -1,0 +1,31 @@
+# THIS IS A UNAUTHENTICATED AND LIMITED FEED PROVIDED BY https://csirtg.io
+# IT IS LICENSED UNDER THE http://creativecommons.org/licenses/by-sa/4.0 LICENSE
+# THE LIMITS ARE RESULTS CREATED WITHIN THE LAST HOUR AND A MAXIMUM RETURN OF 25
+# TO REMOVE THE LIMITS, SIGN UP FOR AN API KEY AT https://csirtg.io
+# ENJOY!
+# id,indicator,itype,portlist,firsttime,lasttime,protocol,application,feed_id,created_at,updated_at,description,portlist_src
+337406,80.82.78.27,ipv4,3389,,,6,,46,2016-03-23 20:35:01 UTC,2016-03-23 20:35:01 UTC,"sourced from firewall logs (incomming WAN, TCP, Syn, blocked)",42775
+337401,216.243.31.2,ipv4,443,,2016-03-23 20:17:26 UTC,6,,46,2016-03-23 20:22:27 UTC,2016-03-23 20:22:27 UTC,"sourced from firewall logs (incomming, TCP, Syn, blocked)",
+337400,91.236.75.4,ipv4,8080,,2016-03-23 20:14:53 UTC,6,,46,2016-03-23 20:17:26 UTC,2016-03-23 20:17:26 UTC,"sourced from firewall logs (incomming, TCP, Syn, blocked)",
+337399,115.230.124.68,ipv4,1433,,2016-03-23 20:14:43 UTC,6,,46,2016-03-23 20:17:26 UTC,2016-03-23 20:17:26 UTC,"sourced from firewall logs (incomming, TCP, Syn, blocked)",
+337398,64.125.239.15,ipv4,8000,,,6,,46,2016-03-23 20:10:02 UTC,2016-03-23 20:10:02 UTC,"sourced from firewall logs (incomming WAN, TCP, Syn, blocked)",60484
+337392,93.174.93.94,ipv4,5900,,2016-03-23 20:03:40 UTC,6,,46,2016-03-23 20:07:26 UTC,2016-03-23 20:07:26 UTC,"sourced from firewall logs (incomming, TCP, Syn, blocked)",
+337391,122.233.251.205,ipv4,110,,2016-03-23 20:03:19 UTC,6,,46,2016-03-23 20:07:26 UTC,2016-03-23 20:07:26 UTC,"sourced from firewall logs (incomming, TCP, Syn, blocked)",
+337390,122.233.251.205,ipv4,110,,2016-03-23 20:03:13 UTC,6,,46,2016-03-23 20:07:25 UTC,2016-03-23 20:07:25 UTC,"sourced from firewall logs (incomming, TCP, Syn, blocked)",
+337389,122.233.251.205,ipv4,110,,2016-03-23 20:03:10 UTC,6,,46,2016-03-23 20:07:25 UTC,2016-03-23 20:07:25 UTC,"sourced from firewall logs (incomming, TCP, Syn, blocked)",
+337385,222.186.51.180,ipv4,1433,,2016-03-23 19:58:03 UTC,6,,46,2016-03-23 20:02:25 UTC,2016-03-23 20:02:25 UTC,"sourced from firewall logs (incomming, TCP, Syn, blocked)",
+337384,59.9.48.2,ipv4,23,,,6,,46,2016-03-23 20:00:04 UTC,2016-03-23 20:00:04 UTC,"sourced from firewall logs (incomming WAN, TCP, Syn, blocked)",48900
+337383,90.16.74.112,ipv4,47623,,,6,,46,2016-03-23 20:00:03 UTC,2016-03-23 20:00:03 UTC,"sourced from firewall logs (incomming WAN, TCP, Syn, blocked)",53689
+337382,90.16.74.112,ipv4,47623,,,6,,46,2016-03-23 20:00:03 UTC,2016-03-23 20:00:03 UTC,"sourced from firewall logs (incomming WAN, TCP, Syn, blocked)",53689
+337381,90.16.74.112,ipv4,47623,,,6,,46,2016-03-23 20:00:01 UTC,2016-03-23 20:00:01 UTC,"sourced from firewall logs (incomming WAN, TCP, Syn, blocked)",53689
+337380,45.35.20.231,ipv4,1433,,,6,,46,2016-03-23 20:00:01 UTC,2016-03-23 20:00:01 UTC,"sourced from firewall logs (incomming WAN, TCP, Syn, blocked)",6000
+337379,93.174.93.94,ipv4,23,,2016-03-23 19:57:21 UTC,6,,46,2016-03-23 19:57:25 UTC,2016-03-23 19:57:25 UTC,"sourced from firewall logs (incomming, TCP, Syn, blocked)",
+337378,183.60.227.122,ipv4,1434,,2016-03-23 19:56:58 UTC,6,,46,2016-03-23 19:57:25 UTC,2016-03-23 19:57:25 UTC,"sourced from firewall logs (incomming, TCP, Syn, blocked)",
+337377,182.59.202.61,ipv4,23,,2016-03-23 19:51:17 UTC,6,,46,2016-03-23 19:52:24 UTC,2016-03-23 19:52:24 UTC,"sourced from firewall logs (incomming, TCP, Syn, blocked)",
+337376,182.59.202.61,ipv4,23,,2016-03-23 19:51:11 UTC,6,,46,2016-03-23 19:52:24 UTC,2016-03-23 19:52:24 UTC,"sourced from firewall logs (incomming, TCP, Syn, blocked)",
+337375,182.59.202.61,ipv4,23,,2016-03-23 19:51:08 UTC,6,,46,2016-03-23 19:52:24 UTC,2016-03-23 19:52:24 UTC,"sourced from firewall logs (incomming, TCP, Syn, blocked)",
+337374,23.102.43.117,ipv4,22,,,6,,46,2016-03-23 19:45:01 UTC,2016-03-23 19:45:01 UTC,"sourced from firewall logs (incomming WAN, TCP, Syn, blocked)",30985
+337370,216.121.233.27,ipv4,49786,,,6,,46,2016-03-23 19:40:04 UTC,2016-03-23 19:40:04 UTC,"sourced from firewall logs (incomming WAN, TCP, Syn, blocked)",54322
+337369,216.121.233.27,ipv4,49786,,,6,,46,2016-03-23 19:40:03 UTC,2016-03-23 19:40:03 UTC,"sourced from firewall logs (incomming WAN, TCP, Syn, blocked)",54322
+337368,216.121.233.27,ipv4,49786,,,6,,46,2016-03-23 19:40:03 UTC,2016-03-23 19:40:03 UTC,"sourced from firewall logs (incomming WAN, TCP, Syn, blocked)",54322
+337367,109.111.134.64,ipv4,49786,,,6,,46,2016-03-23 19:40:02 UTC,2016-03-23 19:40:02 UTC,"sourced from firewall logs (incomming WAN, TCP, Syn, blocked)",55767
