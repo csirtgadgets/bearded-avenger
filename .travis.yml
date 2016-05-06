@@ -6,7 +6,8 @@ python:
 #    - 3.4
 
 script:
-    - py.test
+    - sudo pip install pytest-cov
+    - py.test --cov=cif --cov-fail-under=45
     - python setup.py sdist
     - cp -f dist/bearded-avenger-*.tar.gz deployment/ubuntu14/roles/bearded-avenger/files/bearded-avenger3.tar.gz
     - sudo pip install 'ansible==1.9.6'

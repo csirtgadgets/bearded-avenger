@@ -99,7 +99,6 @@ class Router(object):
         self.frontend.send_multipart([id, '', mtype, rv])
 
     def handle_ping(self, token, data):
-        self.logger.info('sending to hunters..')
         rv = {
             "status": "success",
             "data": str(time.time())
@@ -167,9 +166,9 @@ class Router(object):
         self.storage.send_multipart(['tokens_search', token, data])
         return self.storage.recv()
 
-    def run(self):
+
+    def run(self, loop=ioloop.IOLoop.instance()):
         self.logger.debug('starting loop')
-        loop = ioloop.IOLoop.instance()
         loop.add_handler(self.frontend, self.handle_message, zmq.POLLIN)
         loop.add_handler(self.ctrl, self.handle_ctrl, zmq.POLLIN)
         loop.start()

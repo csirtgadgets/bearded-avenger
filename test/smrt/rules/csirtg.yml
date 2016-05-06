@@ -1,0 +1,42 @@
+# cif-smrt configuration file to pull feeds from csirtg.io
+# For more information see https://csirtg.io
+#
+# If no token is given, the feed by default is a "limited feed"
+# provided by https://csirtg.io. The limits of the "limited feed"
+# are:
+#
+# 1. Only results from the last hour are returned
+# 2. A maximum of 25 results are returned per feed
+#
+# To remove the limits, sign up for an API key at https://csirtg.io
+
+parser: csv
+#token: < token here -> get one at https://csirtg.io >
+defaults:
+  provider: csirtg.io
+  altid_tlp: white
+  altid: https://csirtg.io/search?q=<indicator>
+  tlp: white
+  confidence: 9
+  values:
+    - null
+    - indicator
+    - itype
+    - portlist
+    - null
+    - null
+    - protocol
+    - application
+    - null
+    - null
+    - lasttime
+    - description
+    - null
+
+feeds:
+  # A feed of IP addresses block by a firewall (e.g. port scanners)
+  port-scanners:
+    remote: 'test/smrt/data/feed.txt'
+    defaults:
+      tags:
+        - scanner
