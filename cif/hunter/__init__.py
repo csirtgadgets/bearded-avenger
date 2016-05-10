@@ -33,7 +33,8 @@ class Hunter(object):
         for p in self.plugins:
             p.process(m, self.router)
 
-    def __init__(self, remote=HUNTER_ADDR, router=ROUTER_ADDR, token=TOKEN, *args, **kv):
+    def __init__(self, remote=HUNTER_ADDR, router=ROUTER_ADDR, token=TOKEN, loop=ioloop.IOLoop.instance(), *args,
+                 **kvargs):
 
         self.logger = logging.getLogger(__name__)
         self.context = zmq.Context.instance()
@@ -42,7 +43,7 @@ class Hunter(object):
             self.socket.setsockopt_string(zmq.SUBSCRIBE, '')
         else:
             self.socket.setsockopt(zmq.SUBSCRIBE, '')
-        self.loop = ioloop.IOLoop.instance()
+        self.loop = loop
         self.loop.add_handler(self.socket, self.handle_message, zmq.POLLIN)
 
         self.plugins = []
@@ -51,7 +52,7 @@ class Hunter(object):
         self.logger.debug('loading plugins...')
         for loader, modname, is_pkg in pkgutil.iter_modules(cif.hunter.__path__, 'cif.hunter.'):
             p = loader.find_module(modname).load_module(modname)
-            self.plugins.append(p.Plugin(*args, **kv))
+            self.plugins.append(p.Plugin(*args, **kvargs))
             self.logger.debug('plugin loaded: {}'.format(modname))
 
         self.hunters = remote
