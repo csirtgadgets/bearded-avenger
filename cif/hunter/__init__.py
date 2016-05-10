@@ -64,6 +64,7 @@ class Hunter(object):
         self.socket.connect(self.hunters)
         self.logger.debug('starting loop...')
         self.loop.start()
+        self.logger.debug('started..')
 
     def stop(self):
         self.loop.stop()
@@ -72,7 +73,8 @@ class Hunter(object):
         return self
 
     def __exit__(self, type, value, traceback):
-        self.stop()
+        #self.stop()
+        return self
 
 
 def main():
