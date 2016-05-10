@@ -19,7 +19,7 @@ class HTTP(Client):
 
         self.session = requests.Session()
         self.session.headers["Accept"] = 'application/vnd.cif.v3+json'
-        self.session.headers['User-Agent'] = 'cif-sdk-python/0.0.0a'
+        self.session.headers['User-Agent'] = 'cif-sdk-py/3.0.0a1'
         self.session.headers['Authorization'] = 'Token token=' + self.token
         self.session.headers['Content-Type'] = 'application/json'
 
