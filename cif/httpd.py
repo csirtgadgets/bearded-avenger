@@ -26,7 +26,7 @@ HTTP_LISTEN = os.environ.get('CIF_HTTP_LISTEN', HTTP_LISTEN)
 HTTP_LISTEN_PORT = 5000
 HTTP_LISTEN_PORT = os.environ.get('CIF_HTTP_LISTEN_PORT', HTTP_LISTEN_PORT)
 
-FILTERS = ['itype', 'confidence', 'provider', 'limit', 'application']
+FILTERS = ['indicator', 'itype', 'confidence', 'provider', 'limit', 'application']
 TOKEN_FILTERS = ['username', 'token']
 
 LIMIT_DAY = os.environ.get('CIF_LIMIT_DAY', 5000)
