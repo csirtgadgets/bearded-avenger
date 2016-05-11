@@ -73,7 +73,6 @@ class Hunter(object):
         return self
 
     def __exit__(self, type, value, traceback):
-        #self.stop()
         return self
 
 
@@ -107,6 +106,7 @@ def main():
             h.start()
         except KeyboardInterrupt:
             logging.info("shutting down...")
+            h.stop()
 
 if __name__ == "__main__":
     main()

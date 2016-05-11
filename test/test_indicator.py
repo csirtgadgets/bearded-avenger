@@ -5,25 +5,25 @@ from cif.indicator import Indicator
 ##TODO bring over the new tests from v2
 
 
-def test_obs_ipv4():
-    o = Indicator('192.168.1.1')
-    assert o.is_private()
-    assert o.indicator == '192.168.1.1'
-    assert o.itype == 'ipv4'
+def test_indicator_ipv4():
+    i = Indicator('192.168.1.1')
+    assert i.is_private()
+    assert i.indicator == '192.168.1.1'
+    assert i.itype == 'ipv4'
 
 
-def test_obs_fqdn():
-    o = Indicator('example.org')
+def test_indicator_fqdn():
+    i = Indicator('example.org')
 
-    assert o.is_private() is False
-    assert o.indicator == 'example.org'
-    assert o.itype == 'fqdn'
+    assert i.is_private() is False
+    assert i.indicator == 'example.org'
+    assert i.itype == 'fqdn'
 
 
-def test_obs_url():
-    o = Indicator('http://example.org')
+def test_indicator_url():
+    i = Indicator('http://example.org')
 
-    assert o.is_private() is False
-    assert o.indicator == 'http://example.org'
-    assert o.itype is not 'fqdn'
-    assert o.itype is 'url'
+    assert i.is_private() is False
+    assert i.indicator == 'http://example.org'
+    assert i.itype is not 'fqdn'
+    assert i.itype is 'url'
