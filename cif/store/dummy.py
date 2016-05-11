@@ -19,7 +19,7 @@ class Dummy(Store):
     def tokens_delete(self, data):
         return [data]
 
-    def tokens_search(self, token, data):
+    def tokens_search(self, data):
         return [data]
 
     def token_admin(self, token):

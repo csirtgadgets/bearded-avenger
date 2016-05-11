@@ -130,12 +130,11 @@ class Storage(object):
                 data = json.loads(data)
             except ValueError as e:
                 self.logger.error(e)
-                self.router.send_multipart(["", json.dumps({"status": "failed" })])
+                self.router.send_multipart(["", json.dumps({"status": "failed"})])
 
         handler = getattr(self, "handle_" + mtype)
         if handler:
             self.logger.debug("mtype: {0}".format(mtype))
-
             self.logger.debug('running handler: {}'.format(mtype))
 
             try:
@@ -147,7 +146,7 @@ class Storage(object):
                 rv = {'status': 'failed', 'message': 'unauthorized'}
             except Exception as e:
                 self.logger.error(e)
-                # traceback.print_exc()
+                traceback.print_exc()
                 rv = {"status": "failed"}
 
             self.router.send_multipart([id, json.dumps(rv).encode('utf-8')])
@@ -189,11 +188,7 @@ class Storage(object):
 
     def handle_tokens_delete(self, token, data):
         if self.store.token_admin(token):
-            if data.get('token'):
-                self.logger.debug('deleting token: {}'.format(data['token']))
-                return self.store.tokens_delete(data['token'])
-            else:
-                self.logger.error('missing token')
+            return self.store.tokens_delete(data)
         else:
             raise AuthError('invalid token')
 

@@ -24,6 +24,8 @@ class ZMQ(Client):
         self.socket.SNDTIMEO = SNDTIMEO
         self.socket.setsockopt(zmq.LINGER, LINGER)
 
+        self.logger.debug('token: {}'.format(token))
+
     def _send(self, mtype, data):
         self.logger.debug('connecting to {0}'.format(self.remote))
         self.logger.debug("mtype {0}".format(mtype))

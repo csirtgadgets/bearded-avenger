@@ -166,7 +166,6 @@ class Router(object):
         self.storage.send_multipart(['tokens_search', token, data])
         return self.storage.recv()
 
-
     def run(self, loop=ioloop.IOLoop.instance()):
         self.logger.debug('starting loop')
         loop.add_handler(self.frontend, self.handle_message, zmq.POLLIN)

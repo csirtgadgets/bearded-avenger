@@ -156,7 +156,10 @@ class SQLite(Store):
                 d[col.name] = getattr(obj, col.name).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
             d[col.name] = d[col.name]
 
-        d['tags'] = [t.tag for t in obj.tags]
+        try:
+            d['tags'] = [t.tag for t in obj.tags]
+        except AttributeError:
+            pass
 
         return d
 
@@ -257,7 +260,7 @@ class SQLite(Store):
         s = self.handle()
         s.add(t)
         s.commit()
-        return t.token
+        return self._as_dict(t)
 
     def tokens_admin_exists(self):
         rv = self.handle().query(Token).filter_by(admin=True)
@@ -265,18 +268,35 @@ class SQLite(Store):
             return rv.first().token
 
     def tokens_search(self, data):
-        rv = self.handle().query(Token)\
-            .filter_by(token=data.get('token'))
-        if rv:
-            return True
+        rv = self.handle().query(Token)
+        if data.get('token'):
+            rv = rv.filter_by(token=data['token'])
+
+        if data.get('username'):
+            rv = rv.filter_by(username=data['username'])
+
+        if rv.count():
+            return [self._as_dict(x) for x in rv]
+
+        return []
 
     # http://stackoverflow.com/questions/1484235/replace-delete-field-using-sqlalchemy
-    def tokens_delete(self, token):
+    def tokens_delete(self, data):
         s = self.handle()
-        rv = s.query(Token).filter_by(token=token).delete()
-        if rv:
+
+        rv = s.query(Token)
+        if data.get('username'):
+            rv = rv.filter_by(username=data['username'])
+        if data.get('token'):
+            rv = rv.filter_by(token=data['token'])
+
+        if rv.count():
+            c = rv.count()
+            rv.delete()
             s.commit()
-            return True
+            return c
+        else:
+            return 0
 
     def token_read(self, token):
         x = self.handle().query(Token)\

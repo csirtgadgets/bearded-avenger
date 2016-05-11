@@ -7,6 +7,29 @@ import cif.color
 import dns.resolver
 from dns.resolver import NoAnswer, NXDOMAIN
 from dns.name import EmptyLabel
+import yaml
+import os
+
+
+def read_config(args):
+    options = {}
+    if os.path.isfile(args.config):
+        f = file(args.config)
+        config = yaml.load(f)
+        if config.get('client'):
+            config = config['client']
+        f.close()
+        if not config:
+            print("Unable to read {} config file".format(args.config))
+            raise SystemExit
+        for k in config:
+            if not options.get(k):
+                options[k] = config[k]
+    else:
+        print("Unable to read {} config file".format(args.config))
+        raise SystemExit
+
+    return options
 
 
 def get_argument_parser():

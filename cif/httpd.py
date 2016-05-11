@@ -279,12 +279,9 @@ def main():
         prog='cif-httpd',
         parents=[p]
     )
-    from pprint import pprint
-    pprint(app.config)
-    if app.config.get('CIF_ROUTER_ADDR'):
-        ROUTER_ADDR = app.config['CIF_ROUTER_ADDR']
+    router_address = app.config.get('CIF_ROUTER_ADDR', ROUTER_ADDR)
 
-    p.add_argument("--router", help="specify router frontend [default %(default)s]", default=ROUTER_ADDR)
+    p.add_argument("--router", help="specify router frontend [default %(default)s]", default=router_address)
     p.add_argument('--token', help="specify cif-httpd token [default %(default)s]", default=TOKEN)
     p.add_argument('--listen', help='specify the interface to listen on [default %(default)s]', default=HTTP_LISTEN)
     p.add_argument('--listen-port', help='specify the port to listen on [default %(default)s]',

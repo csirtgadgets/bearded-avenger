@@ -24,7 +24,8 @@ class HTTP(Client):
         self.session.headers['Content-Type'] = 'application/json'
 
     def _get(self, uri, params={}):
-        uri = self.remote + uri
+        if not uri.startswith('http'):
+            uri = self.remote + uri
         body = self.session.get(uri, params=params, verify=self.verify_ssl)
 
         if body.status_code > 303:
@@ -123,8 +124,8 @@ class HTTP(Client):
         rv = self._get('{}/tokens'.format(self.remote), params=filters)
         return rv['data']
 
-    def tokens_delete(self, token):
-        rv = self._delete('{}/tokens'.format(self.remote), {'token': token})
+    def tokens_delete(self, data):
+        rv = self._delete('{}/tokens'.format(self.remote), data)
         return rv['data']
 
     def tokens_create(self, data):
