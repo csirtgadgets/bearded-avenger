@@ -94,6 +94,10 @@ def ping():
 
     :return: { 'message': 'success', 'data': '<timestamp>' }
     """
+    remote = ROUTER_ADDR
+    if app.config.get('CIF_ROUTER_ADDR'):
+        remote = app.config['CIF_ROUTER_ADDR']
+
     r = Client(remote, pull_token()).ping()
     return jsonify({
         "message": "success",
@@ -113,6 +117,10 @@ def search():
 
     :return: { 'message': 'success', 'data': [] }
     """
+
+    remote = ROUTER_ADDR
+    if app.config.get('CIF_ROUTER_ADDR'):
+        remote = app.config['CIF_ROUTER_ADDR']
 
     filters = {}
     for k in FILTERS:
@@ -271,6 +279,10 @@ def main():
         prog='cif-httpd',
         parents=[p]
     )
+    from pprint import pprint
+    pprint(app.config)
+    if app.config.get('CIF_ROUTER_ADDR'):
+        ROUTER_ADDR = app.config['CIF_ROUTER_ADDR']
 
     p.add_argument("--router", help="specify router frontend [default %(default)s]", default=ROUTER_ADDR)
     p.add_argument('--token', help="specify cif-httpd token [default %(default)s]", default=TOKEN)

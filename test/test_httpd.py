@@ -5,18 +5,22 @@ from pprint import pprint
 import threading
 
 # http://stackoverflow.com/a/34843029
+import tempfile
+import os
 from zmq.eventloop import ioloop
+ROUTER_ADDR = 'ipc://{}'.format(tempfile.NamedTemporaryFile().name)
 router_loop = ioloop.IOLoop.instance()
 
 @pytest.fixture
 def client(request):
     httpd.app.config['TESTING'] = True
+    httpd.app.config['CIF_ROUTER_ADDR'] = ROUTER_ADDR
     return httpd.app.test_client()
 
 
 # http://bitterjug.com/blog/deadlock-bdd-testing-a-python-tornado-app-with-py-test-and-splinter/
 def _router_start():
-    r = router.Router()
+    r = router.Router(listen=ROUTER_ADDR)
     global router_thread
     router_thread = threading.Thread(target=r.run, args=[router_loop])
     router_thread.start()
