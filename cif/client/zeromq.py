@@ -52,8 +52,11 @@ class ZMQ(Client):
             self.logger.error(data.get('data'))
             raise RuntimeError(data.get('message'))
 
-    def ping(self):
-        return self._send('ping', str(time.time()))
+    def ping(self, write=False):
+        if write:
+            return self._send('ping_write', str(time.time()))
+        else:
+            return self._send('ping', str(time.time()))
 
     def search(self, filters):
         rv = self._send('search', json.dumps(filters))

@@ -7,6 +7,7 @@ from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 from random import randint
 from time import sleep
+from pprint import pprint
 
 import cif.client
 import cif.smrt.parser
@@ -14,6 +15,7 @@ from cif.constants import REMOTE_ADDR, SMRT_RULES_PATH, SMRT_CACHE
 from cif.rule import Rule
 from cif.smrt.fetcher import Fetcher
 from cif.utils import setup_logging, get_argument_parser, load_plugin, setup_signals, read_config
+from cif.exceptions import AuthError
 
 PARSER_DEFAULT = "pattern"
 TOKEN = os.environ.get('CIF_TOKEN', None)
@@ -35,6 +37,9 @@ class Smrt(object):
 
         self.logger = logging.getLogger(__name__)
         self.client = load_plugin(cif.client.__path__[0], client)(remote, token)
+
+    def ping_router(self):
+        return self.client.ping(write=True)
 
     def _process(self, rule, feed, limit=None):
 
@@ -143,6 +148,12 @@ def main():
 
     args = p.parse_args()
 
+    o = read_config(args)
+    options = vars(args)
+    for v in options:
+        if options[v] is None:
+            options[v] = o.get(v)
+
     setup_logging(args)
     logger = logging.getLogger(__name__)
     logger.info('loglevel is: {}'.format(logging.getLevelName(logger.getEffectiveLevel())))
@@ -163,14 +174,20 @@ def main():
 
         logger.info('starting...')
         try:
-            with Smrt(args.remote, args.token) as s:
+            with Smrt(options.get('remote'), options.get('token')) as s:
                 logger.info('staring up...')
+                logger.info('testing router connection...')
+                s.ping_router()
+
                 x = s.process(args.rule, feed=args.feed, limit=args.limit)
                 logger.info('complete')
 
                 if not args.test:
                     logger.info('sleeping for 1 hour')
                     sleep((60 * 60))
+        except AuthError as e:
+            logger.error(e)
+            stop = True
         except RuntimeError as e:
             logger.error(e)
             if str(e).startswith('submission failed'):

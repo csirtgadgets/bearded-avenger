@@ -126,7 +126,15 @@ class Storage(object):
         self.logger.debug('message received')
         m = s.recv_multipart()
 
-        id, mtype, token, data = m
+        try:
+            id, mtype, token, data = m
+        except Exception as e:
+            self.logger.error(e)
+            self.logger.debug(m)
+            traceback.print_exc()
+            rv = {"status": "failed"}
+            self.router.send_multipart([m[0], json.dumps(rv).encode('utf-8')])
+            return
 
         if isinstance(data, basestring):
             try:
@@ -134,6 +142,7 @@ class Storage(object):
             except ValueError as e:
                 self.logger.error(e)
                 self.router.send_multipart(["", json.dumps({"status": "failed"})])
+                return
 
         handler = getattr(self, "handle_" + mtype)
         if handler:
@@ -194,6 +203,9 @@ class Storage(object):
             return self.store.tokens_delete(data)
         else:
             raise AuthError('invalid token')
+
+    def handle_token_write(self, token, data):
+        return self.store.token_write(token)
 
 
 def main():

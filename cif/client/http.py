@@ -48,7 +48,7 @@ class HTTP(Client):
         return json.loads(body.content)
 
     def _post(self, uri, data):
-        body = self.session.post(uri, data=json.dumps(data))
+        body = self.session.post(uri, data=data)
 
         if body.status_code > 303:
             err = 'request failed: %s' % str(body.status_code)
@@ -111,14 +111,20 @@ class HTTP(Client):
         rv = self._post(uri, data)
         return rv["data"]
 
-    def ping(self):
+    def ping(self, write=False):
         t0 = time.time()
 
-        self._get('/ping')
+        uri = '/ping'
+        if write:
+            uri = '/ping?write=1'
 
-        t1 = (time.time() - t0)
-        self.logger.debug('return time: %.15f' % t1)
-        return t1
+        rv = self._get(uri)
+
+        if rv:
+            rv = (time.time() - t0)
+            self.logger.debug('return time: %.15f' % rv)
+
+        return rv
 
     def tokens_search(self, filters):
         rv = self._get('{}/tokens'.format(self.remote), params=filters)

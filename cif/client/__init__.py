@@ -7,10 +7,10 @@ import textwrap
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 
-from cif.constants import REMOTE_ADDR, SEARCH_LIMIT
+from cif.constants import REMOTE_ADDR, SEARCH_LIMIT, CONFIG_PATH
 from cif.format.table import Table
 from cif.indicator import Indicator
-from cif.utils import setup_logging, get_argument_parser
+from cif.utils import setup_logging, get_argument_parser, read_config
 from cif.exceptions import AuthError
 
 TOKEN = os.environ.get('CIF_TOKEN', None)
@@ -48,7 +48,7 @@ def main():
         parents=[p]
     )
 
-    p.add_argument('--token', help='specify api token', default=str(1234))
+    p.add_argument('--token', help='specify api token', default=TOKEN)
     p.add_argument('--remote', help='specify API remote [default %(default)s]', default=REMOTE_ADDR)
     p.add_argument('-p', '--ping', action="store_true") # meg?
     p.add_argument('-q', '--search', help="search")
@@ -60,16 +60,27 @@ def main():
     p.add_argument('--indicator')
     p.add_argument('--tags', nargs='+')
 
-    p.add_argument("--zmq", dest="zmq", help="use zmq as a transport instead of http", action="store_true")
+    p.add_argument("--zmq", help="use zmq as a transport instead of http", action="store_true")
 
-    p.add_argument('--tokens', help='list tokens (requires admin token)')
-    p.add_argument('--tokens-create', help='create token (requires admin token')
-    p.add_argument('--tokens-delete', help='delete token (requires admin token)')
+    p.add_argument('--config', help='specify config file [default %(default)s]', default=CONFIG_PATH)
 
     args = p.parse_args()
 
     setup_logging(args)
     logger = logging.getLogger(__name__)
+
+    o = read_config(args)
+    options = vars(args)
+    for v in options:
+        if options[v] is None:
+            options[v] = o.get(v)
+
+    if not options.get('token'):
+        raise RuntimeError('missing --token')
+
+    verify_ssl = True
+    if o.get('no_verify_ssl') or options.get('no_verify_ssl'):
+        verify_ssl = False
 
     options = vars(args)
 
@@ -78,7 +89,7 @@ def main():
         cli = ZMQClient(**options)
     else:
         from cif.client.http import HTTP as HTTPClient
-        cli = HTTPClient(args.remote, args.token)
+        cli = HTTPClient(args.remote, args.token, verify_ssl=verify_ssl)
 
     if options.get('ping'):
         logger.info('running ping')

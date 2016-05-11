@@ -307,11 +307,14 @@ class SQLite(Store):
             return True
 
     def token_write(self, token):
-        x = self.handle().query(Token)\
+        self.logger.debug('testing token: {}'.format(token))
+        rv = self.handle().query(Token)\
             .filter_by(token=token)\
             .filter_by(write=True) \
             .filter(Token.revoked is not True)
-        if x.count():
+
+        self.logger.debug(rv.count())
+        if rv.count():
             return True
 
     def token_last_activity_at(self, token, timestamp=None):

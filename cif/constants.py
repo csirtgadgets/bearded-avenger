@@ -15,6 +15,9 @@ LOG_FORMAT = '%(asctime)s - %(levelname)s - %(name)s[%(lineno)s] - %(message)s'
 LOGLEVEL = 'INFO'
 LOGLEVEL = os.environ.get('CIF_LOGLEVEL', LOGLEVEL).upper()
 
+CONFIG_PATH = os.environ.get('CIF_CONFIG',
+                             os.environ.get('CIF_CONFIG', os.path.join(os.path.expanduser('~/'), '.cif.yml')))
+
 # address stuff
 
 REMOTE_ADDR = 'http://localhost:5000'

@@ -15,6 +15,7 @@ from cif.utils import setup_logging, get_argument_parser, setup_signals
 import cif.gatherer
 from cif.indicator import Indicator
 from cif.utils import zhelper
+import traceback
 
 from pprint import pprint
 
@@ -93,7 +94,14 @@ class Router(object):
 
         handler = getattr(self, "handle_" + mtype)
         self.logger.debug('handler: {}'.format(handler))
-        rv = handler(token, data)
+
+        rv = json.dumps({'status': 'failed'})
+
+        try:
+            rv = handler(token, data)
+        except Exception as e:
+            self.logger.error(e)
+            traceback.print_exc()
 
         self.logger.debug("replying {}".format(rv))
         self.frontend.send_multipart([id, '', mtype, rv])
@@ -101,13 +109,6 @@ class Router(object):
     def handle_ping(self, token, data):
         rv = {
             "status": "success",
-            "data": str(time.time())
-        }
-        return json.dumps(rv)
-
-    def handle_write(self, data):
-        rv = {
-            "status": "failed",
             "data": str(time.time())
         }
         return json.dumps(rv)
@@ -153,6 +154,10 @@ class Router(object):
         self.storage.send_multipart(['submission', token, data])
         m = self.storage.recv()
         return m
+
+    def handle_ping_write(self, token, data):
+        self.storage.send_multipart(['token_write', token, '[]'])
+        return self.storage.recv()
 
     def handle_tokens_create(self, token, data):
         self.storage.send_multipart(['tokens_create', token, data])

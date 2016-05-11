@@ -98,11 +98,22 @@ def ping():
     if app.config.get('CIF_ROUTER_ADDR'):
         remote = app.config['CIF_ROUTER_ADDR']
 
-    r = Client(remote, pull_token()).ping()
-    return jsonify({
+    write = request.args.get('write', None)
+
+    r = Client(remote, pull_token()).ping(write=write)
+    resp = jsonify({
         "message": "success",
         "data": r
     })
+
+    if not r:
+        resp = jsonify({
+            'message': 'failed',
+            'data': [],
+        })
+        resp.status_code = 401
+
+    return resp
 
 
 # http://flask.pocoo.org/docs/0.10/api/#flask.Request
@@ -177,6 +188,7 @@ def indicators():
 
     else:
         try:
+            logger.debug(request.data)
             r = Client(remote, pull_token()).submit(request.data)
         except RuntimeError as e:
             logger.error(e)
