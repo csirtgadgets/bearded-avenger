@@ -48,6 +48,9 @@ class HTTP(Client):
         return json.loads(body.content)
 
     def _post(self, uri, data):
+        if type(data) == dict:
+            data = json.dumps(data)
+
         body = self.session.post(uri, data=data)
 
         if body.status_code > 303:

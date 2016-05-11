@@ -126,6 +126,8 @@ class Storage(object):
         self.logger.debug('message received')
         m = s.recv_multipart()
 
+        self.logger.debug(m)
+
         try:
             id, mtype, token, data = m
         except Exception as e:
