@@ -11,9 +11,10 @@ class Dummy(Store):
         pass
 
     def tokens_admin_exists(self):
-        return True
+        return False
 
     def tokens_create(self, data):
+        data['token'] = self._token_generate()
         return [data]
 
     def tokens_delete(self, data):

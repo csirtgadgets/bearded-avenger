@@ -42,9 +42,11 @@ def test_storage_dummy(obs):
 
 
 def test_storage_sqlite(storage):
+    storage.token_create_admin()
     t = storage.store.tokens_admin_exists()
+    assert t
 
-    ob = [
+    i = [
         Indicator(indicator='example.com', tags='botnet', provider='csirtgadgets.org').__dict__,
         Indicator(indicator='example2.com', tags='malware', provider='csirtgadgets.org').__dict__
     ]

@@ -10,6 +10,7 @@ import ujson as json
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 import traceback
+import yaml
 from pprint import pprint
 import arrow
 
@@ -20,6 +21,8 @@ import cif.store
 from cif.constants import CTRL_ADDR, STORAGE_ADDR
 from cif.exceptions import CIFConnectionError, AuthError
 from cif.utils import setup_logging, get_argument_parser, setup_signals
+
+CONFIG_PATH = os.path.join(os.path.expanduser('~'), '.cifv3.yml')
 
 MOD_PATH = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 
@@ -59,9 +62,7 @@ class Storage(object):
 
         self.router = self.context.socket(zmq.ROUTER)
 
-        self._token_create_admin()
-
-    def _token_create_admin(self):
+    def token_create_admin(self):
         self.logger.info('testing for tokens...')
         if not self.store.tokens_admin_exists():
             self.logger.info('admin token does not exist, generating..')
@@ -72,11 +73,13 @@ class Storage(object):
                 'write': u'1',
                 'admin': u'1'
             })
-            self.logger.info('admin token created: {}'.format(rv))
+            self.logger.info('admin token created: {}'.format(rv['token']))
+            return rv['token']
         else:
             self.logger.info('admin token exists...')
 
     def start(self):
+        self.token_create_admin()
         while not self.connected:
             try:
                 self.logger.debug('connecting to router: {0}'.format(self.router))
@@ -216,6 +219,7 @@ def main():
                    default=STORE_DEFAULT)
 
     p.add_argument('--token-create-admin', help='generate an admin token', action='store_true')
+    p.add_argument('--config', help='specify config path [default %(default)s]', default=CONFIG_PATH)
 
     args = p.parse_args()
 
@@ -237,6 +241,16 @@ def main():
                 s.start()
             except KeyboardInterrupt:
                 logger.info('shutting down...')
+        else:
+            t = s.token_create_admin()
+            if t:
+                data = {
+                    'remote': 'http://localhost:5000',
+                    'token': str(t),
+                }
+                with open(args.config, 'w') as f:
+                    f.write(yaml.dump(data, default_flow_style=False))
+
 
 
     # mw.stop_watching()

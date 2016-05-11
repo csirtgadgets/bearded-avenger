@@ -218,6 +218,12 @@ def tokens():
         if request.data:
             try:
                 r = cli.tokens_create(request.data)
+            except AuthError:
+                response = jsonify({
+                    'message': 'admin privs required',
+                    'data': []
+                })
+                response.status_code = 401
             except Exception as e:
                 logger.error(e)
                 response = jsonify({
@@ -251,6 +257,12 @@ def tokens():
 
         try:
             r = cli.tokens_search(filters)
+        except AuthError:
+            response = jsonify({
+                "message": "failed",
+                "data": []
+            })
+            response.status_code = 401
         except Exception as e:
             logger.error(e)
             response = jsonify({

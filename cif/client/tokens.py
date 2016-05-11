@@ -9,9 +9,11 @@ from argparse import RawDescriptionHelpFormatter
 
 from cif.constants import REMOTE_ADDR, SEARCH_LIMIT
 from cif.utils import setup_logging, get_argument_parser, read_config
+from cif.exceptions import AuthError
 from pprint import pprint
 from prettytable import PrettyTable
 import arrow
+import yaml
 
 TOKEN = os.environ.get('CIF_TOKEN', None)
 #REMOTE_ADDR = os.environ.get('CIF_REMOTE', REMOTE_ADDR)
@@ -54,7 +56,7 @@ def main():
     p.add_argument('--columns', help='specify columns to print when searching [default %(default)s]',
                    default=','.join(COLS))
 
-    p.add_argument('--generate-config', help='generate configuration file [default %(default)s]', default=CONFIG)
+    p.add_argument('--config-generate', help='generate configuration file [default %(default)s]', default=CONFIG)
     p.add_argument('--config', help='specify configuration file [default %(default)s]', default=CONFIG)
     p.add_argument('--no-verify-ssl', help='Turn OFF TLS verification', action='store_true')
 
@@ -107,9 +109,19 @@ def main():
                 'groups': list(groups),
                 'acl': acl
             })
+        except AuthError as e:
+            logger.error(e)
         except Exception as e:
             logger.error('token create failed: {}'.format(e))
         else:
+            if options.get('config_generate'):
+                data = {
+                    'remote': options['remote'],
+                    'token': str(rv['token']),
+                }
+                with open(options['config_generate'], 'w') as f:
+                    f.write(yaml.dump(data, default_flow_style=False))
+
             t = PrettyTable(args.columns.split(','))
             l = []
             for c in args.columns.split(','):
@@ -121,7 +133,7 @@ def main():
                     rv[c] = '{}Z'.format(rv[c])
                 l.append(rv[c])
             t.add_row(l)
-        print(t)
+            print(t)
 
     elif options.get('delete'):
         if not (options.get('delete_token') or options.get('username')):
@@ -143,6 +155,8 @@ def main():
             filters['username'] = options.get('username')
         try:
             rv = cli.tokens_search(filters)
+        except AuthError:
+            logger.error('unauthorized')
         except Exception as e:
             logger.error('token search failed: {}'.format(e))
         else:

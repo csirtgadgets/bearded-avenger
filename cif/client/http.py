@@ -56,7 +56,7 @@ class HTTP(Client):
             err = body.content
 
             if body.status_code == 401:
-                raise AuthError('invalid token')
+                raise AuthError('unauthorized')
             elif body.status_code == 404:
                 err = 'not found'
                 raise RuntimeError(err)
@@ -82,7 +82,7 @@ class HTTP(Client):
             err = body.content
 
             if body.status_code == 401:
-                raise AuthError('invalid token')
+                raise AuthError('unauthorized')
             elif body.status_code == 404:
                 err = 'not found'
                 raise RuntimeError(err)

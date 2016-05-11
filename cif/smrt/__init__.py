@@ -13,7 +13,7 @@ import cif.smrt.parser
 from cif.constants import REMOTE_ADDR, SMRT_RULES_PATH, SMRT_CACHE
 from cif.rule import Rule
 from cif.smrt.fetcher import Fetcher
-from cif.utils import setup_logging, get_argument_parser, load_plugin, setup_signals
+from cif.utils import setup_logging, get_argument_parser, load_plugin, setup_signals, read_config
 
 PARSER_DEFAULT = "pattern"
 TOKEN = os.environ.get('CIF_TOKEN', None)
@@ -113,7 +113,7 @@ def main():
 
         example usage:
             $ cif-smrt -v --rules rules/default
-            $ cif-smrt --rules rules/default/drg.yml --feed ssh
+            $ cif-smrt --rules rules/default/csirtg.yml --feed ssh port-scanners
         '''),
         formatter_class=RawDescriptionHelpFormatter,
         prog='cif-smrt',
@@ -138,6 +138,8 @@ def main():
     p.add_argument('--test', action='store_true')
     p.add_argument('--sleep', default=60)
     p.add_argument('--ignore-unknown', action='store_true')
+
+    p.add_argument('--config', help='specify cif config')
 
     args = p.parse_args()
 
