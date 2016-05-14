@@ -23,7 +23,7 @@ class Fqdn(object):
                 self.logger.debug(x)
 
             r = resolve_ns(i.indicator, t='CNAME')
-            self.logger.debug(r)
+            self.logger.debug('CNAME: {}'.format(r))
             for rr in r:
                 ip = copy.deepcopy(i)
                 ip.indicator = str(rr).rstrip('.')
@@ -33,21 +33,22 @@ class Fqdn(object):
                 self.logger.debug(x)
 
             r = resolve_ns(i.indicator, t='NS')
-            self.logger.debug(r)
+            self.logger.debug('NS: {}'.format(r))
             for rr in r:
                 ip = copy.deepcopy(i)
                 ip.indicator = str(rr).rstrip('.')
                 ip.itype = 'fqdn'
-                ip.confidence = (int(ip.confidence) / 3)
+                ip.confidence = 0
                 x = router.submit(ip)
                 self.logger.debug(x)
 
             r = resolve_ns(i.indicator, t='MX')
+            self.logger.debug('MX: {}'.format(r))
             for rr in r:
                 ip = copy.deepcopy(i)
                 ip.indicator = str(rr).rstrip('.')
                 ip.itype = 'fqdn'
-                ip.confidence = (int(ip.confidence) / 4)
+                ip.confidence = 0
                 x = router.submit(ip)
                 self.logger.debug(x)
 

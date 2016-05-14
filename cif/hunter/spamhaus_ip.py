@@ -51,13 +51,13 @@ class SpamhausIp(object):
 
     def _resolve(self, data):
         data = reversed(data.split('.'))
-        data = '{}.zen.spamhaus.org'.format(data.join('.'))
+        data = '{}.zen.spamhaus.org'.format('.'.join(data))
         self.logger.debug(data)
         answers = dns.resolver.query(data, 'A')
         return answers[0]
 
     def process(self, i, router):
-        if i.itype == 'ip':
+        if i.itype == 'ipv4' or i.itype == 'ipv6':
             try:
                 r = self._resolve(i.indicator)
                 r = CODES[r]
@@ -75,6 +75,10 @@ class SpamhausIp(object):
                 self.logger.info('no answer...')
             except NXDOMAIN:
                 self.logger.info('nxdomain...')
+            except Exception as e:
+                self.logger.error(e)
+                import traceback
+                traceback.print_exc()
 
 
 Plugin = SpamhausIp
