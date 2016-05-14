@@ -17,11 +17,11 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     echo GH_TOKEN=#{ENV['GH_TOKEN']} >> /home/vagrant/.profile
   END
 
-  config.vm.provision "ansible" do |ansible|
-    ansible.playbook = "deployment/ubuntu14/vagrant.yml"
-    ansible.extra_vars = { development: 'true' }
+  #config.vm.provision "ansible" do |ansible|
+    #ansible.playbook = "deployment/ubuntu14/vagrant.yml"
+    #ansible.extra_vars = { development: 'true' }
     #ansible.verbose = 'vvv'
-  end
+  #end
 
   if File.file?(VAGRANTFILE_LOCAL)
     external = File.read VAGRANTFILE_LOCAL

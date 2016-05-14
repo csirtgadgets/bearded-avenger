@@ -15,6 +15,7 @@ from cif.utils import setup_logging, get_argument_parser, setup_signals
 import cif.gatherer
 from cif.indicator import Indicator
 from cif.utils import zhelper
+import traceback
 
 from pprint import pprint
 
@@ -74,11 +75,6 @@ class Router(object):
             self.gatherers.append(p.Plugin())
             self.logger.debug('plugin loaded: {}'.format(modname))
 
-    def auth(self, token):
-        if not token:
-            return 0
-        return 1
-
     def handle_ctrl(self, s, e):
         """
 
@@ -93,36 +89,28 @@ class Router(object):
         self.logger.debug('message received')
         m = s.recv_multipart()
 
+        self.logger.debug(m)
+
         id, null, token, mtype, data = m
         self.logger.debug("mtype: {0}".format(mtype))
 
-        if self.auth(token):
-            handler = getattr(self, "handle_" + mtype)
-            self.logger.debug('handler: {}'.format(handler))
+        handler = getattr(self, "handle_" + mtype)
+        self.logger.debug('handler: {}'.format(handler))
+
+        rv = json.dumps({'status': 'failed'})
+
+        try:
             rv = handler(token, data)
-        else:
-            self.logger.debug('auth failed...')
-            rv = json.dumps({
-                "status": "failed",
-                "data": "unauthorized"
-            })
+        except Exception as e:
+            self.logger.error(e)
+            traceback.print_exc()
 
         self.logger.debug("replying {}".format(rv))
         self.frontend.send_multipart([id, '', mtype, rv])
 
-    def handle_ping(self, token, data):
-        rv = {
-            "status": "success",
-            "data": str(time.time())
-        }
-        return json.dumps(rv)
-
-    def handle_write(self, data):
-        rv = {
-            "status": "failed",
-            "data": str(time.time())
-        }
-        return json.dumps(rv)
+    def handle_ping(self, token, data='[]'):
+        self.storage.send_multipart(['ping', token, data])
+        return self.storage.recv()
 
     def handle_search(self, token, data):
         # need to send searches through the _submission pipe
@@ -166,9 +154,28 @@ class Router(object):
         m = self.storage.recv()
         return m
 
+    def handle_ping_write(self, token, data='[]'):
+        self.storage.send_multipart(['token_write', token, data])
+        return self.storage.recv()
+
+    def handle_tokens_create(self, token, data):
+        self.storage.send_multipart(['tokens_create', token, data])
+        return self.storage.recv()
+
+    def handle_tokens_delete(self, token, data):
+        self.storage.send_multipart(['tokens_delete', token, data])
+        return self.storage.recv()
+
+    def handle_tokens_search(self, token, data):
+        self.storage.send_multipart(['tokens_search', token, data])
+        return self.storage.recv()
+
+    def handle_token_edit(self, token, data):
+        self.storage.send_multipart(['token_edit', token, data])
+        return self.storage.recv()
+
     def run(self, loop=ioloop.IOLoop.instance()):
         self.logger.debug('starting loop')
-        #loop = ioloop.IOLoop.instance()
         loop.add_handler(self.frontend, self.handle_message, zmq.POLLIN)
         loop.add_handler(self.ctrl, self.handle_ctrl, zmq.POLLIN)
         loop.start()

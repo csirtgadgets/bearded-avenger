@@ -10,5 +10,10 @@ class CIFException(Exception):
 class CIFConnectionError(CIFException):
     pass
 
+
 class StorageSubmissionFailed(CIFException):
+    pass
+
+
+class AuthError(CIFException):
     pass

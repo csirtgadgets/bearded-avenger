@@ -106,7 +106,7 @@ class Indicator(object):
         self.asn_desc = asn_desc
         self.cc = cc
 
-        if self.indicator and not itype:
+        if self.indicator and (not itype or itype not in ['url', 'fqdn', 'email', 'ipv4', 'ipv6']):
             self.itype = resolve_itype(self.indicator)
 
         if self.mask and self.itype == 'ipv4':

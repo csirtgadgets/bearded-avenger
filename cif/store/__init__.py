@@ -1,22 +1,66 @@
+import abc
+import os
+import binascii
+
+TOKEN_LENGTH = 40
+
 
 class Store(object):
+    __metaclass__ = abc.ABCMeta
 
     name = 'base'
 
+    @abc.abstractmethod
     def __init__(self):
-        pass
+        raise NotImplementedError
 
-    def auth(self, token):
-        return self.auth_read(token)
+    @abc.abstractmethod
+    def ping(self, token):
+        return True
 
-    def auth_read(self, token):
-        pass
+    def _token_generate(self):
+        return binascii.b2a_hex(os.urandom(TOKEN_LENGTH))
 
-    def auth_write(self, token):
-        pass
+    @abc.abstractmethod
+    def tokens_admin_exists(self):
+        raise NotImplementedError
 
-    def search(self, data):
-        pass
+    @abc.abstractmethod
+    def tokens_create(self, data):
+        raise NotImplementedError
 
-    def submit(self, data):
-        pass
+    @abc.abstractmethod
+    def tokens_delete(self, data):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def tokens_search(self, data):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def token_admin(self, token):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def token_read(self, token):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def token_write(self, token):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def token_edit(self, data):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def token_last_activity_at(self, token, timestamp=None):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def search(self, token, data):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def submit(self, token, data):
+        raise NotImplementedError

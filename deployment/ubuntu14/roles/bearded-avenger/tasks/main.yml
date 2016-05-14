@@ -28,6 +28,9 @@
   tags: development
   when: development and not ci
 
+- include: tokens.yml
+  tags: tokens
+
 - include: services.yml
   tags: configuration
   when: not development

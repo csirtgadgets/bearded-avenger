@@ -81,6 +81,8 @@ class SpamhausFqdn(object):
                 f.reference = 'http://www.spamhaus.org/query/dbl?domain={}'.format(f)
                 x = router.submit(f)
                 self.logger.debug(x)
+            except KeyError as e:
+                self.logger.error(e)
             except NoAnswer:
                 self.logger.info('no answer...')
             except NXDOMAIN:

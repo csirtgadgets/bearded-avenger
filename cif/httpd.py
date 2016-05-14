@@ -14,6 +14,8 @@ from flask_limiter.util import get_remote_address
 from cif.client.zeromq import ZMQ as Client
 from cif.constants import ROUTER_ADDR
 from cif.utils import get_argument_parser, setup_logging, setup_signals
+from pprint import pprint
+from cif.exceptions import AuthError
 
 TOKEN = os.environ.get('CIF_TOKEN', None)
 TOKEN = os.environ.get('CIF_HTTPD_TOKEN', TOKEN)
@@ -24,7 +26,8 @@ HTTP_LISTEN = os.environ.get('CIF_HTTP_LISTEN', HTTP_LISTEN)
 HTTP_LISTEN_PORT = 5000
 HTTP_LISTEN_PORT = os.environ.get('CIF_HTTP_LISTEN_PORT', HTTP_LISTEN_PORT)
 
-FILTERS = ['itype', 'confidence', 'provider']
+FILTERS = ['indicator', 'itype', 'confidence', 'provider', 'limit', 'application']
+TOKEN_FILTERS = ['username', 'token']
 
 LIMIT_DAY = os.environ.get('CIF_LIMIT_DAY', 5000)
 LIMIT_HOUR = os.environ.get('CIF_LIMIT_HOUR', 500)
@@ -45,10 +48,11 @@ limiter = Limiter(
 
 
 def pull_token():
-    token = None
+    t = None
     if request.headers.get("Authorization"):
-        token = re.match("^Token token=(\S+)$", request.headers.get("Authorization")).group(1)
-    return token
+        t = re.match("^Token token=(\S+)$", request.headers.get("Authorization")).group(1)
+    return t
+
 
 @app.before_request
 def before_request():
@@ -62,19 +66,25 @@ def before_request():
         if not t or t == 'None':
             return '', 401
 
-@app.route("/")
-def help():
-    """
-    Return a list of routes
 
-    :return:
+@app.route("/")
+@app.route("/help")
+def help():
+    """ Return a list of routes
+
+    :return: str
     """
     return jsonify({
         "GET /": 'this message',
         "GET /help": 'this message',
         'GET /ping': 'ping the router interface',
         'GET /search': 'search for an indicator',
+        'GET /indicators': 'search for a set of indicators',
         'POST /indicators': 'post indicators to the router',
+        'GET /tokens': 'search for a set of tokens',
+        'POST /tokens': 'create a token or set of tokens',
+        'DELETE /tokens': 'delete a token or set of tokens',
+        'PATCH /token': 'update a token'
     })
 
 
@@ -89,11 +99,22 @@ def ping():
     if app.config.get('CIF_ROUTER_ADDR'):
         remote = app.config['CIF_ROUTER_ADDR']
 
-    r = Client(remote, pull_token()).ping()
-    return jsonify({
+    write = request.args.get('write', None)
+
+    r = Client(remote, pull_token()).ping(write=write)
+    resp = jsonify({
         "message": "success",
         "data": r
     })
+
+    if not r:
+        resp = jsonify({
+            'message': 'failed',
+            'data': [],
+        })
+        resp.status_code = 401
+
+    return resp
 
 
 # http://flask.pocoo.org/docs/0.10/api/#flask.Request
@@ -114,19 +135,29 @@ def search():
         remote = app.config['CIF_ROUTER_ADDR']
 
     filters = {}
-    for k in ['indicator', 'itype', 'application', 'limit']:
+    for k in FILTERS:
         if request.args.get(k):
             filters[k] = request.args.get(k)
 
     if request.args.get('q'):
         filters['indicator'] = request.args.get('q')
 
-    r = Client(remote, pull_token()).search(filters)
+    try:
+        r = Client(remote, pull_token()).search(filters)
+        response = jsonify({
+            "message": "success",
+            "data": r
+        })
+        response.status_code = 200
+    except AuthError as e:
+        response = jsonify({
+            'message': 'unauthorized',
+            'data': [],
+            'status': 'failed'
+        })
+        response.status_code = 401
 
-    return jsonify({
-        "message": "success",
-        "data": r
-    })
+    return response
 
 
 @app.route("/indicators", methods=["GET", "POST"])
@@ -142,8 +173,7 @@ def indicators():
             if request.args.get(f):
                 filters[f] = request.args.get(f)
         try:
-            r = Client(remote, pull_token()).filter(filters=filters, limit=request.args.get(
-                'limit'))
+            r = Client(remote, pull_token()).filter(filters=filters, limit=request.args.get('limit'))
         except RuntimeError as e:
             logger.error(e)
             response = jsonify({
@@ -160,6 +190,7 @@ def indicators():
 
     else:
         try:
+            logger.debug(request.data)
             r = Client(remote, pull_token()).submit(request.data)
         except RuntimeError as e:
             logger.error(e)
@@ -178,6 +209,133 @@ def indicators():
     return response
 
 
+@app.route("/token", methods=['PATCH'])
+def token():
+    cli = Client(remote, pull_token())
+    if request.data:
+        try:
+            r = cli.token_edit(request.data)
+        except AuthError:
+            response = jsonify({
+                'message': 'admin privs required',
+                'data': []
+            })
+            response.status_code = 401
+        except Exception as e:
+            logger.error(e)
+            import traceback
+            traceback.print_exc()
+            response = jsonify({
+                'message': 'create failed',
+                'data': []
+            })
+            response.status_code = 503
+        else:
+            if r:
+                response = jsonify({
+                    'message': 'success',
+                    'data': r
+                })
+                response.status_code = 200
+            else:
+                response = jsonify({
+                    'message': 'admin privs required',
+                    'data': []
+                })
+                response.status_code = 401
+    else:
+        response = jsonify({
+            'message': 'edit failed',
+            'data': []
+        })
+        response.status_code = 400
+
+    return response
+
+
+@app.route("/tokens", methods=["GET", "POST", "DELETE"])
+def tokens():
+    cli = Client(remote, pull_token())
+    if request.method == 'DELETE':
+        try:
+            r = cli.tokens_delete(request.data)
+        except Exception as e:
+            logger.error(e)
+            response = jsonify({
+                "message": "failed",
+                "data": []
+            })
+            response.status_code = 503
+        else:
+            response = jsonify({
+                'message': 'success',
+                'data': r
+            })
+            response.status_code = 200
+    elif request.method == 'POST':
+        if request.data:
+            try:
+                r = cli.tokens_create(request.data)
+            except AuthError:
+                response = jsonify({
+                    'message': 'admin privs required',
+                    'data': []
+                })
+                response.status_code = 401
+            except Exception as e:
+                logger.error(e)
+                response = jsonify({
+                    'message': 'create failed',
+                    'data': []
+                })
+                response.status_code = 503
+            else:
+                if r:
+                    response = jsonify({
+                        'message': 'success',
+                        'data': r
+                    })
+                    response.status_code = 200
+                else:
+                    response = jsonify({
+                        'message': 'admin privs required',
+                        'data': []
+                    })
+                    response.status_code = 401
+        else:
+            response = jsonify({
+                'message': 'create failed',
+                'data': []
+            })
+            response.status_code = 400
+    else:
+        filters = {}
+        for f in TOKEN_FILTERS:
+            filters[f] = request.args.get(f)
+
+        try:
+            r = cli.tokens_search(filters)
+        except AuthError:
+            response = jsonify({
+                "message": "failed",
+                "data": []
+            })
+            response.status_code = 401
+        except Exception as e:
+            logger.error(e)
+            response = jsonify({
+                "message": "failed",
+                "data": []
+            })
+            response.status_code = 503
+        else:
+            response = jsonify({
+                'message': 'success',
+                'data': r
+            })
+            response.status_code = 200
+
+    return response
 
 
 def main():
@@ -191,12 +349,9 @@ def main():
         prog='cif-httpd',
         parents=[p]
     )
-    from pprint import pprint
-    pprint(app.config)
-    if app.config.get('CIF_ROUTER_ADDR'):
-        ROUTER_ADDR = app.config['CIF_ROUTER_ADDR']
+    router_address = app.config.get('CIF_ROUTER_ADDR', ROUTER_ADDR)
 
-    p.add_argument("--router", help="specify router frontend [default %(default)s]", default=ROUTER_ADDR)
+    p.add_argument("--router", help="specify router frontend [default %(default)s]", default=router_address)
     p.add_argument('--token', help="specify cif-httpd token [default %(default)s]", default=TOKEN)
     p.add_argument('--listen', help='specify the interface to listen on [default %(default)s]', default=HTTP_LISTEN)
     p.add_argument('--listen-port', help='specify the port to listen on [default %(default)s]',
@@ -213,12 +368,9 @@ def main():
 
     try:
         logger.info('pinging router...')
-        if Client(args.router, args.token).ping():
-            app.config["SECRET_KEY"] = os.urandom(1024)
-            logger.info('starting up...')
-            app.run(host=args.listen, port=args.listen_port, debug=args.fdebug)
-        else:
-            logger.error('router unavailable...')
+        app.config["SECRET_KEY"] = os.urandom(1024)
+        logger.info('starting up...')
+        app.run(host=args.listen, port=args.listen_port, debug=args.fdebug)
     except KeyboardInterrupt:
         logger.info('shutting down...')
         raise SystemExit

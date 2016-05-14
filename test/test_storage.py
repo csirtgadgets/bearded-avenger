@@ -30,26 +30,33 @@ def obs():
     return Indicator(indicator='example.com', tags=['botnet'], provider='csirtgadgets.org')
 
 
-def test_storage(obs):
+def test_storage_dummy(obs):
     with Storage(store='dummy') as s:
-        x = s.handle_search('1234', obs.__dict__)
+        t = s.store.tokens_admin_exists()
+
+        x = s.handle_search(t, obs.__dict__)
         assert x[0]['indicator'] == 'example.com'
 
-        x = s.handle_submission('1234', obs.__dict__)
+        x = s.handle_submission(t, obs.__dict__)
         assert x[0]['indicator'] == 'example.com'
 
 
 def test_storage_sqlite(storage):
-    ob = [
+    storage.token_create_admin()
+    t = storage.store.tokens_admin_exists()
+    assert t
+
+    i = [
         Indicator(indicator='example.com', tags='botnet', provider='csirtgadgets.org').__dict__,
         Indicator(indicator='example2.com', tags='malware', provider='csirtgadgets.org').__dict__
     ]
 
-    x = storage.handle_submission('1234', ob)
-
+    x = storage.handle_search(t, {
+        'indicator': 'example.com'
+    })
     assert x > 0
 
-    x = storage.handle_search('1234', {
+    x = storage.handle_search(t, {
         'indicator': 'example.com'
     })
 

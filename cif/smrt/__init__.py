@@ -7,17 +7,20 @@ from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 from random import randint
 from time import sleep
+from pprint import pprint
 
 import cif.client
 import cif.smrt.parser
 from cif.constants import REMOTE_ADDR, SMRT_RULES_PATH, SMRT_CACHE
 from cif.rule import Rule
 from cif.smrt.fetcher import Fetcher
-from cif.utils import setup_logging, get_argument_parser, load_plugin, setup_signals
+from cif.utils import setup_logging, get_argument_parser, load_plugin, setup_signals, read_config
+from cif.exceptions import AuthError
 
 PARSER_DEFAULT = "pattern"
 TOKEN = os.environ.get('CIF_TOKEN', None)
 TOKEN = os.environ.get('CIF_SMRT_TOKEN', TOKEN)
+CONFIG_PATH = os.environ.get('CIF_SMRT_CONFIG_PATH', os.path.join(os.path.expanduser('~'), 'cif-smrt.yml'))
 
 
 # http://python-3-patterns-idioms-test.readthedocs.org/en/latest/Factory.html
@@ -35,6 +38,9 @@ class Smrt(object):
 
         self.logger = logging.getLogger(__name__)
         self.client = load_plugin(cif.client.__path__[0], client)(remote, token)
+
+    def ping_router(self):
+        return self.client.ping(write=True)
 
     def _process(self, rule, feed, limit=None):
 
@@ -112,8 +118,8 @@ def main():
             CIF_TOKEN
 
         example usage:
-            $ cif-smrt -v --rules rules/default
-            $ cif-smrt --rules rules/default/drg.yml --feed ssh
+            $ cif-smrt --rule /etc/cif/rules/default
+            $ cif-smrt --rule /etc/cif/rules/default/csirtg.yml --feed port-scanners
         '''),
         formatter_class=RawDescriptionHelpFormatter,
         prog='cif-smrt',
@@ -139,7 +145,15 @@ def main():
     p.add_argument('--sleep', default=60)
     p.add_argument('--ignore-unknown', action='store_true')
 
+    p.add_argument('--config', help='specify cif-smrt config path [default %(default)s', default=CONFIG_PATH)
+
     args = p.parse_args()
+
+    o = read_config(args)
+    options = vars(args)
+    for v in options:
+        if options[v] is None:
+            options[v] = o.get(v)
 
     setup_logging(args)
     logger = logging.getLogger(__name__)
@@ -161,14 +175,20 @@ def main():
 
         logger.info('starting...')
         try:
-            with Smrt(args.remote, args.token) as s:
+            with Smrt(options.get('remote'), options.get('token')) as s:
                 logger.info('staring up...')
+                logger.info('testing router connection...')
+                s.ping_router()
+
                 x = s.process(args.rule, feed=args.feed, limit=args.limit)
                 logger.info('complete')
 
                 if not args.test:
                     logger.info('sleeping for 1 hour')
                     sleep((60 * 60))
+        except AuthError as e:
+            logger.error(e)
+            stop = True
         except RuntimeError as e:
             logger.error(e)
             if str(e).startswith('submission failed'):

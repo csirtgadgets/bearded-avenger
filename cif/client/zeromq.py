@@ -1,6 +1,7 @@
 import time
 import json
 from cif.client import Client
+from cif.exceptions import AuthError
 
 from pprint import pprint
 
@@ -23,7 +24,9 @@ class ZMQ(Client):
         self.socket.SNDTIMEO = SNDTIMEO
         self.socket.setsockopt(zmq.LINGER, LINGER)
 
-    def _send(self, mtype, data):
+        self.logger.debug('token: {}'.format(token))
+
+    def _send(self, mtype, data='[]'):
         self.logger.debug('connecting to {0}'.format(self.remote))
         self.logger.debug("mtype {0}".format(mtype))
         self.socket.connect(self.remote)
@@ -42,13 +45,28 @@ class ZMQ(Client):
 
         if data.get('status') == 'success':
             return data.get('data')
+        elif data.get('message') == 'unauthorized':
+            raise AuthError('unauthorized')
         else:
             self.logger.error(data.get('status'))
             self.logger.error(data.get('data'))
-            raise RuntimeError(data.get('status'))
+            raise RuntimeError(data.get('message'))
 
-    def ping(self):
-        return self._send('ping', str(time.time()))
+    def test_connect(self):
+        try:
+            self.socket.RCVTIMEO = 5000
+            self.ping()
+            self.socket.RCVTIMEO = RCVTIMEO
+        except zmq.error.Again:
+            return False
+
+        return True
+
+    def ping(self, write=False):
+        if write:
+            return self._send('ping_write')
+        else:
+            return self._send('ping')
 
     def search(self, filters):
         rv = self._send('search', json.dumps(filters))
@@ -73,5 +91,17 @@ class ZMQ(Client):
                 tries -= 1
                 time.sleep(5)
         return data
+
+    def tokens_search(self, filters={}):
+        return self._send('tokens_search', json.dumps(filters))
+
+    def tokens_create(self, data):
+        return self._send('tokens_create', data)
+
+    def tokens_delete(self, data):
+        return self._send('tokens_delete', data)
+
+    def token_edit(self, data):
+        return self._send('token_edit', data)
 
 Plugin = ZMQ

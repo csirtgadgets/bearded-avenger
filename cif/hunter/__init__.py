@@ -14,9 +14,11 @@ import cif.hunter
 from cif.client.zeromq import ZMQ as Client
 from cif.constants import HUNTER_ADDR, ROUTER_ADDR
 from cif.indicator import Indicator
-from cif.utils import setup_logging, get_argument_parser, setup_signals
+from cif.utils import setup_logging, get_argument_parser, setup_signals, read_config
 
-TOKEN = os.getenv('CIF_HUNTER_TOKEN', 1234)
+TOKEN = os.environ.get('CIF_TOKEN', None)
+TOKEN = os.environ.get('CIF_HUNTER_TOKEN', TOKEN)
+CONFIG_PATH = os.environ.get('CIF_HUNTER_CONFIG_PATH', os.path.join(os.path.expanduser('~'), 'cif-hunter.yml'))
 
 
 class Hunter(object):
@@ -91,16 +93,23 @@ def main():
     p.add_argument('--remote', help="cif-router hunter address [default %(default)s]", default=HUNTER_ADDR)
     p.add_argument('--router', help='cif-router front end address [default %(default)s]', default=ROUTER_ADDR)
     p.add_argument('--token', help='specify cif-hunter token [default %(default)s]', default=TOKEN)
+    p.add_argument('--config', default=CONFIG_PATH)
 
     args = p.parse_args()
     setup_logging(args)
+
+    o = read_config(args)
+    options = vars(args)
+    for v in options:
+        if options[v] is None:
+            options[v] = o.get(v)
 
     logger = logging.getLogger(__name__)
     logger.info('loglevel is: {}'.format(logging.getLevelName(logger.getEffectiveLevel())))
 
     setup_signals(__name__)
 
-    with Hunter(remote=args.remote, router=args.router, token=args.token) as h:
+    with Hunter(remote=options.get('remote'), router=args.router, token=options.get('token')) as h:
         try:
             logger.info('starting up...')
             h.start()
