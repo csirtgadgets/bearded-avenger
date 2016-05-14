@@ -68,11 +68,11 @@ class ZMQ(Client):
         else:
             return self._send('ping')
 
-    def search(self, filters):
-        rv = self._send('search', json.dumps(filters))
+    def indicator_search(self, filters):
+        rv = self._send('indicator_search', json.dumps(filters))
         return rv
 
-    def submit(self, data):
+    def indicator_create(self, data):
         if isinstance(data, dict):
             data = self._kv_to_indicator(data)
 
@@ -83,7 +83,7 @@ class ZMQ(Client):
         tries = 5
         while tries > 0 and not sent:
             try:
-                data = self._send("submission", data)
+                data = self._send("indicators_create", data)
                 sent = True
             except zmq.error.Again:
                 self.logger.warning('timeout... retrying in 5s..')

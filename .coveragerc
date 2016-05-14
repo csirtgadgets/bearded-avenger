@@ -22,5 +22,13 @@ exclude_lines =
 
 ignore_errors = True
 
+omit =
+    cif/client/tokens.py
+    cif/client/dummy.py
+    cif/smrt/parser/pipe.py
+    cif/store/dummy.py
+    cif/_version.py
+    cif/color.py
+
 [html]
 directory = coverage_html_report

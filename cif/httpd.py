@@ -143,7 +143,7 @@ def search():
         filters['indicator'] = request.args.get('q')
 
     try:
-        r = Client(remote, pull_token()).search(filters)
+        r = Client(remote, pull_token()).indicator_search(filters)
         response = jsonify({
             "message": "success",
             "data": r

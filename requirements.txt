@@ -1,3 +1,4 @@
+-e git+https://github.com/zeromq/pyre.git@ecc3ea7579a43016e1cbfea3773cb9ea96fb0498#egg=Pyre
 mock>=2.0.0
 pytest-cov>=2.2.1
 Flask-Limiter==0.9.3

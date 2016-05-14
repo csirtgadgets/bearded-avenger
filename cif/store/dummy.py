@@ -32,10 +32,10 @@ class Dummy(Store):
     def token_write(self, token):
         return True
 
-    def search(self, token, data):
+    def indicator_search(self, token, data):
         return [data]
 
-    def submit(self, token, data):
+    def indicator_create(self, token, data):
         return [data]
 
     def token_last_activity_at(self, token, timestamp=None):

@@ -49,54 +49,19 @@ class Storage(object):
         self.connected = False
         self.ctrl = None
         self.loop = loop
-        self.store = 'cif.store.{}'.format(store)
+        #self.store = 'cif.store.{}'.format(store)
+        self.store = store
 
         # TODO replace with cif.utils.load_plugin
         self.logger.debug('store is: {}'.format(self.store))
         for loader, modname, is_pkg in pkgutil.iter_modules(cif.store.__path__, 'cif.store.'):
             self.logger.debug('testing store plugin: {}'.format(modname))
-            if modname == self.store:
+            if modname == 'cif.store.{}'.format(self.store) or modname == 'cif.store.z{}'.format(self.store):
                 self.logger.debug('Loading plugin: {0}'.format(modname))
                 self.store = loader.find_module(modname).load_module(modname)
                 self.store = self.store.Plugin(*args, **kv)
 
         self.router = self.context.socket(zmq.ROUTER)
-
-    def token_create_admin(self):
-        self.logger.info('testing for tokens...')
-        if not self.store.tokens_admin_exists():
-            self.logger.info('admin token does not exist, generating..')
-            rv = self.store.tokens_create({
-                'username': u'admin',
-                'groups': [u'everyone'],
-                'read': u'1',
-                'write': u'1',
-                'admin': u'1'
-            })
-            self.logger.info('admin token created: {}'.format(rv['token']))
-            return rv['token']
-        else:
-            self.logger.info('admin token exists...')
-
-    def token_create_smrt(self):
-        self.logger.info('generating smrt token')
-        rv = self.store.tokens_create({
-            'username': u'cif-smrt',
-            'groups': [u'everyone'],
-            'write': u'1',
-        })
-        self.logger.info('admin token created: {}'.format(rv['token']))
-        return rv['token']
-
-    def token_create_hunter(self):
-        self.logger.info('generating hunter token')
-        rv = self.store.tokens_create({
-            'username': u'hunter',
-            'groups': [u'everyone'],
-            'write': u'1',
-        })
-        self.logger.info('admin token created: {}'.format(rv['token']))
-        return rv['token']
 
     def start(self):
         self.token_create_admin()
@@ -192,17 +157,17 @@ class Storage(object):
         self.logger.debug('handling ping message')
         return self.store.ping(token)
 
-    def handle_search(self, token, data):
+    def handle_indicator_search(self, token, data):
         if self.store.token_read(token):
             self.logger.debug('searching')
-            return self.store.search(token, data)
+            return self.store.indicator_search(token, data)
         else:
             raise AuthError('invalid token')
 
     # TODO group check
-    def handle_submission(self, token, data):
+    def handle_indicator_create(self, token, data):
         if self.store.token_write(token):
-            return self.store.submit(token, data)
+            return self.store.indicator_create(token, data)
         else:
             raise AuthError('invalid token')
 
@@ -234,6 +199,42 @@ class Storage(object):
             return self.store.token_edit(data)
         else:
             raise AuthError('invalid token')
+
+    def token_create_admin(self):
+        self.logger.info('testing for tokens...')
+        if not self.store.tokens_admin_exists():
+            self.logger.info('admin token does not exist, generating..')
+            rv = self.store.tokens_create({
+                'username': u'admin',
+                'groups': [u'everyone'],
+                'read': u'1',
+                'write': u'1',
+                'admin': u'1'
+            })
+            self.logger.info('admin token created: {}'.format(rv['token']))
+            return rv['token']
+        else:
+            self.logger.info('admin token exists...')
+
+    def token_create_smrt(self):
+        self.logger.info('generating smrt token')
+        rv = self.store.tokens_create({
+            'username': u'cif-smrt',
+            'groups': [u'everyone'],
+            'write': u'1',
+        })
+        self.logger.info('admin token created: {}'.format(rv['token']))
+        return rv['token']
+
+    def token_create_hunter(self):
+        self.logger.info('generating hunter token')
+        rv = self.store.tokens_create({
+            'username': u'hunter',
+            'groups': [u'everyone'],
+            'write': u'1',
+        })
+        self.logger.info('admin token created: {}'.format(rv['token']))
+        return rv['token']
 
 
 def main():

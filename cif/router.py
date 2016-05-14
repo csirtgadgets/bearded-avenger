@@ -85,6 +85,10 @@ class Router(object):
 
         self.ctrl.send_multipart(['router', 'ack', str(time.time())])
 
+    def handle_store_default(self, mtype, token, data='[]'):
+        self.storage.send_multipart([mtype, token, data])
+        return self.storage.recv()
+
     def handle_message(self, s, e):
         self.logger.debug('message received')
         m = s.recv_multipart()
@@ -94,25 +98,29 @@ class Router(object):
         id, null, token, mtype, data = m
         self.logger.debug("mtype: {0}".format(mtype))
 
-        handler = getattr(self, "handle_" + mtype)
-        self.logger.debug('handler: {}'.format(handler))
-
         rv = json.dumps({'status': 'failed'})
 
-        try:
-            rv = handler(token, data)
-        except Exception as e:
-            self.logger.error(e)
-            traceback.print_exc()
+        if mtype in ['search', 'submission']:
+            handler = getattr(self, "handle_" + mtype)
+            try:
+                rv = handler(token, data)
+            except Exception as e:
+                self.logger.error(e)
+                traceback.print_exc()
+        else:
+            handler = self.handle_store_default
+            try:
+                rv = handler(mtype, token, data)
+            except Exception as e:
+                self.logger.error(e)
+                traceback.print_exc()
+
+        self.logger.debug('handler: {}'.format(handler))
 
         self.logger.debug("replying {}".format(rv))
         self.frontend.send_multipart([id, '', mtype, rv])
 
-    def handle_ping(self, token, data='[]'):
-        self.storage.send_multipart(['ping', token, data])
-        return self.storage.recv()
-
-    def handle_search(self, token, data):
+    def handle_indicator_search(self, token, data):
         # need to send searches through the _submission pipe
         self.storage.send_multipart(['search', token, data])
         x = self.storage.recv()
@@ -131,7 +139,7 @@ class Router(object):
 
         return x
 
-    def handle_submission(self, token, data):
+    def handle_indicator_create(self, token, data):
         # this needs to be threaded out, badly.
         data = json.loads(data)
         i = Indicator(**data)
@@ -154,26 +162,6 @@ class Router(object):
         self.storage.send_multipart(['submission', token, data])
         m = self.storage.recv()
         return m
-
-    def handle_ping_write(self, token, data='[]'):
-        self.storage.send_multipart(['token_write', token, data])
-        return self.storage.recv()
-
-    def handle_tokens_create(self, token, data):
-        self.storage.send_multipart(['tokens_create', token, data])
-        return self.storage.recv()
-
-    def handle_tokens_delete(self, token, data):
-        self.storage.send_multipart(['tokens_delete', token, data])
-        return self.storage.recv()
-
-    def handle_tokens_search(self, token, data):
-        self.storage.send_multipart(['tokens_search', token, data])
-        return self.storage.recv()
-
-    def handle_token_edit(self, token, data):
-        self.storage.send_multipart(['token_edit', token, data])
-        return self.storage.recv()
 
     def run(self, loop=ioloop.IOLoop.instance()):
         self.logger.debug('starting loop')

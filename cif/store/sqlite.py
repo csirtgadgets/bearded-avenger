@@ -163,19 +163,8 @@ class SQLite(Store):
 
         return d
 
-    def _log_search(self, d):
-        self.submit({
-            'indicator': d,
-            'reporttime': arrow.utcnow().datetime,
-            'tlp': 'green',
-            'tags': 'search',
-            'itype': resolve_itype(d),
-            'confidence': SEARCH_CONFIDENCE
-        })
-        return True
-
     # TODO - normalize this out into filters
-    def search(self, token, filters, limit=5):
+    def indicator_search(self, token, filters, limit=5):
         self.logger.debug('running search')
 
         if filters.get('limit'):
@@ -197,7 +186,7 @@ class SQLite(Store):
         return [self._as_dict(x)
                 for x in self.handle().query(Indicator).filter(sql).limit(limit)]
 
-    def submit(self, token, data):
+    def indicator_create(self, token, data):
         if self.token_write(token):
             if type(data) == dict:
                 data = [data]

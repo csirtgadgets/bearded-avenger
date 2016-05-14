@@ -1,0 +1,2 @@
+rdflib>=4.2.2
+-r requirements.txt

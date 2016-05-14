@@ -5,6 +5,8 @@ from ._version import get_versions
 VERSION = get_versions()['version']
 del get_versions
 
+TOKEN_LENGTH=40
+
 TEMP_DIR = os.path.join(tempfile.gettempdir())
 RUNTIME_PATH = os.environ.get('CIF_RUNTIME_PATH', TEMP_DIR)
 RUNTIME_PATH = os.path.join(RUNTIME_PATH)
