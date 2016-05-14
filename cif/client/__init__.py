@@ -55,7 +55,7 @@ def main():
     p.add_argument('--itype', help='filter by indicator type')  ## need to fix sqlite for non-ascii stuff first
     p.add_argument("--submit", action="store_true", help="submit an indicator")
     p.add_argument('--limit', help='limit results [default %(default)s]', default=SEARCH_LIMIT)
-    p.add_argument('--nolog', help='do not log search', default=False)
+    p.add_argument('--nolog', help='do not log search', action='store_true')
 
     p.add_argument('--indicator')
     p.add_argument('--tags', nargs='+')
