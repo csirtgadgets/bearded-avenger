@@ -1,3 +1,4 @@
+*.yml
 coverage_html_report/
 deployment/aws/site.yml
 bearded-avenger3.tar.gz

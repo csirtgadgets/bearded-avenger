@@ -102,6 +102,32 @@ class HTTP(Client):
         body = json.loads(body.content)
         return body
 
+    def _patch(self, uri, data):
+        body = self.session.patch(uri, data=json.dumps(data))
+
+        if body.status_code > 303:
+            err = 'request failed: %s' % str(body.status_code)
+            self.logger.debug(err)
+            err = body.content
+
+            if body.status_code == 401:
+                raise AuthError('unauthorized')
+            elif body.status_code == 404:
+                err = 'not found'
+                raise RuntimeError(err)
+            else:
+                try:
+                    err = json.loads(err).get('message')
+                except ValueError as e:
+                    err = body.content
+
+                self.logger.error(err)
+                raise RuntimeError(err)
+
+        self.logger.debug(body.content)
+        body = json.loads(body.content)
+        return body
+
     def search(self, filters):
         rv = self._get('/search', params=filters)
         return rv['data']
@@ -140,6 +166,10 @@ class HTTP(Client):
     def tokens_create(self, data):
         self.logger.debug(data)
         rv = self._post('{}/tokens'.format(self.remote), data)
+        return rv['data']
+
+    def token_edit(self, data):
+        rv = self._patch('{}/token'.format(self.remote), data)
         return rv['data']
 
 Plugin = HTTP

@@ -15,7 +15,7 @@ class Dummy(Store):
 
     def tokens_create(self, data):
         data['token'] = self._token_generate()
-        return [data]
+        return data
 
     def tokens_delete(self, data):
         return [data]
@@ -40,5 +40,11 @@ class Dummy(Store):
 
     def token_last_activity_at(self, token, timestamp=None):
         return timestamp
+
+    def token_edit(self, data):
+        return data
+
+    def ping(self):
+        return True
 
 Plugin = Dummy

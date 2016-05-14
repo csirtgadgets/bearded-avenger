@@ -48,10 +48,10 @@ limiter = Limiter(
 
 
 def pull_token():
-    token = None
+    t = None
     if request.headers.get("Authorization"):
-        token = re.match("^Token token=(\S+)$", request.headers.get("Authorization")).group(1)
-    return token
+        t = re.match("^Token token=(\S+)$", request.headers.get("Authorization")).group(1)
+    return t
 
 
 @app.before_request
@@ -83,7 +83,8 @@ def help():
         'POST /indicators': 'post indicators to the router',
         'GET /tokens': 'search for a set of tokens',
         'POST /tokens': 'create a token or set of tokens',
-        'DELETE /tokens': 'delete a token or set of tokens'
+        'DELETE /tokens': 'delete a token or set of tokens',
+        'PATCH /token': 'update a token'
     })
 
 
@@ -158,6 +159,7 @@ def search():
 
     return response
 
+
 @app.route("/indicators", methods=["GET", "POST"])
 def indicators():
     """
@@ -203,6 +205,50 @@ def indicators():
                 "data": r
             })
             response.status_code = 201
+
+    return response
+
+
+@app.route("/token", methods=['PATCH'])
+def token():
+    cli = Client(remote, pull_token())
+    if request.data:
+        try:
+            r = cli.token_edit(request.data)
+        except AuthError:
+            response = jsonify({
+                'message': 'admin privs required',
+                'data': []
+            })
+            response.status_code = 401
+        except Exception as e:
+            logger.error(e)
+            import traceback
+            traceback.print_exc()
+            response = jsonify({
+                'message': 'create failed',
+                'data': []
+            })
+            response.status_code = 503
+        else:
+            if r:
+                response = jsonify({
+                    'message': 'success',
+                    'data': r
+                })
+                response.status_code = 200
+            else:
+                response = jsonify({
+                    'message': 'admin privs required',
+                    'data': []
+                })
+                response.status_code = 401
+    else:
+        response = jsonify({
+            'message': 'edit failed',
+            'data': []
+        })
+        response.status_code = 400
 
     return response
 
@@ -322,12 +368,9 @@ def main():
 
     try:
         logger.info('pinging router...')
-        if Client(args.router, args.token).ping():
-            app.config["SECRET_KEY"] = os.urandom(1024)
-            logger.info('starting up...')
-            app.run(host=args.listen, port=args.listen_port, debug=args.fdebug)
-        else:
-            logger.error('router unavailable...')
+        app.config["SECRET_KEY"] = os.urandom(1024)
+        logger.info('starting up...')
+        app.run(host=args.listen, port=args.listen_port, debug=args.fdebug)
     except KeyboardInterrupt:
         logger.info('shutting down...')
         raise SystemExit

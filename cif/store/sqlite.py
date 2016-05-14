@@ -298,6 +298,10 @@ class SQLite(Store):
         else:
             return 0
 
+    def ping(self, token):
+        if self.token_read(token) or self.token_write(token):
+            return True
+
     def token_read(self, token):
         x = self.handle().query(Token)\
             .filter_by(token=token)\
@@ -316,6 +320,25 @@ class SQLite(Store):
         self.logger.debug(rv.count())
         if rv.count():
             return True
+
+    def token_edit(self, data):
+        if not data.get('token'):
+            return 'token required for updating'
+
+        s = self.handle()
+        rv = s.query(Token).filter_by(token=data['token'])
+
+        if not rv.count():
+            return 'token not found'
+
+        rv = rv.first()
+
+        if data.get('groups'):
+            rv.groups = ','.join(data['groups'])
+
+        s.commit()
+
+        return True
 
     def token_last_activity_at(self, token, timestamp=None):
         s = self.handle()

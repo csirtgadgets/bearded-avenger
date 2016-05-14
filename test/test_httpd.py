@@ -44,6 +44,7 @@ def test_httpd_help(client):
     assert rv.status_code == 200
 
 
+@pytest.mark.skipif(not os.environ.get('CIF_ADVANCED_TESTS'), reason='requres CIF_ADVANCED_TEST to be true')
 def test_httpd_ping(myrouter, client):
     rv = client.get('/ping')
     assert rv.status_code == 401

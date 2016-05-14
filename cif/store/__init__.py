@@ -14,7 +14,8 @@ class Store(object):
     def __init__(self):
         raise NotImplementedError
 
-    def ping(self):
+    @abc.abstractmethod
+    def ping(self, token):
         return True
 
     def _token_generate(self):
@@ -46,6 +47,10 @@ class Store(object):
 
     @abc.abstractmethod
     def token_write(self, token):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def token_edit(self, data):
         raise NotImplementedError
 
     @abc.abstractmethod

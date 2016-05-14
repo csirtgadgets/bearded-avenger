@@ -60,6 +60,8 @@ def main():
     p.add_argument('--config', help='specify configuration file [default %(default)s]', default=CONFIG)
     p.add_argument('--no-verify-ssl', help='Turn OFF TLS verification', action='store_true')
 
+    p.add_argument('--update', help='update a token')
+
     args = p.parse_args()
 
     setup_logging(args)
@@ -149,6 +151,35 @@ def main():
                 logger.error('no tokens deleted')
         except Exception as e:
             logger.error('token delete failed: %s' % e)
+    elif options.get('update'):
+        if not options.get('groups'):
+            raise RuntimeError('requires --groups')
+
+        groups = options['groups'].split(',')
+
+        rv = cli.token_edit({
+            'token': options['update'],
+            'groups': groups
+        })
+
+        if rv:
+            logger.info('token updated successfully')
+            rv = cli.tokens_search({'token': options['update']})
+            t = PrettyTable(args.columns.split(','))
+            for r in rv:
+                l = []
+                for c in args.columns.split(','):
+                    if c == 'last_activity_at' and r[c] is not None:
+                        r[c] = arrow.get(r[c]).format('YYYY-MM-DDTHH:MM:ss')
+                        r[c] = '{}Z'.format(r[c])
+                    if c == 'expires' and r[c] is not None:
+                        r[c] = arrow.get(r[c]).format('YYYY-MM-DDTHH:MM:ss')
+                        r[c] = '{}Z'.format(r[c])
+                    l.append(r[c])
+                t.add_row(l)
+            print(t)
+        else:
+            logger.error(rv)
     else:
         filters = {}
         if options.get('username'):

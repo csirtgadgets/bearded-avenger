@@ -89,6 +89,8 @@ class Router(object):
         self.logger.debug('message received')
         m = s.recv_multipart()
 
+        self.logger.debug(m)
+
         id, null, token, mtype, data = m
         self.logger.debug("mtype: {0}".format(mtype))
 
@@ -106,12 +108,9 @@ class Router(object):
         self.logger.debug("replying {}".format(rv))
         self.frontend.send_multipart([id, '', mtype, rv])
 
-    def handle_ping(self, token, data):
-        rv = {
-            "status": "success",
-            "data": str(time.time())
-        }
-        return json.dumps(rv)
+    def handle_ping(self, token, data='[]'):
+        self.storage.send_multipart(['ping', token, data])
+        return self.storage.recv()
 
     def handle_search(self, token, data):
         # need to send searches through the _submission pipe
@@ -155,8 +154,8 @@ class Router(object):
         m = self.storage.recv()
         return m
 
-    def handle_ping_write(self, token, data):
-        self.storage.send_multipart(['token_write', token, '[]'])
+    def handle_ping_write(self, token, data='[]'):
+        self.storage.send_multipart(['token_write', token, data])
         return self.storage.recv()
 
     def handle_tokens_create(self, token, data):
@@ -169,6 +168,10 @@ class Router(object):
 
     def handle_tokens_search(self, token, data):
         self.storage.send_multipart(['tokens_search', token, data])
+        return self.storage.recv()
+
+    def handle_token_edit(self, token, data):
+        self.storage.send_multipart(['token_edit', token, data])
         return self.storage.recv()
 
     def run(self, loop=ioloop.IOLoop.instance()):

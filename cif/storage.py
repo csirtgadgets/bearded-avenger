@@ -18,7 +18,7 @@ import zmq
 from zmq.eventloop import ioloop
 
 import cif.store
-from cif.constants import CTRL_ADDR, STORAGE_ADDR
+from cif.constants import CTRL_ADDR, STORAGE_ADDR, REMOTE_ADDR
 from cif.exceptions import CIFConnectionError, AuthError
 from cif.utils import setup_logging, get_argument_parser, setup_signals
 
@@ -30,7 +30,7 @@ STORE_PATH = os.path.join(MOD_PATH, "store")
 RCVTIMEO = 5000
 SNDTIMEO = 2000
 LINGER = 3
-STORE_DEFAULT = 'dummy'
+STORE_DEFAULT = 'sqlite'
 STORE_PLUGINS = ['cif.store.dummy', 'cif.store.sqlite', 'cif.store.elasticsearch', 'cif.store.rdflib']
 
 
@@ -77,6 +77,26 @@ class Storage(object):
             return rv['token']
         else:
             self.logger.info('admin token exists...')
+
+    def token_create_smrt(self):
+        self.logger.info('generating smrt token')
+        rv = self.store.tokens_create({
+            'username': u'cif-smrt',
+            'groups': [u'everyone'],
+            'write': u'1',
+        })
+        self.logger.info('admin token created: {}'.format(rv['token']))
+        return rv['token']
+
+    def token_create_hunter(self):
+        self.logger.info('generating hunter token')
+        rv = self.store.tokens_create({
+            'username': u'hunter',
+            'groups': [u'everyone'],
+            'write': u'1',
+        })
+        self.logger.info('admin token created: {}'.format(rv['token']))
+        return rv['token']
 
     def start(self):
         self.token_create_admin()
@@ -168,9 +188,9 @@ class Storage(object):
             self.logger.error('message type {0} unknown'.format(mtype))
             self.router.send_multipart([id, '0'])
 
-    def handle_ping(self):
+    def handle_ping(self, token, data='[]'):
         self.logger.debug('handling ping message')
-        return self.store.ping()
+        return self.store.ping(token)
 
     def handle_search(self, token, data):
         if self.store.token_read(token):
@@ -206,8 +226,14 @@ class Storage(object):
         else:
             raise AuthError('invalid token')
 
-    def handle_token_write(self, token, data):
+    def handle_token_write(self, token, data=None):
         return self.store.token_write(token)
+
+    def handle_token_edit(self, token, data):
+        if self.store.token_admin(token):
+            return self.store.token_edit(data)
+        else:
+            raise AuthError('invalid token')
 
 
 def main():
@@ -232,10 +258,16 @@ def main():
     p.add_argument("--store", help="specify a store type {} [default: %(default)s]".format(', '.join(STORE_PLUGINS)),
                    default=STORE_DEFAULT)
 
-    p.add_argument('--token-create-admin', help='generate an admin token', action='store_true')
     p.add_argument('--config', help='specify config path [default %(default)s]', default=CONFIG_PATH)
 
+    p.add_argument('--token-create-admin', help='generate an admin token')
+    p.add_argument('--token-create-smrt')
+    p.add_argument('--token-create-smrt-remote', default=REMOTE_ADDR)
+    p.add_argument('--token-create-hunter')
+
     args = p.parse_args()
+
+    pprint(args)
 
     setup_logging(args)
     logger = logging.getLogger(__name__)
@@ -248,22 +280,59 @@ def main():
     # mw.watch_module('cif.storage')
     # mw.start_watching()
 
-    with Storage(storage_address=args.storage_address, store=args.store) as s:
-        if not args.token_create_admin:
+    start = True
+    if args.token_create_smrt:
+        start = False
+        with Storage(store=args.store) as s:
+            t = s.token_create_smrt()
+            if t:
+                data = {
+                    'token': str(t),
+                }
+                with open(args.token_create_smrt, 'w') as f:
+                    f.write(yaml.dump(data, default_flow_style=False))
+
+                logger.info('token config generated: {}'.format(args.token_create_smrt))
+            else:
+                logger.error('token not created')
+
+    if args.token_create_hunter:
+        start = False
+        with Storage(store=args.store) as s:
+            t = s.token_create_hunter()
+            if t:
+                data = {
+                    'token': str(t),
+                }
+                with open(args.token_create_hunter, 'w') as f:
+                    f.write(yaml.dump(data, default_flow_style=False))
+
+                logger.info('token config generated: {}'.format(args.token_create_hunter))
+            else:
+                logger.error('token not created')
+
+    if args.token_create_admin:
+        start = False
+        with Storage(store=args.store) as s:
+            t = s.token_create_admin()
+            if t:
+                data = {
+                    'token': str(t),
+                }
+                with open(args.token_create_admin, 'w') as f:
+                    f.write(yaml.dump(data, default_flow_style=False))
+
+                logger.info('token config generated: {}'.format(args.token_create_admin))
+            else:
+                logger.error('token not created')
+
+    if start:
+        with Storage(storage_address=args.storage_address, store=args.store) as s:
             try:
                 logger.info('starting up...')
                 s.start()
             except KeyboardInterrupt:
                 logger.info('shutting down...')
-        else:
-            t = s.token_create_admin()
-            if t:
-                data = {
-                    'remote': 'http://localhost:5000',
-                    'token': str(t),
-                }
-                with open(args.config, 'w') as f:
-                    f.write(yaml.dump(data, default_flow_style=False))
 
 
 

@@ -20,6 +20,7 @@ from cif.exceptions import AuthError
 PARSER_DEFAULT = "pattern"
 TOKEN = os.environ.get('CIF_TOKEN', None)
 TOKEN = os.environ.get('CIF_SMRT_TOKEN', TOKEN)
+CONFIG_PATH = os.environ.get('CIF_SMRT_CONFIG_PATH', os.path.join(os.path.expanduser('~'), 'cif-smrt.yml'))
 
 
 # http://python-3-patterns-idioms-test.readthedocs.org/en/latest/Factory.html
@@ -117,8 +118,8 @@ def main():
             CIF_TOKEN
 
         example usage:
-            $ cif-smrt -v --rules rules/default
-            $ cif-smrt --rules rules/default/csirtg.yml --feed ssh port-scanners
+            $ cif-smrt --rule /etc/cif/rules/default
+            $ cif-smrt --rule /etc/cif/rules/default/csirtg.yml --feed port-scanners
         '''),
         formatter_class=RawDescriptionHelpFormatter,
         prog='cif-smrt',
@@ -144,7 +145,7 @@ def main():
     p.add_argument('--sleep', default=60)
     p.add_argument('--ignore-unknown', action='store_true')
 
-    p.add_argument('--config', help='specify cif config')
+    p.add_argument('--config', help='specify cif-smrt config path [default %(default)s', default=CONFIG_PATH)
 
     args = p.parse_args()
 
