@@ -114,21 +114,22 @@ class Router(object):
 
     def handle_search(self, token, data):
         # need to send searches through the _submission pipe
+        self.storage.send_multipart(['search', token, data])
+        x = self.storage.recv()
+
         data = json.loads(data)
         if data.get('indicator'):
             i = Indicator(
                 indicator=data['indicator'],
                 tlp='green',
-                confidence=5,
+                confidence=10,
                 tags='search'
             )
             r = self.handle_submission(token, str(i))
             if r:
                 self.logger.info('search logged')
 
-        data = json.dumps(data)
-        self.storage.send_multipart(['search', token, data])
-        return self.storage.recv()
+        return x
 
     def handle_submission(self, token, data):
         # this needs to be threaded out, badly.
