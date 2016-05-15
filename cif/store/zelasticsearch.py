@@ -3,7 +3,7 @@ try:
 except ImportError:
     raise SystemExit('Requires Elasticsearch to be installed')
 
-from cif.store import Store
+from cif.store.plugin import Store
 import logging
 
 

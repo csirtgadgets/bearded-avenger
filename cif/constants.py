@@ -28,8 +28,8 @@ REMOTE_ADDR = os.environ.get('CIF_REMOTE_ADDR', REMOTE_ADDR)
 ROUTER_ADDR = "ipc://{}".format(os.path.join(RUNTIME_PATH, 'router.ipc'))
 ROUTER_ADDR = os.environ.get('CIF_ROUTER_ADDR', ROUTER_ADDR)
 
-STORAGE_ADDR = 'ipc://{}'.format(os.path.join(RUNTIME_PATH, 'storage.ipc'))
-STORAGE_ADDR = os.environ.get('CIF_STORAGE_ADDR', STORAGE_ADDR)
+STORE_ADDR = 'ipc://{}'.format(os.path.join(RUNTIME_PATH, 'store.ipc'))
+STORE_ADDR = os.environ.get('CIF_STORE_ADDR', STORE_ADDR)
 
 CTRL_ADDR = 'ipc://{}'.format(os.path.join(RUNTIME_PATH, 'ctrl.ipc'))
 CTRL_ADDR = os.environ.get('CIF_CTRL_ADDR', CTRL_ADDR)

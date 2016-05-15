@@ -28,7 +28,7 @@ setup(
     author="Wes Young",
     author_email="wes@csirtgadgets.org",
     packages=find_packages(),
-    install_requires=reqs,
+    install_requires=[],
     scripts=[],
     entry_points={
         'console_scripts': [
@@ -38,7 +38,7 @@ setup(
             'cif-hunter=cif.hunter:main',
             'cif-gatherer=cif.gatherer:main',
             'cif-httpd=cif.httpd:main',
-            'cif-storage=cif.storage:main',
+            'cif-store=cif.store:main',
             'cif-tokens=cif.client.tokens:main'
         ]
     },

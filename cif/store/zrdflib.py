@@ -5,7 +5,7 @@ except ImportError as e:
     print(e)
     raise SystemExit('Requires RDFLib to be installed')
 
-from cif.store import Store
+from cif.store.plugin import Store
 import logging
 from pprint import pprint
 import uuid

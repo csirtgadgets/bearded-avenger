@@ -8,7 +8,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, backref, class_mapper
 
 from cif.constants import RUNTIME_PATH, SEARCH_CONFIDENCE
-from cif.store import Store
+from cif.store.plugin import Store
 from cif.utils import resolve_itype
 import json
 from cif.exceptions import AuthError

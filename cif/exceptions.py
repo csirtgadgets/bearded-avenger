@@ -11,7 +11,7 @@ class CIFConnectionError(CIFException):
     pass
 
 
-class StorageSubmissionFailed(CIFException):
+class StoreSubmissionFailed(CIFException):
     pass
 
 

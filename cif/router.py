@@ -12,7 +12,7 @@ import zmq
 from zmq.eventloop import ioloop
 
 import cif.gatherer
-from cif.constants import CTRL_ADDR, ROUTER_ADDR, STORAGE_ADDR, HUNTER_ADDR
+from cif.constants import CTRL_ADDR, ROUTER_ADDR, STORE_ADDR, HUNTER_ADDR
 from cif.utils import setup_logging, get_argument_parser, setup_signals
 from cif.utils import zhelper
 from csirtg_indicator import Indicator
@@ -30,13 +30,13 @@ class Router(object):
         if self.p2p:
             self.p2p.send("$$STOP".encode('utf_8'))
 
-    def __init__(self, listen=ROUTER_ADDR, hunter=HUNTER_ADDR, storage=STORAGE_ADDR, p2p=False):
+    def __init__(self, listen=ROUTER_ADDR, hunter=HUNTER_ADDR, store=STORE_ADDR, p2p=False):
         self.logger = logging.getLogger(__name__)
 
         self.context = zmq.Context.instance()
         self.frontend = self.context.socket(zmq.ROUTER)
         self.hunters = self.context.socket(zmq.PUB)
-        self.storage = self.context.socket(zmq.DEALER)
+        self.store = self.context.socket(zmq.DEALER)
         self.ctrl = self.context.socket(zmq.REP)
         self.p2p = p2p
 
@@ -53,7 +53,7 @@ class Router(object):
             raise SystemExit
 
         self._init_gatherers()
-        self.storage.bind(storage)
+        self.store.bind(store)
         self.hunters.bind(hunter)
         self.frontend.bind(listen)
 
@@ -84,8 +84,8 @@ class Router(object):
         self.ctrl.send_multipart(['router', 'ack', str(time.time())])
 
     def handle_store_default(self, mtype, token, data='[]'):
-        self.storage.send_multipart([mtype, token, data])
-        return self.storage.recv()
+        self.store.send_multipart([mtype, token, data])
+        return self.store.recv()
 
     def handle_message(self, s, e):
         self.logger.debug('message received')
@@ -119,13 +119,13 @@ class Router(object):
         self.frontend.send_multipart([id, '', mtype, rv])
 
     def handle_ping_write(self, token, data='[]'):
-        self.storage.send_multipart(['token_write', token, data])
-        return self.storage.recv()
+        self.store.send_multipart(['token_write', token, data])
+        return self.store.recv()
 
     def handle_indicators_search(self, token, data):
         # need to send searches through the _submission pipe
-        self.storage.send_multipart(['indicators_search', token, data])
-        x = self.storage.recv()
+        self.store.send_multipart(['indicators_search', token, data])
+        x = self.store.recv()
 
         data = json.loads(data)
         if data.get('indicator'):
@@ -161,8 +161,8 @@ class Router(object):
 
             self.hunters.send(data)
 
-        self.storage.send_multipart(['indicators_create', token, data])
-        m = self.storage.recv()
+        self.store.send_multipart(['indicators_create', token, data])
+        m = self.store.recv()
         return m
 
     def run(self, loop=ioloop.IOLoop.instance()):
@@ -183,7 +183,7 @@ def main():
             CIF_RUNTIME_PATH
             CIF_ROUTER_ADDR
             CIF_HUNTER_ADDR
-            CIF_STORAGE_ADDR
+            CIF_STORE_ADDR
 
         example usage:
             $ cif-router --listen 0.0.0.0 -d
@@ -195,8 +195,8 @@ def main():
 
     p.add_argument('--listen', help='address to listen on [default: %(default)s]', default=ROUTER_ADDR)
     p.add_argument('--hunter', help='address hunters listen on on [default: %(default)s]', default=HUNTER_ADDR)
-    p.add_argument("--storage", help="specify a storage address [default: %(default)s]",
-                   default=STORAGE_ADDR)
+    p.add_argument("--store", help="specify a store address [default: %(default)s]",
+                   default=STORE_ADDR)
 
     p.add_argument('--p2p', action='store_true', help='enable experimental p2p support')
 
@@ -207,7 +207,7 @@ def main():
 
     setup_signals(__name__)
 
-    with Router(listen=args.listen, hunter=args.hunter, storage=args.storage, p2p=args.p2p) as r:
+    with Router(listen=args.listen, hunter=args.hunter, store=args.store, p2p=args.p2p) as r:
         try:
             logger.info('starting router..')
             r.run()

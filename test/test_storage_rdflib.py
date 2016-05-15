@@ -1,18 +1,18 @@
 import py.test
 
-from cif.storage import Storage
+from cif.store import Store
 from csirtg_indicator import Indicator
 
 
 @py.test.yield_fixture
-def storage():
-    with Storage(store='rdflib') as s:
+def store():
+    with Store(store='rdflib') as s:
         yield s
 
 
-def test_storage_rdflib(storage):
-    storage.token_create_admin()
-    t = storage.store.tokens_admin_exists()
+def test_store_rdflib(store):
+    store.token_create_admin()
+    t = store.store.tokens_admin_exists()
     assert t
 
     i = [
@@ -20,10 +20,10 @@ def test_storage_rdflib(storage):
         Indicator(indicator='example2.com', tags='malware', provider='csirtgadgets.org').__dict__
     ]
 
-    x = storage.handle_indicators_create(t, i)
+    x = store.handle_indicators_create(t, i)
     assert x > 0
 
-    x = storage.handle_indicators_search(t, {
+    x = store.handle_indicators_search(t, {
         'indicator': 'example.com'
     })
 

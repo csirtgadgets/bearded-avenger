@@ -1,4 +1,4 @@
-from cif.store import Store
+from cif.store.plugin import Store
 from pprint import pprint
 
 
