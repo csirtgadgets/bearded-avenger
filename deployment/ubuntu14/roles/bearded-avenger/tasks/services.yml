@@ -5,7 +5,7 @@
     - cif-router
     - cif-smrt
     - cif-httpd
-    - cif-storage
+    - cif-store
     - cif-hunter
     - cif-services
 
@@ -15,7 +15,7 @@
     - cif-router.conf
     - cif-httpd.conf
     - cif-smrt.conf
-    - cif-storage.conf
+    - cif-store.conf
     - cif-hunter.conf
 
 - name: copy /etc/defaults/cif

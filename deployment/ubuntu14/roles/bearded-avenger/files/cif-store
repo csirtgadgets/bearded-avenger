@@ -15,13 +15,13 @@
 # Version:	@(#)skeleton  1.9  26-Feb-2001  miquels@cistron.nl
 #
 ### BEGIN INIT INFO
-# Provides:          cif-storage
+# Provides:          cif-store
 # Required-Start:    $remote_fs $network $named
 # Required-Stop:     $remote_fs $network $named
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: Start/stop cif-storage
-# Description:       Start/stop cif-storage daemon and its configured
+# Short-Description: Start/stop cif-store
+# Description:       Start/stop cif-store daemon and its configured
 #                    subprocesses.
 ### END INIT INFO
 
@@ -30,8 +30,8 @@
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 DAEMON=/usr/local/bin/supervisord
 SUPERVISORCTL=/usr/local/bin/supervisorctl
-NAME=cif-storage
-DESC=cif-storage
+NAME=cif-store
+DESC=cif-store
 
 RUNTIME_PATH=/var/lib/cif
 
@@ -49,15 +49,15 @@ if [ -f /etc/default/cif ] ; then
 	. /etc/default/cif
 fi
 
-# Include cif-storage defaults if available
-if [ -f /etc/default/cif-storage ] ; then
-	. /etc/default/cif-storage
+# Include cif-store defaults if available
+if [ -f /etc/default/cif-store ] ; then
+	. /etc/default/cif-store
 fi
-DAEMON_OPTS="-c /etc/cif/cif-storage.conf $DAEMON_OPTS"
+DAEMON_OPTS="-c /etc/cif/cif-store.conf $DAEMON_OPTS"
 
 export CIF_RUNTIME_PATH=$CIF_RUNTIME_PATH
 export CIF_LOGLEVEL=$CIF_LOGLEVEL
-export CIF_STORAGE_STORE=$CIF_STORAGE_STORE
+export CIF_STORE_STORE=$CIF_STORE_STORE
 
 set -e
 
