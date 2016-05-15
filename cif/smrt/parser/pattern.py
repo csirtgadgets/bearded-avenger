@@ -1,10 +1,8 @@
-from cif.smrt.parser import Parser
-import re
-from pprint import pprint
 import copy
-import sys
-import logging
-from cif.indicator import Indicator
+import re
+
+from cif.smrt.parser import Parser
+from csirtg_indicator import Indicator
 
 
 class Pattern(Parser):
@@ -66,7 +64,7 @@ class Pattern(Parser):
                     self.logger.info('skipping: {}'.format(i['indicator']))
                 else:
                     self.logger.debug(i)
-                    r = self.client.submit(i)
+                    r = self.client.indicator_create(i)
                     rv.append(r)
 
             if self.limit:

@@ -19,10 +19,13 @@ class Dummy(Client):
     def _post(self, uri, data):
         return data
 
-    def submit(self, data):
+    def indicator_create(self, data):
         if isinstance(data, dict):
             data = self._kv_to_indicator(data)
 
+        return data
+
+    def indicator_search(self, data):
         return data
 
 Plugin = Dummy

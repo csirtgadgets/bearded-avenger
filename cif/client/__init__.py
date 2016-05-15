@@ -8,10 +8,10 @@ from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 
 from cif.constants import REMOTE_ADDR, SEARCH_LIMIT, CONFIG_PATH
-from cif.format.table import Table
-from cif.indicator import Indicator
-from cif.utils import setup_logging, get_argument_parser, read_config
 from cif.exceptions import AuthError
+from cif.format.table import Table
+from cif.utils import setup_logging, get_argument_parser, read_config
+from csirtg_indicator import Indicator
 
 TOKEN = os.environ.get('CIF_TOKEN', None)
 REMOTE_ADDR = os.environ.get('CIF_REMOTE', REMOTE_ADDR)

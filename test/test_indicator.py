@@ -1,6 +1,4 @@
-import py.test
-
-from cif.indicator import Indicator
+from csirtg_indicator import Indicator
 
 ##TODO bring over the new tests from v2
 

@@ -5,10 +5,9 @@ from argparse import Namespace
 
 import py.test
 
-from cif.indicator import Indicator
 from cif.storage import Storage
 from cif.utils import setup_logging
-from pprint import pprint
+from csirtg_indicator import Indicator
 
 args = Namespace(debug=True, verbose=None)
 setup_logging(args)
@@ -34,10 +33,10 @@ def test_storage_dummy(obs):
     with Storage(store='dummy') as s:
         t = s.store.tokens_admin_exists()
 
-        x = s.handle_indicator_search(t, obs.__dict__)
+        x = s.handle_indicators_search(t, obs.__dict__)
         assert x[0]['indicator'] == 'example.com'
 
-        x = s.handle_indicator_create(t, obs.__dict__)
+        x = s.handle_indicators_create(t, obs.__dict__)
         assert x[0]['indicator'] == 'example.com'
 
 
@@ -51,12 +50,12 @@ def test_storage_sqlite(storage):
         Indicator(indicator='example2.com', tags='malware', provider='csirtgadgets.org').__dict__
     ]
 
-    x = storage.handle_indicator_create(t, {
+    x = storage.handle_indicators_create(t, {
         'indicator': 'example.com'
     })
     assert x > 0
 
-    x = storage.handle_indicator_search(t, {
+    x = storage.handle_indicators_search(t, {
         'indicator': 'example.com'
     })
 

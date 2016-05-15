@@ -58,9 +58,9 @@ class Store(object):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def indicator_search(self, token, data):
+    def indicators_search(self, token, data):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def indicator_create(self, token, data):
+    def indicators_create(self, token, data):
         raise NotImplementedError

@@ -1,10 +1,11 @@
-import ujson as json
-from cif.smrt.parser import Parser
 import copy
-from cif.utils import normalize_itype
-from cif.indicator import Indicator
+import ujson as json
 
-from pprint import pprint
+from cif.smrt.parser import Parser
+from cif.utils import normalize_itype
+from csirtg_indicator import Indicator
+
+
 class Json(Parser):
 
     def __init__(self, *args, **kwargs):
@@ -29,7 +30,7 @@ class Json(Parser):
                     self.logger.debug(i)
                     i = normalize_itype(i)
                     i = Indicator(**i)
-                    r = self.client.submit(i)
+                    r = self.client.indicator_create(i)
                     data.append(r)
                 except NotImplementedError as e:
                     self.logger.error(e)

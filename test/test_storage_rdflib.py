@@ -1,7 +1,7 @@
 import py.test
 
-from cif.indicator import Indicator
 from cif.storage import Storage
+from csirtg_indicator import Indicator
 
 
 @py.test.yield_fixture
@@ -20,10 +20,10 @@ def test_storage_rdflib(storage):
         Indicator(indicator='example2.com', tags='malware', provider='csirtgadgets.org').__dict__
     ]
 
-    x = storage.handle_indicator_create(t, i)
+    x = storage.handle_indicators_create(t, i)
     assert x > 0
 
-    x = storage.handle_indicator_search(t, {
+    x = storage.handle_indicators_search(t, {
         'indicator': 'example.com'
     })
 

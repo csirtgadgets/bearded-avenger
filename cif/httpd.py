@@ -191,7 +191,7 @@ def indicators():
     else:
         try:
             logger.debug(request.data)
-            r = Client(remote, pull_token()).submit(request.data)
+            r = Client(remote, pull_token()).indicator_create(request.data)
         except RuntimeError as e:
             logger.error(e)
             response = jsonify({
@@ -370,7 +370,8 @@ def main():
         logger.info('pinging router...')
         app.config["SECRET_KEY"] = os.urandom(1024)
         logger.info('starting up...')
-        app.run(host=args.listen, port=args.listen_port, debug=args.fdebug)
+        app.run(host=args.listen, port=args.listen_port, debug=args.fdebug, threaded=True)
+
     except KeyboardInterrupt:
         logger.info('shutting down...')
         raise SystemExit

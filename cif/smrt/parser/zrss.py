@@ -1,9 +1,11 @@
-import feedparser
-from cif.smrt.parser import Parser
-from cif.indicator import Indicator
 import copy
 import re
+
+import feedparser
+
+from cif.smrt.parser import Parser
 from cif.utils import normalize_itype
+from csirtg_indicator import Indicator
 
 
 class Rss(Parser):
@@ -58,7 +60,7 @@ class Rss(Parser):
                 i = normalize_itype(i)
                 i = Indicator(**i)
                 self.logger.debug(i)
-                r = self.client.submit(i)
+                r = self.client.indicator_create(i)
                 rv.append(r)
             except NotImplementedError as e:
                 self.logger.error(e)

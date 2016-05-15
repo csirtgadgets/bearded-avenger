@@ -1,5 +1,6 @@
 from cif.smrt.parser import Parser
-from cif.indicator import Indicator
+from csirtg_indicator import Indicator
+
 
 class Delim(Parser):
 
@@ -35,7 +36,7 @@ class Delim(Parser):
                     self.logger.error(e)
                     self.logger.info('skipping: {}'.format(obs['indicator']))
                 else:
-                    r = self.client.submit(obs)
+                    r = self.client.indicator_create(obs)
                     rv.append(r)
 
             if self.limit:

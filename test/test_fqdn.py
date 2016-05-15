@@ -1,7 +1,4 @@
-import pytest
-
-from cif.indicator import Indicator
-# asdfasdf
+from csirtg_indicator import Indicator
 
 
 def _not(data):

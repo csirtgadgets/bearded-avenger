@@ -14,10 +14,10 @@ class ElasticSearch_(Store):
     def __init__(self, nodes=[]):
         self.logger = logging.getLogger(__name__)
 
-    def indicator_create(self, token, data):
+    def indicators_create(self, token, data):
         return data
 
-    def indicator_search(self, token, data):
+    def indicators_search(self, token, data):
         return data
 
     def ping(self, token):

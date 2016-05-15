@@ -4,20 +4,18 @@ import json
 import logging
 import textwrap
 import time
+import traceback
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 
 import zmq
 from zmq.eventloop import ioloop
 
+import cif.gatherer
 from cif.constants import CTRL_ADDR, ROUTER_ADDR, STORAGE_ADDR, HUNTER_ADDR
 from cif.utils import setup_logging, get_argument_parser, setup_signals
-import cif.gatherer
-from cif.indicator import Indicator
 from cif.utils import zhelper
-import traceback
-
-from pprint import pprint
+from csirtg_indicator import Indicator
 
 MIN_CONFIDENCE = 3
 
@@ -100,7 +98,7 @@ class Router(object):
 
         rv = json.dumps({'status': 'failed'})
 
-        if mtype in ['search', 'submission']:
+        if mtype in ['indicators_search', 'indicators_create', 'token_write']:
             handler = getattr(self, "handle_" + mtype)
             try:
                 rv = handler(token, data)
@@ -120,9 +118,13 @@ class Router(object):
         self.logger.debug("replying {}".format(rv))
         self.frontend.send_multipart([id, '', mtype, rv])
 
-    def handle_indicator_search(self, token, data):
+    def handle_ping_write(self, token, data='[]'):
+        self.storage.send_multipart(['token_write', token, data])
+        return self.storage.recv()
+
+    def handle_indicators_search(self, token, data):
         # need to send searches through the _submission pipe
-        self.storage.send_multipart(['search', token, data])
+        self.storage.send_multipart(['indicators_search', token, data])
         x = self.storage.recv()
 
         data = json.loads(data)
@@ -133,13 +135,13 @@ class Router(object):
                 confidence=10,
                 tags='search'
             )
-            r = self.handle_submission(token, str(i))
+            r = self.handle_indicators_create(token, str(i))
             if r:
                 self.logger.info('search logged')
 
         return x
 
-    def handle_indicator_create(self, token, data):
+    def handle_indicators_create(self, token, data):
         # this needs to be threaded out, badly.
         data = json.loads(data)
         i = Indicator(**data)
@@ -159,7 +161,7 @@ class Router(object):
 
             self.hunters.send(data)
 
-        self.storage.send_multipart(['submission', token, data])
+        self.storage.send_multipart(['indicators_create', token, data])
         m = self.storage.recv()
         return m
 

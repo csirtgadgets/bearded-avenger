@@ -1,20 +1,21 @@
 #!/usr/bin/env python
 
+import json
 import logging
+import os
+import sys
 import textwrap
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 
-import json
 import zmq
 from zmq.eventloop import ioloop
-import os
-import sys
+
 import cif.gatherer
 from cif.client.zeromq import ZMQ as Client
 from cif.constants import GATHER_ADDR, ROUTER_ADDR
-from cif.indicator import Indicator
 from cif.utils import setup_logging, get_argument_parser, setup_signals
+from csirtg_indicator import Indicator
 
 TOKEN = os.getenv('CIF_GATHERER_TOKEN', 1234)
 

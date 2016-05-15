@@ -164,7 +164,7 @@ class SQLite(Store):
         return d
 
     # TODO - normalize this out into filters
-    def indicator_search(self, token, filters, limit=5):
+    def indicators_search(self, token, filters, limit=5):
         self.logger.debug('running search')
 
         if filters.get('limit'):
@@ -186,7 +186,7 @@ class SQLite(Store):
         return [self._as_dict(x)
                 for x in self.handle().query(Indicator).filter(sql).limit(limit)]
 
-    def indicator_create(self, token, data):
+    def indicators_create(self, token, data):
         if self.token_write(token):
             if type(data) == dict:
                 data = [data]

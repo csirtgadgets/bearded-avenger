@@ -1,10 +1,11 @@
-from nltk.tokenize import wordpunct_tokenize, sent_tokenize, word_tokenize
 from collections import defaultdict
-import logging
-from cif.indicator import Indicator
-from cif.utils import resolve_itype
-import arrow
 from pprint import pprint
+
+import arrow
+from nltk.tokenize import wordpunct_tokenize
+
+from cif.utils import resolve_itype
+from csirtg_indicator import Indicator
 
 KNOWN_SEPERATORS = set([',', '|', "\t", ';'])
 IGNORE_SEPARATORS = set(['.', '/'])

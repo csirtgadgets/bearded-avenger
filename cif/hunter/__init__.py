@@ -13,8 +13,8 @@ from zmq.eventloop import ioloop
 import cif.hunter
 from cif.client.zeromq import ZMQ as Client
 from cif.constants import HUNTER_ADDR, ROUTER_ADDR
-from cif.indicator import Indicator
 from cif.utils import setup_logging, get_argument_parser, setup_signals, read_config
+from csirtg_indicator import Indicator
 
 TOKEN = os.environ.get('CIF_TOKEN', None)
 TOKEN = os.environ.get('CIF_HUNTER_TOKEN', TOKEN)

@@ -49,7 +49,6 @@ class Storage(object):
         self.connected = False
         self.ctrl = None
         self.loop = loop
-        #self.store = 'cif.store.{}'.format(store)
         self.store = store
 
         # TODO replace with cif.utils.load_plugin
@@ -157,17 +156,21 @@ class Storage(object):
         self.logger.debug('handling ping message')
         return self.store.ping(token)
 
-    def handle_indicator_search(self, token, data):
+    def handle_ping_write(self, token, data='[]'):
+        self.logger.debug('handling ping write')
+        return self.store.token_write(token)
+
+    def handle_indicators_search(self, token, data):
         if self.store.token_read(token):
             self.logger.debug('searching')
-            return self.store.indicator_search(token, data)
+            return self.store.indicators_search(token, data)
         else:
             raise AuthError('invalid token')
 
     # TODO group check
-    def handle_indicator_create(self, token, data):
+    def handle_indicators_create(self, token, data):
         if self.store.token_write(token):
-            return self.store.indicator_create(token, data)
+            return self.store.indicators_create(token, data)
         else:
             raise AuthError('invalid token')
 

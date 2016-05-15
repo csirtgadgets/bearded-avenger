@@ -14,6 +14,7 @@ if sys.version.startswith('3'):
 else:
     u = unicode
 
+
 # --------------------------------------------------------------------------
 # Create a pipe, which consists of two PAIR sockets connected over inproc.
 # The pipe is configured to use a default 1000 hwm setting. Returns the

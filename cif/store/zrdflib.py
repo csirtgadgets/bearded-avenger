@@ -33,7 +33,7 @@ class Rdflib(Store):
         self.logger.debug("closing store")
         self.handle.close(commit_pending_transaction=True)
 
-    def indicator_search(self, token, data):
+    def indicators_search(self, token, data):
         rv = []
         for s, p, o in self.handle.triples((Literal(data['indicator']), None, None)):
             rv.append((s, p, o))
@@ -41,7 +41,7 @@ class Rdflib(Store):
         return rv
 
     # http://en.wikipedia.org/wiki/Resource_Description_Framework
-    def indicator_create(self, token, data):
+    def indicators_create(self, token, data):
         if type(data) is not list:
             data = [data]
 

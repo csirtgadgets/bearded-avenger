@@ -128,11 +128,11 @@ class HTTP(Client):
         body = json.loads(body.content)
         return body
 
-    def search(self, filters):
+    def indicator_search(self, filters):
         rv = self._get('/search', params=filters)
         return rv['data']
 
-    def submit(self, data):
+    def indicator_create(self, data):
         data = str(data)
 
         uri = "{0}/indicators".format(self.remote)
