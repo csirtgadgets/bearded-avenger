@@ -10,7 +10,7 @@ from sqlalchemy.orm import sessionmaker, relationship, backref, class_mapper
 from cifsdk.constants import RUNTIME_PATH
 from cif.store.plugin import Store
 import json
-from cif.exceptions import AuthError
+from cifsdk.exceptions import AuthError
 from pprint import pprint
 
 DB_FILE = os.path.join(RUNTIME_PATH, 'cif.sqlite')

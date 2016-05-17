@@ -20,7 +20,7 @@ from zmq.eventloop import ioloop
 import cif.store
 from cif.constants import CTRL_ADDR, STORE_ADDR
 from cifsdk.constants import REMOTE_ADDR, CONFIG_PATH
-from cif.exceptions import CIFConnectionError, AuthError
+from cifsdk.exceptions import CIFConnectionError, AuthError
 from cifsdk.utils import setup_logging, get_argument_parser, setup_signals
 
 MOD_PATH = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))

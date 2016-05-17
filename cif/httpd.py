@@ -16,7 +16,7 @@ from cif.constants import ROUTER_ADDR
 from cifsdk.constants import TOKEN
 from cifsdk.utils import get_argument_parser, setup_logging, setup_signals
 from pprint import pprint
-from cif.exceptions import AuthError
+from cifsdk.exceptions import AuthError
 
 TOKEN = os.environ.get('CIF_HTTPD_TOKEN', TOKEN)
 
