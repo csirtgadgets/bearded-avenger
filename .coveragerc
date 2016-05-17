@@ -28,6 +28,7 @@ omit =
     cif/constants.py
     cif/exceptions.py
     cif/store/plugin.py
+    cif/p2p.py
 
 [html]
 directory = coverage_html_report
