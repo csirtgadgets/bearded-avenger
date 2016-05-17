@@ -6,7 +6,7 @@ from argparse import Namespace
 import py.test
 
 from cif.store import Store
-from cif.utils import setup_logging
+from cifsdk.utils import setup_logging
 from csirtg_indicator import Indicator
 
 args = Namespace(debug=True, verbose=None)

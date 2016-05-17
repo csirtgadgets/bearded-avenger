@@ -11,26 +11,26 @@ from flask import Flask, request, jsonify
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
-from cif.client.zeromq import ZMQ as Client
+from cifsdk.client.zeromq import ZMQ as Client
 from cif.constants import ROUTER_ADDR
-from cif.utils import get_argument_parser, setup_logging, setup_signals
+from cifsdk.constants import TOKEN
+from cifsdk.utils import get_argument_parser, setup_logging, setup_signals
 from pprint import pprint
 from cif.exceptions import AuthError
 
-TOKEN = os.environ.get('CIF_TOKEN', None)
 TOKEN = os.environ.get('CIF_HTTPD_TOKEN', TOKEN)
 
 HTTP_LISTEN = '127.0.0.1'
-HTTP_LISTEN = os.environ.get('CIF_HTTP_LISTEN', HTTP_LISTEN)
+HTTP_LISTEN = os.environ.get('CIF_HTTPD_LISTEN', HTTP_LISTEN)
 
 HTTP_LISTEN_PORT = 5000
-HTTP_LISTEN_PORT = os.environ.get('CIF_HTTP_LISTEN_PORT', HTTP_LISTEN_PORT)
+HTTP_LISTEN_PORT = os.environ.get('CIF_HTTPD_LISTEN_PORT', HTTP_LISTEN_PORT)
 
-FILTERS = ['indicator', 'itype', 'confidence', 'provider', 'limit', 'application']
+VALID_FILTERS = ['indicator', 'itype', 'confidence', 'provider', 'limit', 'application']
 TOKEN_FILTERS = ['username', 'token']
 
-LIMIT_DAY = os.environ.get('CIF_LIMIT_DAY', 5000)
-LIMIT_HOUR = os.environ.get('CIF_LIMIT_HOUR', 500)
+LIMIT_DAY = os.environ.get('CIF_HTTPD_LIMIT_DAY', 5000)
+LIMIT_HOUR = os.environ.get('CIF_HTTPD_LIMIT_HOUR', 500)
 
 # https://github.com/mitsuhiko/flask/blob/master/examples/minitwit/minitwit.py
 
@@ -135,7 +135,7 @@ def search():
         remote = app.config['CIF_ROUTER_ADDR']
 
     filters = {}
-    for k in FILTERS:
+    for k in VALID_FILTERS:
         if request.args.get(k):
             filters[k] = request.args.get(k)
 
@@ -169,7 +169,7 @@ def indicators():
     """
     if request.method == 'GET':
         filters = {}
-        for f in FILTERS:
+        for f in VALID_FILTERS:
             if request.args.get(f):
                 filters[f] = request.args.get(f)
         try:

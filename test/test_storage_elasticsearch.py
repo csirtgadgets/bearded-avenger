@@ -3,6 +3,12 @@ import py.test
 from cif.store import Store
 from csirtg_indicator import Indicator
 
+DISABLE_TESTS = False
+
+try:
+    import elasticsearch
+except ImportError as e:
+    DISABLE_TESTS = True
 
 @py.test.yield_fixture
 def store():
@@ -10,6 +16,7 @@ def store():
         yield s
 
 
+@py.test.mark.skipif(DISABLE_TESTS, reason='missing elasticsearch')
 def test_store_elasticsearch(store):
     store.token_create_admin()
     t = store.store.tokens_admin_exists()

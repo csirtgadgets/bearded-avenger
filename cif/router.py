@@ -13,11 +13,10 @@ from zmq.eventloop import ioloop
 
 import cif.gatherer
 from cif.constants import CTRL_ADDR, ROUTER_ADDR, STORE_ADDR, HUNTER_ADDR
-from cif.utils import setup_logging, get_argument_parser, setup_signals
-from cif.utils import zhelper
+from cifsdk.utils import setup_logging, get_argument_parser, setup_signals, zhelper
 from csirtg_indicator import Indicator
 
-MIN_CONFIDENCE = 3
+HUNTER_MIN_CONFIDENCE = 3
 
 
 class Router(object):
@@ -154,7 +153,7 @@ class Router(object):
 
         data = str(i)
 
-        if i.confidence >= MIN_CONFIDENCE:
+        if i.confidence >= HUNTER_MIN_CONFIDENCE:
             if self.p2p:
                 self.logger.info('sending to peers...')
                 self.p2p.send(data.encode('utf-8'))

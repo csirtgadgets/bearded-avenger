@@ -1,8 +1,8 @@
 import py.test
 
-from cif.smrt import Smrt
-from cif.rule import Rule
-from cif.constants import REMOTE_ADDR
+from csirtg_smrt import Smrt
+from csirtg_smrt.rule import Rule
+from cifsdk.constants import REMOTE_ADDR
 from pprint import pprint
 
 rule = 'rules/default/malc0de.yml'

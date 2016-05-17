@@ -18,11 +18,10 @@ import zmq
 from zmq.eventloop import ioloop
 
 import cif.store
-from cif.constants import CTRL_ADDR, STORE_ADDR, REMOTE_ADDR
+from cif.constants import CTRL_ADDR, STORE_ADDR
+from cifsdk.constants import REMOTE_ADDR, CONFIG_PATH
 from cif.exceptions import CIFConnectionError, AuthError
-from cif.utils import setup_logging, get_argument_parser, setup_signals
-
-CONFIG_PATH = os.path.join(os.path.expanduser('~'), '.cifv3.yml')
+from cifsdk.utils import setup_logging, get_argument_parser, setup_signals
 
 MOD_PATH = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 

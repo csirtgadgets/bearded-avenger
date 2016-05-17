@@ -1,7 +1,7 @@
 import py.test
 
-from cif.smrt import Smrt
-from cif.constants import REMOTE_ADDR
+from csirtg_smrt import Smrt
+from cifsdk.constants import REMOTE_ADDR
 from pprint import pprint
 
 

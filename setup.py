@@ -32,8 +32,6 @@ setup(
     scripts=[],
     entry_points={
         'console_scripts': [
-            'cif=cif.client:main',
-            'cif-smrt=cif.smrt:main',
             'cif-router=cif.router:main',
             'cif-hunter=cif.hunter:main',
             'cif-gatherer=cif.gatherer:main',

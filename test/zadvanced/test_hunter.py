@@ -6,13 +6,12 @@ import threading
 import tempfile
 import os
 from pprint import pprint
-import time
 
 loop = ioloop.IOLoop.instance()
 ADDR = 'ipc://{}'.format(tempfile.NamedTemporaryFile().name)
 
 
-@pytest.mark.skipif(not os.environ.get('CIF_ADVANCED_TESTS'), reason='requres CIF_ADVANCED_TEST to be true')
+@pytest.mark.skipif(not os.environ.get('CIF_ADVANCED_TESTS'), reason='requires CIF_ADVANCED_TEST to be true')
 def test_zadvanced_hunter_start():
     with Hunter(loop=loop, remote=ADDR) as h:
         h = Hunter(loop=loop, remote=ADDR)

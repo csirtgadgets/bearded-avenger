@@ -1,11 +1,8 @@
 import py.test
 
-from cif.smrt import Smrt
-from cif.rule import Rule
-from cif.constants import REMOTE_ADDR
-from pprint import pprint
-from cif.utils.znltk import text_to_list
-import arrow
+from csirtg_smrt import Smrt
+from csirtg_smrt.rule import Rule
+from cifsdk.constants import REMOTE_ADDR
 
 rule = 'rules/default/sans_edu.yml'
 rule = Rule(path=rule)

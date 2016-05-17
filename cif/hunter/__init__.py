@@ -2,7 +2,7 @@
 
 import json
 import logging
-import os
+import os.path
 import sys
 import textwrap
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
@@ -11,14 +11,14 @@ import zmq
 from zmq.eventloop import ioloop
 
 import cif.hunter
-from cif.client.zeromq import ZMQ as Client
+from cifsdk.client.zeromq import ZMQ as Client
 from cif.constants import HUNTER_ADDR, ROUTER_ADDR
-from cif.utils import setup_logging, get_argument_parser, setup_signals, read_config
+from cifsdk.utils import setup_logging, get_argument_parser, setup_signals, read_config
 from csirtg_indicator import Indicator
 
 TOKEN = os.environ.get('CIF_TOKEN', None)
 TOKEN = os.environ.get('CIF_HUNTER_TOKEN', TOKEN)
-CONFIG_PATH = os.environ.get('CIF_HUNTER_CONFIG_PATH', os.path.join(os.path.expanduser('~'), 'cif-hunter.yml'))
+CONFIG_PATH = os.environ.get('CIF_HUNTER_CONFIG_PATH', os.path.join(os.getcwd(), 'cif-hunter.yml'))
 
 
 class Hunter(object):

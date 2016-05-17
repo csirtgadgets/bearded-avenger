@@ -2,7 +2,7 @@ import abc
 import os
 import binascii
 
-TOKEN_LENGTH = 40
+from cif.constants import TOKEN_LENGTH
 
 
 class Store(object):
