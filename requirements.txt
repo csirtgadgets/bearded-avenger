@@ -1,6 +1,6 @@
 -e git+https://github.com/zeromq/pyre.git@ecc3ea7579a43016e1cbfea3773cb9ea96fb0498#egg=Pyre
 -e git+https://github.com/csirtgadgets/csirtg-indicator-py.git@3c547c0524e2eca59383db5d144a2e3e53dd4953#egg=csirtg_indicator
--e git+https://github.com/csirtgadgets/bearded-avenger-sdk-py.git@f8b9d1ee58f44422690bf8205acee928b1f25e1e#egg=cifsdk
+-e git+https://github.com/csirtgadgets/bearded-avenger-sdk-py.git@ed0ea423f23edd4552f60091486e78d73388bd4b#egg=cifsdk
 -e git+https://github.com/csirtgadgets/csirtg-smrt-py.git@c9eaefd193b8d82e242899acb24f4be806154824#egg=csirtg_smrt
 mock>=2.0.0
 pytest-cov>=2.2.1
