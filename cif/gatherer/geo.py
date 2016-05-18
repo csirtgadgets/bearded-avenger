@@ -43,6 +43,7 @@ class Geo(object):
         if (indicator.itype == 'ipv4' or indicator.itype == 'ipv6') and not indicator.is_private():
             # https://geoip2.readthedocs.org/en/latest/
             i = indicator.indicator
+            self.logger.debug(i)
             match = re.search('^(\S+)\/\d+$', i)
             if match:
                 i = match.group(1)

@@ -1,9 +1,9 @@
 import dns.resolver
 import logging
-import copy
 import dns.resolver
 from dns.resolver import NXDOMAIN, NoAnswer
 from pprint import pprint
+from csirtg_indicator import Indicator
 
 CONFIDENCE = 9
 PROVIDER = 'spamhaus.org'
@@ -57,20 +57,23 @@ class SpamhausIp(object):
         return answers[0]
 
     def process(self, i, router):
-        if i.itype == 'ipv4' or i.itype == 'ipv6':
+        if (i.itype == 'ipv4' or i.itype == 'ipv6') and i.provider != 'spamhaus.org':
             try:
                 r = self._resolve(i.indicator)
-                r = CODES[r]
+                r = CODES.get(str(r), None)
 
-                f = copy.deepcopy(i)
-                f.tags = f['tags']
-                f.description = f['description']
-                f.confidence = CONFIDENCE
-                f.provider = PROVIDER
-                f.reference_tlp = 'white'
-                f.reference = 'http://www.spamhaus.org/query/bl?ip={}'.format(f)
-                x = router.submit(f)
-                self.logger.debug(x)
+                if r:
+                    f = Indicator(**i.__dict__)
+
+                    f.tags = [r['tags']]
+                    f.description = r['description']
+                    f.confidence = CONFIDENCE
+                    f.provider = PROVIDER
+                    f.reference_tlp = 'white'
+                    f.reference = 'http://www.spamhaus.org/query/bl?ip={}'.format(f.indicator)
+                    pprint(f)
+                    x = router.indicator_create(f)
+                    self.logger.debug(x)
             except NoAnswer:
                 self.logger.info('no answer...')
             except NXDOMAIN:

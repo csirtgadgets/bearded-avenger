@@ -14,7 +14,7 @@ from flask_limiter.util import get_remote_address
 from cifsdk.client.zeromq import ZMQ as Client
 from cif.constants import ROUTER_ADDR
 from cifsdk.constants import TOKEN
-from cifsdk.utils import get_argument_parser, setup_logging, setup_signals
+from cifsdk.utils import get_argument_parser, setup_logging, setup_signals, setup_runtime_path
 from pprint import pprint
 from cifsdk.exceptions import AuthError
 
@@ -365,6 +365,8 @@ def main():
     logger.info('loglevel is: {}'.format(logging.getLevelName(logger.getEffectiveLevel())))
 
     setup_signals(__name__)
+
+    setup_runtime_path(args.runtime_path)
 
     try:
         logger.info('pinging router...')

@@ -21,7 +21,7 @@ class Url(object):
             self.logger.debug(fqdn)
 
             self.logger.debug('sending to router..')
-            r = router.submit(fqdn)
-            self.logger.debug(r)
+            x = router.indicator_create(fqdn)
+
 
 Plugin = Url

@@ -16,6 +16,16 @@ from pprint import pprint
 DB_FILE = os.path.join(RUNTIME_PATH, 'cif.sqlite')
 Base = declarative_base()
 
+from sqlalchemy.engine import Engine
+from sqlalchemy import event
+
+
+@event.listens_for(Engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
+
 
 class Token(Base):
     __tablename__ = 'tokens'
@@ -58,7 +68,11 @@ class Indicator(Base):
     description = Column(UnicodeText)
     additional_data = Column(UnicodeText)
 
-    tags = relationship('Tag', primaryjoin='and_(Indicator.id==Tag.indicator_id)')
+    tags = relationship(
+        'Tag',
+        primaryjoin='and_(Indicator.id==Tag.indicator_id)',
+        backref=backref('tags', uselist=True),
+    )
 
     def __init__(self, indicator=None, itype=None, tlp=None, provider=None, portlist=None, asn=None, asn_desc=None,
                  cc=None, protocol=None, firsttime=None, lasttime=None,
@@ -115,13 +129,11 @@ class Tag(Base):
     id = Column(Integer, primary_key=True)
     tag = Column(String)
 
-    indicator_id = Column(Integer, ForeignKey('indicators.id'))
+    indicator_id = Column(Integer, ForeignKey('indicators.id', ondelete='CASCADE'))
     indicator = relationship(
         Indicator,
-        cascade='all,delete',
-        backref=backref('indicators',
-                         uselist=True,
-                         cascade='delete,all'))
+        backref=backref('indicators', uselist=True)
+    )
 
 
 # http://www.pythoncentral.io/sqlalchemy-orm-examples/
@@ -137,7 +149,11 @@ class SQLite(Store):
         self.dictrows = dictrows
         self.path = "sqlite:///{0}".format(self.dbfile)
 
-        self.engine = create_engine(self.path)
+        echo = False
+        if self.logger.getEffectiveLevel() == logging.DEBUG:
+            echo = True
+
+        self.engine = create_engine(self.path, echo=echo)
         self.handle = sessionmaker()
         self.handle.configure(bind=self.engine)
 
@@ -197,16 +213,18 @@ class SQLite(Store):
                 # namespace conflict with related self.tags
                 tags = d.get("tags", [])
                 if len(tags) > 0:
-                    if isinstance(tags, str):
-                        tags = tags.split(',')
+                    print type(tags)
+                    if type(tags) == str or type(tags) == unicode:
+                        if '.' in tags:
+                            tags = tags.split(',')
+                        else:
+                            tags = [str(tags)]
 
                     del d['tags']
+
                 o = Indicator(**d)
 
                 s.add(o)
-
-                if type(tags) == str:
-                    tags = [tags]
 
                 for t in tags:
                     t = Tag(tag=t, indicator=o)

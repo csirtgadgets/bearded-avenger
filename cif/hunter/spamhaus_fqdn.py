@@ -1,9 +1,9 @@
 import dns.resolver
 import logging
-import copy
 import dns.resolver
 from dns.resolver import NoAnswer, NXDOMAIN
 from dns.name import EmptyLabel
+from csirtg_indicator import Indicator
 from pprint import pprint
 
 CONFIDENCE = 9
@@ -67,19 +67,20 @@ class SpamhausFqdn(object):
         return answers[0]
 
     def process(self, i, router):
-        if i.itype == 'fqdn':
+        if i.itype == 'fqdn' and i.provider != 'spamhaus.org':
             try:
                 r = self._resolve(i.indicator)
                 r = CODES[r]
 
-                f = copy.deepcopy(i)
-                f.tags = f['tags']
-                f.description = f['description']
+                f = Indicator(**i.__dict__)
+
+                f.tags = [r['tags']]
+                f.description = r['description']
                 f.confidence = CONFIDENCE
                 f.provider = PROVIDER
                 f.reference_tlp = 'white'
-                f.reference = 'http://www.spamhaus.org/query/dbl?domain={}'.format(f)
-                x = router.submit(f)
+                f.reference = 'http://www.spamhaus.org/query/dbl?domain={}'.format(f.indicator)
+                x = router.indicator_create(f)
                 self.logger.debug(x)
             except KeyError as e:
                 self.logger.error(e)

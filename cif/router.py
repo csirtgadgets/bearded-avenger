@@ -13,7 +13,7 @@ from zmq.eventloop import ioloop
 
 import cif.gatherer
 from cif.constants import CTRL_ADDR, ROUTER_ADDR, STORE_ADDR, HUNTER_ADDR
-from cifsdk.utils import setup_logging, get_argument_parser, setup_signals, zhelper
+from cifsdk.utils import setup_logging, get_argument_parser, setup_signals, zhelper, setup_runtime_path
 from csirtg_indicator import Indicator
 
 HUNTER_MIN_CONFIDENCE = 3
@@ -144,12 +144,15 @@ class Router(object):
         # this needs to be threaded out, badly.
         data = json.loads(data)
         i = Indicator(**data)
+        self.logger.debug(i.indicator)
         for g in self.gatherers:
+            self.logger.debug('testing: %s' % g)
             try:
                 i = g.process(i)
             except Exception as e:
                 self.logger.error('gatherer failed: %s' % g)
                 self.logger.error(e)
+                traceback.print_exc()
 
         data = str(i)
 
@@ -205,6 +208,8 @@ def main():
     logger.info('loglevel is: {}'.format(logging.getLevelName(logger.getEffectiveLevel())))
 
     setup_signals(__name__)
+
+    setup_runtime_path(args.runtime_path)
 
     with Router(listen=args.listen, hunter=args.hunter, store=args.store, p2p=args.p2p) as r:
         try:

@@ -6,7 +6,7 @@ import os.path
 import sys
 import textwrap
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
-
+import traceback
 import zmq
 from zmq.eventloop import ioloop
 
@@ -19,6 +19,8 @@ from csirtg_indicator import Indicator
 TOKEN = os.environ.get('CIF_TOKEN', None)
 TOKEN = os.environ.get('CIF_HUNTER_TOKEN', TOKEN)
 CONFIG_PATH = os.environ.get('CIF_HUNTER_CONFIG_PATH', os.path.join(os.getcwd(), 'cif-hunter.yml'))
+if not os.path.isfile(CONFIG_PATH):
+    CONFIG_PATH = os.path.join(os.path.expanduser('~'), 'cif-hunter.yml')
 
 
 class Hunter(object):
@@ -33,7 +35,11 @@ class Hunter(object):
         m = Indicator(**m)
 
         for p in self.plugins:
-            p.process(m, self.router)
+            try:
+                p.process(m, self.router)
+            except Exception as e:
+                self.logger.error(e)
+                traceback.print_exc()
 
     def __init__(self, remote=HUNTER_ADDR, router=ROUTER_ADDR, token=TOKEN, loop=ioloop.IOLoop.instance(), *args,
                  **kvargs):
