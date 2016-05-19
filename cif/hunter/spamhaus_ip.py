@@ -1,7 +1,7 @@
 import dns.resolver
 import logging
 import copy
-import dns.resolver
+
 from dns.resolver import NXDOMAIN, NoAnswer
 from pprint import pprint
 
