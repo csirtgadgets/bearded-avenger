@@ -9,6 +9,9 @@ class Asn(object):
     def __init__(self, *args, **kv):
         self.logger = logging.getLogger(__name__)
 
+    def _resolve(self, data):
+        return resolve_ns('{}.{}'.format(data, 'origin.asn.cymru.com'), t='TXT')
+
     def process(self, indicator):
         if indicator.itype == 'ipv4' and not indicator.is_private():
             i = indicator.indicator
@@ -18,7 +21,7 @@ class Asn(object):
 
             i = '.'.join(reversed(i.split('.')))
 
-            answers = resolve_ns('{}.{}'.format(i, 'origin.asn.cymru.com'), t='TXT')
+            answers = self._resolve(i)
 
             if len(answers) > 0:
                 # Separate fields and order by netmask length

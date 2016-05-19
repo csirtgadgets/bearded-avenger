@@ -31,7 +31,10 @@ omit =
     cif/store/plugin.py
     cif/p2p.py
     cif/hunter/spamhaus_*
+    cif/hunter/fqdn.py
+    cif/hunter/url.py
     cif/router.py
+    cif/gatherer/geo.py
 
 [html]
 directory = coverage_html_report

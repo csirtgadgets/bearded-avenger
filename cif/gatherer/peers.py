@@ -8,10 +8,13 @@ class Peer(object):
     def __init__(self, *args, **kv):
         self.logger = logging.getLogger(__name__)
 
+    def _resolve(self, data):
+        return resolve_ns('{}.{}'.format(data, 'peer.asn.cymru.com'), t='TXT')
+
     def process(self, indicator):
         if indicator.itype == 'ipv4' and not indicator.is_private():
             i = '.'.join(reversed(indicator.indicator.split('.')))
-            answers = resolve_ns('{}.{}'.format(i, 'peer.asn.cymru.com'), t='TXT')
+            answers = self._resolve(i)
             if len(answers) > 0:
                 if not indicator.peers:
                     indicator.peers = []
