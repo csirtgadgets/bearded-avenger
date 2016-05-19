@@ -1,7 +1,5 @@
 import dns.resolver
 import logging
-import dns.resolver
-from dns.resolver import NXDOMAIN, NoAnswer
 from pprint import pprint
 from csirtg_indicator import Indicator
 
@@ -74,9 +72,9 @@ class SpamhausIp(object):
                     pprint(f)
                     x = router.indicator_create(f)
                     self.logger.debug(x)
-            except NoAnswer:
+            except dns.resolver.NoAnswer:
                 self.logger.info('no answer...')
-            except NXDOMAIN:
+            except dns.resolver.NXDOMAIN:
                 self.logger.info('nxdomain...')
             except Exception as e:
                 self.logger.error(e)

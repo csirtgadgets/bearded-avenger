@@ -1,7 +1,5 @@
 import dns.resolver
 import logging
-import dns.resolver
-from dns.resolver import NoAnswer, NXDOMAIN
 from dns.name import EmptyLabel
 from csirtg_indicator import Indicator
 from pprint import pprint
@@ -84,9 +82,9 @@ class SpamhausFqdn(object):
                 self.logger.debug(x)
             except KeyError as e:
                 self.logger.error(e)
-            except NoAnswer:
+            except dns.resolver.NoAnswer:
                 self.logger.info('no answer...')
-            except NXDOMAIN:
+            except dns.resolver.NXDOMAIN:
                 self.logger.info('nxdomain...')
             except EmptyLabel:
                 self.logger.error('empty label: {}'.format(i.indicator))
