@@ -149,9 +149,9 @@ def search():
 
     try:
         if app.config.get('dummy'):
-            r = DummyClient(remote, pull_token()).indicator_search(filters)
+            r = DummyClient(remote, pull_token()).indicators_search(filters)
         else:
-            r = Client(remote, pull_token()).indicator_search(filters)
+            r = Client(remote, pull_token()).indicators_search(filters)
         response = jsonify({
             "message": "success",
             "data": r
@@ -220,51 +220,7 @@ def indicators():
     return response
 
 
-@app.route("/token", methods=['PATCH'])
-def token():
-    cli = Client(remote, pull_token())
-    if request.data:
-        try:
-            r = cli.token_edit(request.data)
-        except AuthError:
-            response = jsonify({
-                'message': 'admin privs required',
-                'data': []
-            })
-            response.status_code = 401
-        except Exception as e:
-            logger.error(e)
-            import traceback
-            traceback.print_exc()
-            response = jsonify({
-                'message': 'create failed',
-                'data': []
-            })
-            response.status_code = 503
-        else:
-            if r:
-                response = jsonify({
-                    'message': 'success',
-                    'data': r
-                })
-                response.status_code = 200
-            else:
-                response = jsonify({
-                    'message': 'admin privs required',
-                    'data': []
-                })
-                response.status_code = 401
-    else:
-        response = jsonify({
-            'message': 'edit failed',
-            'data': []
-        })
-        response.status_code = 400
-
-    return response
-
-
-@app.route("/tokens", methods=["GET", "POST", "DELETE"])
+@app.route("/tokens", methods=["GET", "POST", "DELETE", "PATCH"])
 def tokens():
     cli = Client(remote, pull_token())
     if request.method == 'DELETE':
@@ -319,6 +275,37 @@ def tokens():
                 'data': []
             })
             response.status_code = 400
+    elif request.method == 'PATCH':
+        try:
+            r = cli.tokens_edit(request.data)
+        except AuthError:
+            response = jsonify({
+                'message': 'admin privs required',
+                'data': []
+            })
+            response.status_code = 401
+        except Exception as e:
+            logger.error(e)
+            import traceback
+            traceback.print_exc()
+            response = jsonify({
+                'message': 'create failed',
+                'data': []
+            })
+            response.status_code = 503
+        else:
+            if r:
+                response = jsonify({
+                    'message': 'success',
+                    'data': r
+                })
+                response.status_code = 200
+            else:
+                response = jsonify({
+                    'message': 'admin privs required',
+                    'data': []
+                })
+                response.status_code = 401
     else:
         filters = {}
         for f in TOKEN_FILTERS:

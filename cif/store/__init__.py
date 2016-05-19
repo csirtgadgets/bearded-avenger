@@ -196,7 +196,7 @@ class Store(object):
     def handle_token_write(self, token, data=None):
         return self.store.token_write(token)
 
-    def handle_token_edit(self, token, data):
+    def handle_tokens_edit(self, token, data):
         if self.store.token_admin(token):
             return self.store.token_edit(data)
         else:
