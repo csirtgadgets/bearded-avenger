@@ -12,6 +12,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
 from cifsdk.client.zeromq import ZMQ as Client
+from cifsdk.client.dummy import Dummy as DummyClient
 from cif.constants import ROUTER_ADDR
 from cifsdk.constants import TOKEN
 from cifsdk.utils import get_argument_parser, setup_logging, setup_signals, setup_runtime_path
@@ -101,7 +102,11 @@ def ping():
 
     write = request.args.get('write', None)
 
-    r = Client(remote, pull_token()).ping(write=write)
+    if app.config.get('dummy'):
+        r = DummyClient(remote, pull_token()).ping(write=write)
+    else:
+        r = Client(remote, pull_token()).ping(write=write)
+
     resp = jsonify({
         "message": "success",
         "data": r
@@ -143,7 +148,10 @@ def search():
         filters['indicator'] = request.args.get('q')
 
     try:
-        r = Client(remote, pull_token()).indicator_search(filters)
+        if app.config.get('dummy'):
+            r = DummyClient(remote, pull_token()).indicator_search(filters)
+        else:
+            r = Client(remote, pull_token()).indicator_search(filters)
         response = jsonify({
             "message": "success",
             "data": r
@@ -173,7 +181,10 @@ def indicators():
             if request.args.get(f):
                 filters[f] = request.args.get(f)
         try:
-            r = Client(remote, pull_token()).filter(filters=filters, limit=request.args.get('limit'))
+            if app.config.get('dummy'):
+                r = DummyClient(remote, pull_token()).filter(filters=filters, limit=request.args.get('limit'))
+            else:
+                r = Client(remote, pull_token()).filter(filters=filters, limit=request.args.get('limit'))
         except RuntimeError as e:
             logger.error(e)
             response = jsonify({

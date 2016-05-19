@@ -19,6 +19,7 @@ exclude_lines =
     # Don't complain if non-runnable code isn't run:
     if 0:
     if __name__ == .__main__.:
+    p.add_argument
 
 ignore_errors = True
 
@@ -29,6 +30,8 @@ omit =
     cif/exceptions.py
     cif/store/plugin.py
     cif/p2p.py
+    cif/hunter/spamhaus_*
+    cif/router.py
 
 [html]
 directory = coverage_html_report
