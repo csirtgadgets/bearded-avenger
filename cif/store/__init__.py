@@ -221,7 +221,7 @@ class Store(object):
     def token_create_smrt(self):
         self.logger.info('generating smrt token')
         rv = self.store.tokens_create({
-            'username': u'cif-smrt',
+            'username': u'csirtg-smrt',
             'groups': [u'everyone'],
             'write': u'1',
         })
