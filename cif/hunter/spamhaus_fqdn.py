@@ -78,7 +78,7 @@ class SpamhausFqdn(object):
                 f.provider = PROVIDER
                 f.reference_tlp = 'white'
                 f.reference = 'http://www.spamhaus.org/query/dbl?domain={}'.format(f.indicator)
-                x = router.indicator_create(f)
+                x = router.indicators_create(f)
                 self.logger.debug(x)
             except KeyError as e:
                 self.logger.error(e)

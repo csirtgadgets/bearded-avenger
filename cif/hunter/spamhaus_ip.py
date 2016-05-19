@@ -70,7 +70,7 @@ class SpamhausIp(object):
                     f.reference_tlp = 'white'
                     f.reference = 'http://www.spamhaus.org/query/bl?ip={}'.format(f.indicator)
                     pprint(f)
-                    x = router.indicator_create(f)
+                    x = router.indicators_create(f)
                     self.logger.debug(x)
             except dns.resolver.NoAnswer:
                 self.logger.info('no answer...')

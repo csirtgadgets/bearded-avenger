@@ -202,7 +202,7 @@ def indicators():
     else:
         try:
             logger.debug(request.data)
-            r = Client(remote, pull_token()).indicator_create(request.data)
+            r = Client(remote, pull_token()).indicators_create(request.data)
         except RuntimeError as e:
             logger.error(e)
             response = jsonify({
