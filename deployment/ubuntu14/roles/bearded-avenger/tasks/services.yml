@@ -3,7 +3,7 @@
   copy: src="{{ item }}" dest="/etc/init.d/{{ item }}" mode=0755 backup=yes
   with_items:
     - cif-router
-    - cif-smrt
+    - csirtg-smrt
     - cif-httpd
     - cif-store
     - cif-hunter
@@ -14,7 +14,7 @@
   with_items:
     - cif-router.conf
     - cif-httpd.conf
-    - cif-smrt.conf
+    - csirtg-smrt.conf
     - cif-store.conf
     - cif-hunter.conf
 
