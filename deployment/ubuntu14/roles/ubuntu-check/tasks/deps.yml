@@ -1,7 +1,4 @@
 ---
-- name: Add python repo
-  apt_repository: repo='ppa:fkrull/deadsnakes-python2.7'
-
 - name: Add apt HTTPS support
   apt: name=apt-transport-https state=present
 
@@ -29,9 +26,16 @@
     - virtualenvwrapper
     - python-virtualenv
 
+- include: python.yml
+  when: upgrade_python
+
 - name: update pip
+  command: easy_install -U pip
+  become: yes
+
+- name: update vex and requests
   pip: name="{{ item }}" extra_args="--upgrade"
-  with_items: [ requests pip vex ] # requests first, old version conflicts with new pip
+  with_items: [ requests vex ] # requests first, old version conflicts with new pip
 
 - name: install supervisord
   pip: name='supervisor==3.2.1'

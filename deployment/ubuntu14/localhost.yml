@@ -2,8 +2,6 @@
 - name: Install bearded-avenger
   hosts: localhost
   become: True
-  vars:
-    GH_TOKEN: "{{ lookup('env', 'GH_TOKEN') }}"
   roles:
     - { role: ubuntu-check, tags: role-ubuntu-check }
     - { role: bearded-avenger, tags: role-bearded-avenger }

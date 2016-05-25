@@ -6,14 +6,11 @@ import versioneer
 if os.environ.get('USER') == 'vagrant' or os.path.isdir('/vagrant'):
     del os.link
 
-with open('requirements.txt') as f:
-    reqs = f.read().splitlines()
-
 setup(
-    name="bearded-avenger",
+    name="cif",
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
-    description="CIF",
+    description="CIFv3",
     long_description="",
     url="https://github.com/csirtgadgets/bearded-avenger",
     license='LGPL3',

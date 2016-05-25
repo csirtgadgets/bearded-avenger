@@ -1,6 +1,0 @@
----
-- name: Ensure app user has a .cifrc
-  template: src=cifrc.j2 dest="{{ app_user_home }}/.cifrc" owner={{ app_user }} group={{ app_user }} mode=0660
-
-- name: Ensure .cifrc is linked to .profile
-  lineinfile: dest="{{ app_user_home }}/.profile" line=". ~/.cifrc"

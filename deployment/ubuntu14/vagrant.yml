@@ -5,9 +5,7 @@
   vars:
     app_runtime_path: '/tmp/cif'
     app_rules_path: '/vagrant/rules'
-    app_log_path: '/tmp/cif'
     app_user: vagrant
-    GH_TOKEN: "{{ lookup('env', 'GH_TOKEN') }}"
     development: true
   pre_tasks:
     - name: Add GH token to profile

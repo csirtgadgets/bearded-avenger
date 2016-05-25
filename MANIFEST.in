@@ -10,3 +10,4 @@ recursive-include hacking *
 recursive-include docs *
 recursive-include packaging *
 recursive-include rules *
+recursive-exclude deployment *
