@@ -7,5 +7,5 @@
     ci: true
     app_user: travis
   roles:
-    - { role: ubuntu-check, tags: role-ubuntu-check }
+    - { role: ubuntu14, tags: role-ubuntu14 }
     - { role: bearded-avenger, tags: role-bearded-avenger }

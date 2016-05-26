@@ -1,3 +1,4 @@
+*.retry
 *.yml
 coverage_html_report/
 deployment/aws/site.yml

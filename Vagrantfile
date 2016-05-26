@@ -7,15 +7,12 @@ VAGRANTFILE_LOCAL = 'Vagrantfile.local'
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box = 'ubuntu/trusty64'
+  #config.vm.box = 'ubuntu/xenial64' # https://github.com/mitchellh/vagrant/pull/6724/files
 
   config.vm.network :forwarded_port, guest: 5000, host: 5000
   config.vm.provider :virtualbox do |vb|
-    vb.customize ["modifyvm", :id, "--cpus", "2", "--ioapic", "on", "--memory", "512" ]
+    vb.customize ["modifyvm", :id, "--cpus", "2", "--ioapic", "on", "--memory", "1024" ]
   end
-
-  config.vm.provision "shell", inline: <<-END
-    echo GH_TOKEN=#{ENV['GH_TOKEN']} >> /home/vagrant/.profile
-  END
 
   #config.vm.provision "ansible" do |ansible|
     #ansible.playbook = "deployment/ubuntu14/vagrant.yml"
