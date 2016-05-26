@@ -29,6 +29,38 @@ class Geo(object):
                     self.db = geoip2.database.Reader(os.path.join(p, db))
                     break
 
+    def _resolve(self, indicator):
+        if self.db:
+            g = self.db.city(indicator.indicator)
+
+            if g.country.iso_code:
+                indicator.cc = g.country.iso_code
+
+            if g.city.name:
+                indicator.city = g.city.name
+
+            if g.location.longitude:
+                indicator.longitude = g.location.longitude
+
+            if g.location.latitude:
+                indicator.longitude = g.location.latitude
+
+            if g.location.time_zone:
+                indicator.timezone = g.location.time_zone
+
+    def process(self, indicator):
+        if (indicator.itype == 'ipv4' or indicator.itype == 'ipv6') and not indicator.is_private():
+            # https://geoip2.readthedocs.org/en/latest/
+            i = indicator.indicator
+            self.logger.debug(indicator.indicator)
+            match = re.search('^(\S+)\/\d+$', indicator.indicator)
+            if match:
+                i = match.group(1)
+
+            self.logger.debug('looking up: %s' % indicator.indicator)
+
+            self._resolve(indicator)
+
     def __enter__(self):
         return self
 
@@ -36,37 +68,5 @@ class Geo(object):
         if self.db:
             self.db.close()
 
-    def process(self, indicator):
-        if not self.db:
-            return indicator
-
-        if (indicator.itype == 'ipv4' or indicator.itype == 'ipv6') and not indicator.is_private():
-            # https://geoip2.readthedocs.org/en/latest/
-            i = indicator.indicator
-            self.logger.debug(i)
-            match = re.search('^(\S+)\/\d+$', i)
-            if match:
-                i = match.group(1)
-
-            self.logger.debug('looking up: %s' % i)
-            r = self.db.city(i)
-
-            self.logger.debug(r)
-            if r.country.iso_code:
-                indicator.cc = r.country.iso_code
-
-            if r.city.name:
-                indicator.city = r.city.name
-
-            if r.location.longitude:
-                indicator.longitude = r.location.longitude
-
-            if r.location.latitude:
-                indicator.longitude = r.location.latitude
-
-            if r.location.time_zone:
-                indicator.timezone = r.location.time_zone
-
-        return indicator
 
 Plugin = Geo
