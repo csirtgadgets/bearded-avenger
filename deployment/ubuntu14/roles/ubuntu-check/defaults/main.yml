@@ -1,9 +1,0 @@
----
-# defaults file for ubuntu-check
-python_version: 2.7.11
-upgrade_python: False
-app_user: cif
-app_user_home: /home/cif
-geoip_userid: 999999
-geoip_key: "000000000000"
-geoip_products: GeoLite2-City GeoLite2-Country GeoLite-Legacy-IPv6-City GeoLite-Legacy-IPv6-Country 506 517 533
