@@ -1,6 +1,6 @@
 import logging
-import copy
 from cif.utils import resolve_ns
+from csirtg_indicator import Indicator
 from pprint import pprint
 
 
@@ -20,48 +20,49 @@ class Fqdn(object):
             r = resolve_ns(i.indicator, t='CNAME')
             self.logger.debug('CNAME: {}'.format(r))
             for rr in r:
-                fqdn = copy.deepcopy(i)
+                fqdn = Indicator(**i.__dict__)
+
                 fqdn.indicator = str(rr).rstrip('.')
                 fqdn.itype = 'fqdn'
                 fqdn.confidence = (int(fqdn.confidence) / 2)
-                x = router.submit(fqdn)
+                x = router.indicators_create(fqdn)
                 self.logger.debug(x)
 
             if i.is_subdomain():
-                fqdn = copy.deepcopy(i)
+                fqdn = Indicator(**i.__dict__)
                 fqdn.indicator = i.is_subdomain()
                 fqdn.confidence = (int(fqdn.confidence) / 3)
-                x = router.submit(fqdn)
+                x = router.indicators_create(fqdn)
                 self.logger.debug(x)
 
             r = resolve_ns(i.indicator)
             self.logger.debug(r)
             for rr in r:
-                ip = copy.deepcopy(i)
+                ip = Indicator(**i.__dict__)
                 ip.indicator = str(rr)
                 ip.itype = 'ipv4'
                 ip.confidence = (int(ip.confidence) / 4)
-                x = router.submit(ip)
+                x = router.indicators_create(ip)
                 self.logger.debug(x)
 
             r = resolve_ns(i.indicator, t='NS')
             self.logger.debug('NS: {}'.format(r))
             for rr in r:
-                ip = copy.deepcopy(i)
+                ip = Indicator(**i.__dict__)
                 ip.indicator = str(rr).rstrip('.')
                 ip.itype = 'fqdn'
                 ip.confidence = (int(ip.confidence) / 5)
-                x = router.submit(ip)
+                x = router.indicators_create(ip)
                 self.logger.debug(x)
 
             r = resolve_ns(i.indicator, t='MX')
             self.logger.debug('MX: {}'.format(r))
             for rr in r:
-                ip = copy.deepcopy(i)
+                ip = Indicator(**i.__dict__)
                 ip.indicator = str(rr).rstrip('.')
                 ip.itype = 'fqdn'
                 ip.confidence = (int(ip.confidence) / 6)
-                x = router.submit(ip)
+                x = router.indicators_create(ip)
                 self.logger.debug(x)
 
 
