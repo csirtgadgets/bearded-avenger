@@ -10,18 +10,14 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   config.vm.network :forwarded_port, guest: 5000, host: 5000
   config.vm.provider :virtualbox do |vb|
-    vb.customize ["modifyvm", :id, "--cpus", "2", "--ioapic", "on", "--memory", "512" ]
+    vb.customize ["modifyvm", :id, "--cpus", "2", "--ioapic", "on", "--memory", "1024" ]
   end
 
-  config.vm.provision "shell", inline: <<-END
-    echo GH_TOKEN=#{ENV['GH_TOKEN']} >> /home/vagrant/.profile
-  END
-
-  config.vm.provision "ansible" do |ansible|
-    ansible.playbook = "deployment/centos71/ansible/vagrant.yml"
-    ansible.extra_vars = { development: 'true' }
-#    ansible.verbose = 'vvv'
-  end
+  #config.vm.provision "ansible" do |ansible|
+  #  ansible.playbook = "deployment/centos71/ansible/vagrant.yml"
+  #  ansible.extra_vars = { development: 'true' }
+  #  ansible.verbose = 'vvv'
+  #end
 
   if File.file?(VAGRANTFILE_LOCAL)
     external = File.read VAGRANTFILE_LOCAL

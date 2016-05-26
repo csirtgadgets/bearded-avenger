@@ -9,7 +9,6 @@ echo 'installing ansible...'
 sudo pip install 'setuptools>=11.3' 'ansible==2.1' versioneer markupsafe
 
 echo 'running ansible...'
-cd deployment/ubuntu16
 ansible-playbook -i "localhost," -c local localhost.yml -vvv
 
 echo 'testing connectivity'

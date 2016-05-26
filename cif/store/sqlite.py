@@ -150,8 +150,8 @@ class SQLite(Store):
         self.path = "sqlite:///{0}".format(self.dbfile)
 
         echo = False
-        if self.logger.getEffectiveLevel() == logging.DEBUG:
-            echo = True
+        #if self.logger.getEffectiveLevel() == logging.DEBUG:
+        #    echo = True
 
         self.engine = create_engine(self.path, echo=echo)
         self.handle = sessionmaker()

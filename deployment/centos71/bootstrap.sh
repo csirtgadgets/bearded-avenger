@@ -2,29 +2,29 @@
 
 set -e
 
-echo 'remove this line, not supported yet, use at your own risk'
-exit 0
+#echo 'remove this line, not supported yet, use at your own risk'
+#exit 0
 
 echo 'updating apt-get tree and installing python-pip'
-sudo yum install python-pip python-devel git
+sudo yum install -y python-pip python-devel git libffi-devel
 
 echo 'installing ansible...'
-sudo pip install 'ansible==2.0.2.0' versioneer markupsafe
-
-echo 'cleaning up dist..'
-rm -rf dist/*.tar.gz
-
-echo 'building dist'
-python setup.py sdist
-
-echo 'moving sdist into ansible dir..'
-cp -f dist/bearded-avenger-*.tar.gz deployment/centos71/roles/bearded-avenger/files/bearded-avenger3.tar.gz
+sudo pip install 'setuptools>=11.3' 'ansible==2.1' versioneer markupsafe
 
 echo 'running ansible...'
-ansible-playbook -i "localhost," -c local deployment/centos71/ansible/localhost.yml
+ansible-playbook -i "localhost," -c local localhost.yml -vv
 
 echo 'testing connectivity'
-cif -d -p
+sudo -u cif cif --config /home/cif/.cif.yml -p -d
 
 echo 'testing query'
-cif --search -n example.com -d
+sudo -u cif cif --config /home/cif/.cif.yml --search example.com
+
+echo 'testing query'
+sudo -u cif cif --config /home/cif/.cif.yml --search example.com
+
+sudo -u cif cif --config /home/cif/.cif.yml --itype ipv4
+
+sudo -u cif cif --config /home/cif/.cif.yml -q 93.184.216.34
+
+sudo -u cif cif --config /home/cif/.cif.yml -q 93.184.216.34

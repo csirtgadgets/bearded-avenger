@@ -5,3 +5,6 @@
   roles:
     - { role: ubuntu14, tags: role-ubuntu14 }
     - { role: bearded-avenger, tags: role-bearded-avenger }
+  post_tasks:
+    - name: start cif-services
+      command: service cif-services start

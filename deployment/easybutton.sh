@@ -32,9 +32,10 @@ if [ -f /etc/lsb-release ]; then
 elif [ -f /etc/debian_version ]; then
     OS=Debian  # XXX or Ubuntu??
     VER=$(cat /etc/debian_version)
-elif [ -f /etc/redhat-release ]; then
-    # TODO add code for Red Hat and CentOS here
-    ...
+elif [ -f /etc/centos-release ]; then
+    . /etc/os-release
+    OS=$NAME
+    VER=$VERSION_ID
 else
     OS=$(uname -s)
     VER=$(uname -r)
@@ -43,9 +44,11 @@ fi
 case $OS in
     "Ubuntu" )
     	if [ $VER == "14.04" ]; then
-    	    bash deployment/ubuntu14/bootstrap.sh
+    	    cd deployment/ubuntu14
+    	    bash bootstrap.sh
     	elif [ $VER == '16.04' ]; then
-    	    bash deployment/ubuntu16/bootstrap.sh
+    	    cd deployment/ubuntu16
+    	    bash bootstrap.sh
     	else
     	    echo "Currently only 14.04 or 16.04 LTS is supported"
     		echo "We accept Pull Requests! =)"
@@ -67,9 +70,13 @@ case $OS in
         echo "We accept Pull Requests! =)"
         exit 1;;
 
-    "CentOS" )
-        echo 'CentOS not yet supported...'
-        echo "We accept Pull Requests! =)"
-        exit 1;;
+    "CentOS Linux" )
+        if [ $VER == '7' ]; then
+            bash deployment/centos71/bootstrap.sh
+        else
+            echo 'only CentOS 7 is supported'
+            echo "We accept Pull Requests! =)"
+        fi
+        ;;
 
 esac

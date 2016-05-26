@@ -148,7 +148,7 @@ class Router(object):
         for g in self.gatherers:
             self.logger.debug('testing: %s' % g)
             try:
-                i = g.process(i)
+                g.process(i)
             except Exception as e:
                 self.logger.error('gatherer failed: %s' % g)
                 self.logger.error(e)

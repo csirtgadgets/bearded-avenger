@@ -11,8 +11,7 @@ echo 'installing ansible...'
 sudo pip install 'setuptools>=11.3' 'ansible==2.1' versioneer markupsafe
 
 echo 'running ansible...'
-cd deployment/ubuntu14
-ansible-playbook -i "localhost," -c local localhost.yml
+ansible-playbook -i "localhost," -c local localhost.yml -vv
 
 echo 'testing connectivity'
 sudo -u cif cif --config /home/cif/.cif.yml -p
