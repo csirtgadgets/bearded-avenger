@@ -1,7 +1,7 @@
--e git+https://github.com/zeromq/pyre.git@ecc3ea7579a43016e1cbfea3773cb9ea96fb0498#egg=Pyre
--e git+https://github.com/csirtgadgets/csirtg-indicator-py.git@master#egg=csirtg_indicator
--e git+https://github.com/csirtgadgets/bearded-avenger-sdk-py.git@master#egg=cifsdk
--e git+https://github.com/csirtgadgets/csirtg-smrt-py.git@master#egg=csirtg_smrt
+git+https://github.com/zeromq/pyre.git@ecc3ea7579a43016e1cbfea3773cb9ea96fb0498#egg=Pyre
+git+https://github.com/csirtgadgets/csirtg-indicator-py.git@master#egg=csirtg_indicator
+git+https://github.com/csirtgadgets/bearded-avenger-sdk-py.git@master#egg=cifsdk
+git+https://github.com/csirtgadgets/csirtg-smrt-py.git@master#egg=csirtg_smrt
 mock>=2.0.0
 pytest-cov>=2.2.1
 Flask-Limiter>=0.9.3

@@ -1,7 +1,0 @@
----
-- name: Install bearded-avenger
-  hosts: localhost
-  become: True
-  roles:
-    - { role: centos7, tags: role-centos7 }
-    - { role: bearded-avenger, tags: role-bearded-avenger }

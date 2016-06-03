@@ -1,8 +1,0 @@
----
-# build happens out of band for now
-
-- name: copy dist
-  copy: src=bearded-avenger3.tar.gz dest=/tmp/
-
-- name: install dist
-  pip: name=/tmp/bearded-avenger3.tar.gz

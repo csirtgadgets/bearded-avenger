@@ -1,4 +1,0 @@
-aws_region: 'us-east-1'
-aws_profile: 'default'
-aws_base_ami: 'ami-fce3c696' # ubuntu14
-aws_instance_type: 't2.micro'
