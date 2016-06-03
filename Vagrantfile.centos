@@ -9,9 +9,9 @@ $script = <<SCRIPT
 sudo rpm -iUvh http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 yum -y update
 sudo yum install -y gcc python-pip python-devel git libffi-devel openssl-devel
-sudo pip install 'setuptools>=11.3' 'ansible>=2.1' versioneer markupsafe
+sudo pip install 'setuptools>=18.3' 'ansible>=2.1' versioneer markupsafe
 cd /vagrant/deployment/centos7
-sudo ansible-playbook "localhost," -c local vagrant.yml -vv
+sudo ansible-playbook -i "localhost," -c local vagrant.yml -vv
 SCRIPT
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
