@@ -6,8 +6,7 @@ python:
 #    - 3.4
 
 script:
-    - sudo pip install pytest-cov
-    - pip install elasticsearch rdflib
+    - sudo pip install -r requirements.txt
     - py.test --cov=cif --cov-fail-under=35
     #- python setup.py sdist
     #- cp -f dist/bearded-avenger-*.tar.gz deployment/ubuntu14/roles/bearded-avenger/files/bearded-avenger3.tar.gz
