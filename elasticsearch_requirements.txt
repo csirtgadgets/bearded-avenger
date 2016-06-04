@@ -1,2 +1,0 @@
-elasticsearch>=2.3.0
--r requirements.txt
