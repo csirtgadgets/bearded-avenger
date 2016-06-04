@@ -3,6 +3,7 @@ if [ -f /etc/default/cif ] ; then
 fi
 
 export CIF_RUNTIME_PATH={{ app_runtime_path }}
-export CIF_SMRT_RULES_PATH={{ app_rules_path }}/default
-export CIF_SMRT_CONFIG_PATH=/etc/cif/csirtg-smrt.yml
+export CSIRTG_SMRT_RUNTIME_PATH={{ app_runtime_path }}
+export CSIRTG_SMRT_RULES_PATH={{ app_rules_path }}/default
+export CSIRTG_SMRT_CONFIG_PATH=/etc/cif/csirtg-smrt.yml
 export CIF_HUNTER_CONFIG_PATH=/etc/cif/cif-hunter.yml

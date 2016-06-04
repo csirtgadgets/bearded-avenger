@@ -5,7 +5,16 @@
 VAGRANTFILE_API_VERSION = "2"
 VAGRANTFILE_LOCAL = 'Vagrantfile.local'
 
+$script = <<SCRIPT
+echo 'yes' | sudo add-apt-repository 'ppa:fkrull/deadsnakes-python2.7'
+sudo apt-get update && sudo apt-get install -y python2.7 python-pip python-dev git libffi-dev libssl-dev sqlite3
+sudo pip install 'setuptools>=11.3' 'ansible>=2.1' versioneer markupsafe
+cd /vagrant/deployment/ubuntu14
+sudo ansible-playbook -i "localhost," -c local vagrant.yml -vv
+SCRIPT
+
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  config.vm.provision "shell", inline: $script
   config.vm.box = 'ubuntu/trusty64'
   #config.vm.box = 'ubuntu/xenial64' # https://github.com/mitchellh/vagrant/pull/6724/files
 
@@ -13,12 +22,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.provider :virtualbox do |vb|
     vb.customize ["modifyvm", :id, "--cpus", "2", "--ioapic", "on", "--memory", "1024" ]
   end
-
-  #config.vm.provision "ansible" do |ansible|
-    #ansible.playbook = "deployment/ubuntu14/vagrant.yml"
-    #ansible.extra_vars = { development: 'true' }
-    #ansible.verbose = 'vvv'
-  #end
 
   if File.file?(VAGRANTFILE_LOCAL)
     external = File.read VAGRANTFILE_LOCAL
