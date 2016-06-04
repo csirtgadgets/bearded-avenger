@@ -5,13 +5,15 @@ Current master build status: [![Circle CI](https://circleci.com/gh/csirtgadgets/
 ```
 $ tar -zxvf cif-3.x.x.tar.gz
 $ cd cif-3.x.x
-$ pip install -r requirements.txt supervisor==3.2.1
+$ pip install -r requirements.txt
 $ python setup.py develop
-$ cp hacking/develop.conf hacking/local.conf
+$ mkdir -p log && cp hacking/develop.conf hacking/local.conf
 $ cif-store -d --token-create-admin cif.yml
 $ cif-store -d --token-create-hunter cif-hunter.yml
 $ cif-store -d --token-create-smrt csirtg-smrt.yml
 $ supervisord -c hacking/local.conf
+
+# new window
 $ cif --config cif.yml -p
 $ csirtg-smrt --config csirtg-smrt.yml --test -r rules/default/csirtg.yml -d
 $ cif --config cif.yml --itype ipv4
