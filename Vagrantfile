@@ -14,7 +14,7 @@ sudo ansible-playbook -i "localhost," -c local vagrant.yml -vv
 SCRIPT
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-  #config.vm.provision "shell", inline: $script
+  config.vm.provision "shell", inline: $script
   config.vm.box = 'ubuntu/trusty64'
 
   config.vm.network :forwarded_port, guest: 5000, host: 5000
