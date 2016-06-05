@@ -1,0 +1,6 @@
+---
+- name: Create RUNTIME_PATH
+  file: path="{{ app_runtime_path }}" state=directory recurse=true mode=0770 owner="{{ app_user }}" group="{{ app_user }}"
+
+- name: Create logging path
+  file: path="{{ app_log_path }}" state=directory recurse=true mode=0770 owner="{{ app_user }}" group="{{ app_user }}"

@@ -1,0 +1,17 @@
+# https://semaphoreci.com/community/tutorials/testing-ansible-roles-on-multiple-operating-systems-with-docker-and-semaphore
+---
+- name: systemd env file
+  copy: src=cif.env dest=/etc/cif.env owner=cif group=cif mode=0660
+  tags: configuration
+
+- name: systemd services
+  copy: src={{ item }} dest=/etc/systemd/system owner=root group=root mode=0755
+  tags: configuration
+  with_items:
+    - cif-router.service
+    - cif-httpd.service
+    - cif-store.service
+    - csirtg-smrt.service
+    - cif-hunter.service
+  notify:
+    - reload systemd

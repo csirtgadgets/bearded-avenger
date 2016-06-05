@@ -1,0 +1,34 @@
+---
+
+- name: 'create cif sqlite db'
+  file: path=/var/lib/cif/cif.sqlite owner=cif group=cif mode=0660 state=touch
+
+- stat: path=/home/cif/.cif.yml
+  register: f
+
+- name: 'generate cif admin token'
+  shell: CIF_RUNTIME_PATH=/var/lib/cif cif-store --store sqlite --token-create-admin /home/cif/.cif.yml -d
+  when: not f.stat.exists
+
+- name: 'update permissions'
+  file: path=/home/cif/.cif.yml owner=cif group=cif mode=0660
+
+- stat: path=/etc/cif/csirtg-smrt.yml
+  register: f
+
+- name: 'generate cif smrt token'
+  shell: CIF_RUNTIME_PATH=/var/lib/cif cif-store --store sqlite --runtime-path /var/lib/cif --token-create-smrt /etc/cif/csirtg-smrt.yml -d
+  when: not f.stat.exists
+
+- name: 'update permissions'
+  file: path=/etc/cif/csirtg-smrt.yml owner=cif group=cif mode=0660
+
+- stat: path=/etc/cif/cif-hunter.yml
+  register: f
+
+- name: 'generate cif hunter token'
+  shell: CIF_RUNTIME_PATH=/var/lib/cif cif-store --store sqlite  --runtime-path /var/lib/cif --token-create-hunter /etc/cif/cif-hunter.yml -d
+  when: not f.stat.exists
+
+- name: 'update permissions'
+  file: path=/etc/cif/cif-hunter.yml owner=cif group=cif mode=0660

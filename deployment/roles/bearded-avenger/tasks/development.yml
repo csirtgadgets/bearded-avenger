@@ -1,0 +1,7 @@
+---
+- include: venv.yml
+  tags: venv
+
+- include: github.yml
+  tags: github
+  when: GH_TOKEN is defined

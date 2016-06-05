@@ -1,0 +1,21 @@
+---
+- name: Install bind9
+  yum: pkg=bind state=installed
+
+- name: "Setting named.conf"
+  copy: src=bind_named.conf dest=/etc/named.conf
+
+- name: restart named
+  command: systemctl restart named
+
+- name: update NetworkManager.conf
+  lineinfile: dest=/etc/NetworkManager/NetworkManager.conf line="dns=none"
+
+- name: restart NetworkManager
+  command: systemctl restart NetworkManager
+
+- name: "Restart networking"
+  command: systemctl restart network
+
+- name: copy resolv.conf
+  copy: src=named_resolv.conf dest=/etc/resolv.conf

@@ -1,0 +1,24 @@
+---
+# defaults file for centos71-check
+firewall_allowed_tcp_ports:
+  - "22"
+  - "443"
+  - '5000'
+firewall_allowed_udp_ports: []
+firewall_forwarded_tcp_ports: []
+firewall_forwarded_udp_ports: []
+firewall_additional_rules: []
+firewall_log_dropped_packets: true
+
+python_tmp: '/tmp/tmp_install_python'
+python_version: '2.7.10'
+
+app_user: cif
+app_user_home: "/home/{{ app_user }}"
+app_runtime_path: "/var/lib/cif"
+app_rules_path: "/etc/cif/rules"
+app_log_path: "/var/log/cif"
+
+geoip_userid: 999999
+geoip_key: "000000000000"
+geoip_products: GeoLite2-City GeoLite2-Country GeoLite-Legacy-IPv6-City GeoLite-Legacy-IPv6-Country 506 517 533

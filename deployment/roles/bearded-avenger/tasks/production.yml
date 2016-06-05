@@ -1,0 +1,13 @@
+---
+
+- include: paths.yml
+  tags: paths
+
+- include: dist.yml
+  tags: dist
+
+- include: rules.yml
+  tags: rules
+
+- include: tokens.yml
+  tags: tokens

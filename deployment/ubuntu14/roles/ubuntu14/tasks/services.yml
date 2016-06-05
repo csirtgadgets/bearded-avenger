@@ -1,0 +1,22 @@
+---
+- name: copy init scripts
+  copy: src="{{ item }}" dest="/etc/init.d/{{ item }}" mode=0755 backup=yes
+  with_items:
+    - cif-router
+    - csirtg-smrt
+    - cif-httpd
+    - cif-store
+    - cif-hunter
+    - cif-services
+
+- name: copy supervisord configs
+  copy: src="{{ item }}" dest=/etc/cif/ mode=0660 owner="{{ app_user }}" group="{{ app_user }}"
+  with_items:
+    - cif-router.conf
+    - cif-httpd.conf
+    - csirtg-smrt.conf
+    - cif-store.conf
+    - cif-hunter.conf
+
+- name: copy /etc/defaults/cif
+  copy: src=defaults dest=/etc/default/cif mode=0660 owner="{{ app_user }}" group="{{ app_user }}"
