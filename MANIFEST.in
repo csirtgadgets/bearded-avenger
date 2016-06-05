@@ -5,6 +5,8 @@ include VERSION
 include MANIFEST.ininclude versioneer.py
 include 'cif'
 include cif/_version.py
+include Vagrantfile
+include Vagrantfile.centos
 recursive-include deployment *
 recursive-include hacking *
 recursive-include docs *
