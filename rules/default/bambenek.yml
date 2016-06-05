@@ -1,0 +1,26 @@
+defaults:
+  provider: osint.bambenekconsulting.com
+  tlp: white
+  altid_tlp: white
+  confidence: 9
+  tags: botnet
+  values:
+      - indicator
+      - description
+      - lasttime
+      - altid
+
+feeds:
+  c2-dommasterlist:
+    remote: http://osint.bambenekconsulting.com/feeds/c2-dommasterlist.txt
+    pattern: ^(\S+)\,Domain used by ([^,]+)\,([^,]+)\,(\S+)$
+  c2-ipmasterlist:
+    remote: http://osint.bambenekconsulting.com/feeds/c2-ipmasterlist.txt
+    pattern: ^(\S+)\,IP used by ([^,]+)\,([^,]+)\,(\S+)$
+
+#  Warning: the dga-feed is disabled by default as it is a very large
+#           feed at ~800K records and 95MB in size. You must have a
+#           large CIF instance to process this data set.
+#  dga-feed:
+#    remote: http://osint.bambenekconsulting.com/feeds/dga-feed.txt
+#    pattern: ^(\S+)\,Domain used by ([^,]+)\,([^,]+)\,(\S+)$
