@@ -68,18 +68,26 @@ class SpamhausFqdn(object):
         if i.itype == 'fqdn' and i.provider != 'spamhaus.org':
             try:
                 r = self._resolve(i.indicator)
-                r = CODES[r]
 
-                f = Indicator(**i.__dict__)
+                try:
+                    r = CODES[r]
+                except Exception as e:
+                    # https://www.spamhaus.org/faq/section/DNSBL%20Usage
+                    self.logger.error(e)
+                    self.logger.info('check spamhaus return codes')
+                    r = None
 
-                f.tags = [r['tags']]
-                f.description = r['description']
-                f.confidence = CONFIDENCE
-                f.provider = PROVIDER
-                f.reference_tlp = 'white'
-                f.reference = 'http://www.spamhaus.org/query/dbl?domain={}'.format(f.indicator)
-                x = router.indicators_create(f)
-                self.logger.debug(x)
+                if r:
+                    f = Indicator(**i.__dict__)
+
+                    f.tags = [r['tags']]
+                    f.description = r['description']
+                    f.confidence = CONFIDENCE
+                    f.provider = PROVIDER
+                    f.reference_tlp = 'white'
+                    f.reference = 'http://www.spamhaus.org/query/dbl?domain={}'.format(f.indicator)
+                    x = router.indicators_create(f)
+                    self.logger.debug(x)
             except KeyError as e:
                 self.logger.error(e)
             except dns.resolver.NoAnswer:

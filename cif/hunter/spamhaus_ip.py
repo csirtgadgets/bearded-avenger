@@ -31,6 +31,10 @@ CODES = {
         'tags': 'exploit',
         'description': 'CBL + customised NJABL. 3rd party exploits (proxies, trojans, etc.)',
     },
+    '127.0.0.9': {
+        'tags': 'hijacked',
+        'description': 'Spamhaus DROP/EDROP Data',
+    },
     '127.0.0.10': {
         'tags': 'spam',
         'description': 'End-user Non-MTA IP addresses set by ISP outbound mail policy',
@@ -58,7 +62,13 @@ class SpamhausIp(object):
         if (i.itype == 'ipv4' or i.itype == 'ipv6') and i.provider != 'spamhaus.org':
             try:
                 r = self._resolve(i.indicator)
-                r = CODES.get(str(r), None)
+                try:
+                    r = CODES.get(str(r), None)
+                except Exception as e:
+                    # https://www.spamhaus.org/faq/section/DNSBL%20Usage
+                    self.logger.error(e)
+                    self.logger.info('check spamhaus return codes')
+                    r = None
 
                 if r:
                     f = Indicator(**i.__dict__)
