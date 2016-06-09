@@ -2,7 +2,7 @@
 Current master build status: [![Circle CI](https://circleci.com/gh/csirtgadgets/bearded-avenger.svg?style=svg&circle-token=e08a0a7ec010e17feb6724dbbc93ce584b9868cd)](https://circleci.com/gh/csirtgadgets/bearded-avenger)
 
 ## QuickStart
-This assumes you have a proper Python dev already environment properly configured. If you need help getting started with this, checkout one of our [installation guides](Ubuntu14LTS).
+This assumes you have a proper Python dev already environment properly configured. If you need help getting started with this, checkout one of our [installation guides](https://github.com/csirtgadgets/bearded-avenger/wiki/Ubuntu14LTS).
 
 ```
 $ tar -zxvf cif-3.x.x.tar.gz
