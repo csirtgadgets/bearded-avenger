@@ -2,6 +2,9 @@
 - name: Add apt HTTPS support
   apt: name=apt-transport-https state=present
 
+- name: Add apt HTTPS support
+  apt: name=ca-certificates state=present
+
 - name: Add python repo
   apt_repository: repo='ppa:maxmind/ppa'
 
