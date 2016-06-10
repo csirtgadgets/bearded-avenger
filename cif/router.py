@@ -118,10 +118,6 @@ class Router(object):
         self.logger.debug("replying {}".format(rv))
         self.frontend.send_multipart([id, '', mtype, rv])
 
-    def handle_ping_write(self, token, data='[]'):
-        self.store.send_multipart(['token_write', token, data])
-        return self.store.recv()
-
     def handle_indicators_search(self, token, data):
         # need to send searches through the _submission pipe
         self.store.send_multipart(['indicators_search', token, data])
