@@ -27,7 +27,7 @@ HTTP_LISTEN = os.environ.get('CIF_HTTPD_LISTEN', HTTP_LISTEN)
 HTTP_LISTEN_PORT = 5000
 HTTP_LISTEN_PORT = os.environ.get('CIF_HTTPD_LISTEN_PORT', HTTP_LISTEN_PORT)
 
-VALID_FILTERS = ['indicator', 'itype', 'confidence', 'provider', 'limit', 'application']
+VALID_FILTERS = ['indicator', 'itype', 'confidence', 'provider', 'limit', 'application', 'nolog']
 TOKEN_FILTERS = ['username', 'token']
 
 LIMIT_DAY = os.environ.get('CIF_HTTPD_LIMIT_DAY', 5000)
@@ -152,6 +152,7 @@ def search():
             r = DummyClient(remote, pull_token()).indicators_search(filters)
         else:
             r = Client(remote, pull_token()).indicators_search(filters)
+
         response = jsonify({
             "message": "success",
             "data": r
