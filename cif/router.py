@@ -7,6 +7,7 @@ import time
 import traceback
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
+from pprint import pprint
 
 import zmq
 from zmq.eventloop import ioloop
@@ -84,7 +85,7 @@ class Router(object):
 
     def handle_store_default(self, mtype, token, data='[]'):
         self.store.send_multipart([mtype, token, data])
-        return self.store.recv()
+        return self.store.recv()  # this needs to be async
 
     def handle_message(self, s, e):
         self.logger.debug('message received')
@@ -127,16 +128,21 @@ class Router(object):
         x = self.store.recv()
 
         data = json.loads(data)
-        if data.get('indicator'):
-            i = Indicator(
-                indicator=data['indicator'],
-                tlp='green',
-                confidence=10,
-                tags=['search'],
-            )
-            r = self.handle_indicators_create(token, str(i))
-            if r:
-                self.logger.info('search logged')
+        xx = json.loads(x)
+
+        if xx.get('status') == 'success':
+            if data.get('indicator') and data.get('nolog') == 'False':
+                self.logger.debug('creating search')
+                i = Indicator(
+                    indicator=data['indicator'],
+                    tlp='green',
+                    confidence=10,
+                    tags=['search'],
+                )
+                self.logger.debug('creating indicator')
+                r = self.handle_indicators_create(token, str(i))
+                if r:
+                    self.logger.info('search logged')
 
         return x
 
