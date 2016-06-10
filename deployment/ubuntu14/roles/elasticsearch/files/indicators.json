@@ -1,0 +1,70 @@
+{
+  "template": "cif.indicators-*",
+  "mappings": {
+    "indicators": {
+      "properties": {
+        "@version": {
+          "index": "not_analyzed",
+          "type": "string"
+        },
+        "@timestamp": {
+          "type": "date"
+        },
+        "group": {
+          "type": "string",
+          "index": "not_analyzed"
+        },
+        "indicator": {
+          "type": "string",
+          "index": "not_analyzed"
+        },
+        "indicator_ipv4": {
+          "type": "ip"
+        },
+        "itype": {
+          "type": "string"
+        },
+        "confidence": {
+          "type": "float",
+          "store": "yes"
+        },
+        "firsttime": {
+          "type": "date"
+        },
+        "lasttime": {
+          "type": "date"
+        },
+        "reporttime": {
+          "type": "date"
+        },
+        "provider": {
+          "type": "string",
+          "index": "not_analyzed"
+        },
+        "description": {
+          "type": "string",
+          "index": "not_analyzed"
+        },
+        "rdata": {
+          "type": "string",
+          "index": "not_analyzed"
+        },
+        "cc": {
+          "type": "string"
+        },
+        "portlist": {
+          "type": "string"
+        },
+        "latitude": {
+          "type": "double"
+        },
+        "longitude": {
+          "type": "double"
+        },
+        "geolocation": {
+          "type": "geo_point"
+        }
+      }
+    }
+  }
+}

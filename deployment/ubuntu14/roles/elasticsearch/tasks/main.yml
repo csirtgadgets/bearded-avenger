@@ -1,0 +1,49 @@
+---
+# tasks file for elasticsearch
+
+- name: Add python repo
+  apt_repository: repo='deb https://apt.dockerproject.org/repo ubuntu-trusty main' state=present filename=docker
+
+- name: Update apt cache if needed.
+  apt: update_cache=yes cache_valid_time=3600
+
+- name: Update apt cache if needed.
+  apt: update_cache=yes cache_valid_time=3600 upgrade=yes
+
+- name: install deps
+  apt:
+    state: latest
+    pkg: "{{ item }}"
+  with_items:
+    - linux-image-extra-virtual
+    - docker-engine
+
+- name: setup ES dirs
+  file: path={{ item }} state=directory mode=770
+  with_items:
+    - /mnt/elasticsearch/data
+    - /mnt/elasticsearch/config
+    - /mnt/elasticsearch/config/scripts
+
+- name: copy ES configs
+  copy: src={{ item }} dest=/mnt/elasticsearch/config mode=666
+  with_items:
+    - elasticsearch.yml
+    - logging.yml
+
+- name: start elasticsearch
+  command: docker run -d -p 9200:9200 -p 9300:9300 -v /mnt/elasticsearch/data:/usr/share/elasticsearch/data elasticsearch elasticsearch
+
+- name: copy templates
+  copy: src={{ item }} dest=/tmp
+  with_items:
+    - indicators.json
+    - tokens.json
+  tags: ['es', 'template']
+
+- name: setup templates
+  command: curl -XPUT localhost:9200/_template/cif_{{ item }}/ -d @/tmp/{{ item }}.json
+  with_items:
+    - indicators
+    - tokens
+  tags: ['es', 'template']
