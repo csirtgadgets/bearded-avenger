@@ -7,9 +7,11 @@ import os
 import logging
 from pprint import pprint
 import arrow
+from cifsdk.exceptions import AuthError
 
 from cif.store.plugin import Store
 ES_NODES = os.getenv('CIF_ES_NODES', '127.0.0.1:9200')
+VALID_FILTERS = ['indicator', 'confidence', 'provider', 'itype', 'group']
 
 
 class Token(DocType):
@@ -68,20 +70,42 @@ class ElasticSearch_(Store):
         #self.handle = Elasticsearch(nodes)
         connections.create_connection(hosts=nodes)
 
+    def _dict(self, data):
+        return [x.__dict__['_d_'] for x in data.hits]
+
     def indicators_create(self, token, data):
         # http://elasticsearch-py.readthedocs.org/en/master/api.html#elasticsearch.Elasticsearch.bulk
-        results = []
-        return results
+        i = Indicator(**data)
+        if i.save():
+            return i.__dict__['_d_']
+        else:
+            raise AuthError('invalid token')
 
-    def indicators_search(self, token, data):
+    def indicators_search(self, token, filters):
         # build filters with elasticsearch-dsl
         # http://elasticsearch-dsl.readthedocs.org/en/latest/search_dsl.html
-        query = {}
-        results = []
 
-        s = Search().using(connections.get_connection()).query("match", title="python")
+        limit = filters.get('limit')
+        if limit:
+            del filters['limit']
 
-        return results
+        nolog = filters.get('nolog')
+        if nolog:
+            del filters['nolog']
+
+        q_filters = {}
+        for f in VALID_FILTERS:
+            if filters.get(f):
+                q_filters[f] = filters[f]
+
+        s = Indicator.search()
+
+        for f in q_filters:
+            s.filter('term', f=q_filters[f])
+
+        rv = s.execute()
+
+        return self._dict(rv)
 
     def ping(self, token):
         # http://elasticsearch-py.readthedocs.org/en/master/api.html#elasticsearch.client.IndicesClient.stats
@@ -99,7 +123,6 @@ class ElasticSearch_(Store):
         except elasticsearch.exceptions.NotFoundError:
             return False
 
-        #pprint(response)
         return True
 
     def tokens_create(self, data):
@@ -135,8 +158,7 @@ class ElasticSearch_(Store):
 
         rv = s.execute()
 
-        rv = [x.__dict__['_d_'] for x in rv.hits]
-        return rv
+        return self._dict(rv)
 
     def token_admin(self, token):
         return True
@@ -151,11 +173,10 @@ class ElasticSearch_(Store):
         return True
 
     def token_last_activity_at(self, token, timestamp=None):
-        # if timestamp:
-        #     s = Token.search()
-        #     s = s.filter('token', token=token)
-        #     r = s.execute()
-        #     pprint(r)
+        if timestamp:
+            s = Token.search()
+            s = s.filter('term', token=token)
+            r = s.execute()
 
         return arrow.utcnow()
 
