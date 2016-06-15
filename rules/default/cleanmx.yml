@@ -18,7 +18,7 @@ feeds:
       - id
       - lasttime
       - description
-      - observable
+      - indicator
     tags: 
       - malware
   phishing:
@@ -34,6 +34,6 @@ feeds:
       - id
       - lasttime
       - description
-      - observable
+      - indicator
     tags: 
       - phishing
