@@ -1,0 +1,39 @@
+parser: xml
+defaults:
+  provider: support.clean-mx.de
+  altid_tlp: green
+  tlp: amber
+  confidence: 8
+feeds:
+  malware:
+    remote: 'http://support.clean-mx.de/clean-mx/xmlviruses.php?'
+    altid: 'http://support.clean-mx.de/clean-mx/viruses.php?id=<id>'
+    node: entry
+    map:
+      - id
+      - first
+      - virusname
+      - url
+    values:
+      - id
+      - lasttime
+      - description
+      - indicator
+    tags: 
+      - malware
+  phishing:
+    remote: 'http://support.clean-mx.de/clean-mx/xmlphishing.php?'
+    altid: 'http://support.clean-mx.de/clean-mx/phishing.php?id=<id>'
+    node: entry
+    map:
+      - id
+      - first
+      - virusname
+      - url
+    values:
+      - id
+      - lasttime
+      - description
+      - indicator
+    tags: 
+      - phishing
