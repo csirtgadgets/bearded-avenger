@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 @py.test.yield_fixture
 def store():
     dbfile = tempfile.mktemp()
-    with Store(store='sqlite', dbfile=dbfile) as s:
+    with Store(store_type='sqlite', dbfile=dbfile) as s:
         yield s
 
     os.unlink(dbfile)
@@ -30,7 +30,7 @@ def obs():
 
 
 def test_store_dummy(obs):
-    with Store(store='dummy') as s:
+    with Store(store_type='dummy') as s:
         t = s.store.tokens_admin_exists()
 
         x = s.handle_indicators_search(t, obs.__dict__)

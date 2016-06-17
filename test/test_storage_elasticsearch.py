@@ -12,7 +12,7 @@ except ImportError as e:
 
 @py.test.yield_fixture
 def store():
-    with Store(store='elasticsearch') as s:
+    with Store(store_type='elasticsearch') as s:
         yield s
 
 

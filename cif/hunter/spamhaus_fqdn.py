@@ -56,7 +56,7 @@ CODES = {
 
 class SpamhausFqdn(object):
 
-    def __init__(self, *args, **kv):
+    def __init__(self):
         self.logger = logging.getLogger(__name__)
 
     def _resolve(self, data):
@@ -91,9 +91,9 @@ class SpamhausFqdn(object):
             except KeyError as e:
                 self.logger.error(e)
             except dns.resolver.NoAnswer:
-                self.logger.info('no answer...')
+                self.logger.debug('no answer...')
             except dns.resolver.NXDOMAIN:
-                self.logger.info('nxdomain...')
+                self.logger.debug('nxdomain...')
             except EmptyLabel:
                 self.logger.error('empty label: {}'.format(i.indicator))
 

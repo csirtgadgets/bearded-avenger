@@ -3,6 +3,7 @@
 import logging
 import os
 import geoip2.database
+from geoip2.errors import AddressNotFoundError
 import re
 from pprint import pprint
 
@@ -59,7 +60,10 @@ class Geo(object):
 
             self.logger.debug('looking up: %s' % indicator.indicator)
 
-            self._resolve(indicator)
+            try:
+                self._resolve(indicator)
+            except AddressNotFoundError as e:
+                self.logger.warn(e)
 
     def __enter__(self):
         return self

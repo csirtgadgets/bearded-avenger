@@ -27,8 +27,8 @@
   register: f
 
 - name: 'generate cif hunter token'
-  shell: CIF_RUNTIME_PATH=/var/lib/cif cif-store --store sqlite  --runtime-path /var/lib/cif --token-create-hunter /etc/cif/cif-hunter.yml -d
+  shell: CIF_RUNTIME_PATH=/var/lib/cif cif-store --store sqlite  --runtime-path /var/lib/cif --hunter-token-create /etc/cif/cif-router.yml -d
   when: not f.stat.exists
 
 - name: 'update permissions'
-  file: path=/etc/cif/cif-hunter.yml owner=cif group=cif mode=0660
+  file: path=/etc/cif/cif-router.yml owner=cif group=cif mode=0660

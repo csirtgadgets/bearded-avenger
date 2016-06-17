@@ -1,11 +1,12 @@
 from urlparse import urlparse
 import logging
 import copy
+from csirtg_indicator import Indicator
 
 
 class Url(object):
 
-    def __init__(self, *args, **kv):
+    def __init__(self):
 
         self.logger = logging.getLogger(__name__)
 
@@ -13,12 +14,11 @@ class Url(object):
         if i.itype == 'url':
             u = urlparse(i.indicator)
             if u.netloc:
-                fqdn = copy.deepcopy(i)
+                fqdn = Indicator(**i.__dict__)
                 fqdn.indicator = u.netloc
                 fqdn.itype = 'fqdn'
                 fqdn.confidence = (int(fqdn.confidence) / 2)
-            self.logger.info(u.netloc)
-            self.logger.debug(fqdn)
+                fqdn.rdata = i.indicator
 
             self.logger.debug('sending to router..')
             x = router.indicators_create(fqdn)

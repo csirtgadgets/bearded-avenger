@@ -5,7 +5,6 @@ import logging
 import os
 import pkgutil
 import textwrap
-import time
 import ujson as json
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
@@ -15,12 +14,11 @@ from pprint import pprint
 import arrow
 
 import zmq
-from zmq.eventloop import ioloop
 
 import cif.store
-from cif.constants import CTRL_ADDR, STORE_ADDR
+from cif.constants import STORE_ADDR
 from cifsdk.constants import REMOTE_ADDR, CONFIG_PATH
-from cifsdk.exceptions import CIFConnectionError, AuthError
+from cifsdk.exceptions import AuthError
 from cifsdk.utils import setup_logging, get_argument_parser, setup_signals
 
 MOD_PATH = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -38,18 +36,19 @@ class Store(object):
         return self
 
     def __exit__(self, type, value, traceback):
-        self.stop()
+        return self
 
-    def __init__(self, store=STORE_DEFAULT, store_address=STORE_ADDR, loop=ioloop.IOLoop.instance(), *args, **kv):
+    def __init__(self, context=zmq.Context.instance(), store_type=STORE_DEFAULT, store_address=STORE_ADDR, **kvargs):
         self.logger = logging.getLogger(__name__)
-        self.context = zmq.Context()
-        self.router = self.context.socket(zmq.ROUTER)
+        self.context = context
         self.store_addr = store_address
-        self.connected = False
-        self.ctrl = None
-        self.loop = loop
-        self.store = store
+        self.store = store_type
 
+        self.router = self.context.socket(zmq.ROUTER)
+
+        self._load_plugin(**kvargs)
+
+    def _load_plugin(self, **kwargs):
         # TODO replace with cif.utils.load_plugin
         self.logger.debug('store is: {}'.format(self.store))
         for loader, modname, is_pkg in pkgutil.iter_modules(cif.store.__path__, 'cif.store.'):
@@ -57,76 +56,38 @@ class Store(object):
             if modname == 'cif.store.{}'.format(self.store) or modname == 'cif.store.z{}'.format(self.store):
                 self.logger.debug('Loading plugin: {0}'.format(modname))
                 self.store = loader.find_module(modname).load_module(modname)
-                self.store = self.store.Plugin(*args, **kv)
-
-        self.router = self.context.socket(zmq.ROUTER)
+                self.store = self.store.Plugin(**kwargs)
 
     def start(self):
+        #self._load_plugin()
         self.token_create_admin()
-        while not self.connected:
-            try:
-                self.logger.debug('connecting to router: {0}'.format(self.router))
-                self._connect_ctrl()
-            except zmq.error.Again:
-                self.logger.error("problem connecting to router, retrying...")
-            except CIFConnectionError:
-                self.logger.error("unable to connect")
-                raise
-            except KeyboardInterrupt:
-                raise SystemExit
-            else:
-                self.connected = True
 
+        self.logger.debug('connecting to router: {}'.format(self.store_addr))
         self.router.connect(self.store_addr)
 
         self.logger.info('connected')
-        self.loop.add_handler(self.router, self.handle_message, zmq.POLLIN)
 
         self.logger.debug('staring loop')
-        self.loop.start()
+        while True:
+            self.logger.debug('waiting on message')
+            m = self.router.recv_multipart()
+            self.handle_message(m)
 
-    def stop(self):
-        self.loop.stop()
-
-    def _connect_ctrl(self):
-        if self.ctrl:
-            self.connected = False
-            self.ctrl.close()
-            self.ctrl = None
-
-        self.ctrl = self.context.socket(zmq.REQ)
-        self.ctrl.RCVTIMEO = RCVTIMEO
-        self.ctrl.SNDTIMEO = SNDTIMEO
-        self.ctrl.setsockopt(zmq.LINGER, LINGER)
-
-        self.ctrl.connect(CTRL_ADDR)
-        self.ctrl.send_multipart(['store', 'ping', str(time.time())])
-        id, mtype, data = self.ctrl.recv_multipart()
-        if mtype != 'ack':
-            raise CIFConnectionError("connection rejected by router: {}".format(mtype))
-
-    def handle_message(self, s, e):
+    def handle_message(self, m):
         self.logger.debug('message received')
-        m = s.recv_multipart()
 
         self.logger.debug(m)
 
-        try:
-            id, mtype, token, data = m
-        except Exception as e:
-            self.logger.error(e)
-            self.logger.debug(m)
-            traceback.print_exc()
-            rv = {"status": "failed"}
-            self.router.send_multipart([m[0], json.dumps(rv).encode('utf-8')])
-            return
+        id, client_id, null, mtype, token, data = m
+
+        self.logger.debug(data)
 
         if isinstance(data, basestring):
             try:
                 data = json.loads(data)
             except ValueError as e:
                 self.logger.error(e)
-                self.router.send_multipart(["", json.dumps({"status": "failed"})])
+                self.router.send_multipart([id, json.dumps({"status": "failed"})])
                 return
 
         handler = getattr(self, "handle_" + mtype)
@@ -146,10 +107,10 @@ class Store(object):
                 traceback.print_exc()
                 rv = {"status": "failed"}
 
-            self.router.send_multipart([id, json.dumps(rv).encode('utf-8')])
+            self.router.send_multipart([id, client_id, null, mtype, json.dumps(rv).encode('utf-8')])
         else:
             self.logger.error('message type {0} unknown'.format(mtype))
-            self.router.send_multipart([id, '0'])
+            self.router.send_multipart([id, null, '0'])
 
     def handle_ping(self, token, data='[]'):
         self.logger.debug('handling ping message')
@@ -203,6 +164,7 @@ class Store(object):
             raise AuthError('invalid token')
 
     def token_create_admin(self):
+        #self._load_plugin()
         self.logger.info('testing for tokens...')
         if not self.store.tokens_admin_exists():
             self.logger.info('admin token does not exist, generating..')
@@ -219,6 +181,7 @@ class Store(object):
             self.logger.info('admin token exists...')
 
     def token_create_smrt(self):
+        #self._load_plugin()
         self.logger.info('generating smrt token')
         rv = self.store.tokens_create({
             'username': u'csirtg-smrt',
@@ -229,6 +192,7 @@ class Store(object):
         return rv['token']
 
     def token_create_hunter(self):
+        #self._load_plugin()
         self.logger.info('generating hunter token')
         rv = self.store.tokens_create({
             'username': u'hunter',
@@ -266,11 +230,9 @@ def main():
     p.add_argument('--token-create-admin', help='generate an admin token')
     p.add_argument('--token-create-smrt')
     p.add_argument('--token-create-smrt-remote', default=REMOTE_ADDR)
-    p.add_argument('--token-create-hunter')
+    p.add_argument('--hunter-token-create')
 
     args = p.parse_args()
-
-    pprint(args)
 
     setup_logging(args)
     logger = logging.getLogger(__name__)
@@ -278,15 +240,8 @@ def main():
 
     setup_signals(__name__)
 
-    # from cif.reloader import ModuleWatcher
-    # mw = ModuleWatcher()
-    # mw.watch_module('cif.store')
-    # mw.start_watching()
-
-    start = True
     if args.token_create_smrt:
-        start = False
-        with Store(store=args.store) as s:
+        with Store(store_type=args.store) as s:
             t = s.token_create_smrt()
             if t:
                 data = {
@@ -299,24 +254,22 @@ def main():
             else:
                 logger.error('token not created')
 
-    if args.token_create_hunter:
-        start = False
-        with Store(store=args.store) as s:
+    if args.hunter_token_create:
+        with Store(store_type=args.store) as s:
             t = s.token_create_hunter()
             if t:
                 data = {
-                    'token': str(t),
+                    'hunter_token': str(t),
                 }
-                with open(args.token_create_hunter, 'w') as f:
+                with open(args.hunter_token_create, 'w') as f:
                     f.write(yaml.dump(data, default_flow_style=False))
 
-                logger.info('token config generated: {}'.format(args.token_create_hunter))
+                logger.info('token config generated: {}'.format(args.hunter_token_create))
             else:
                 logger.error('token not created')
 
     if args.token_create_admin:
-        start = False
-        with Store(store=args.store) as s:
+        with Store(store_type=args.store) as s:
             t = s.token_create_admin()
             if t:
                 data = {
@@ -328,18 +281,6 @@ def main():
                 logger.info('token config generated: {}'.format(args.token_create_admin))
             else:
                 logger.error('token not created')
-
-    if start:
-        with Store(store_address=args.store_address, store=args.store) as s:
-            try:
-                logger.info('starting up...')
-                s.start()
-            except KeyboardInterrupt:
-                logger.info('shutting down...')
-
-
-
-    # mw.stop_watching()
 
 if __name__ == "__main__":
     main()
