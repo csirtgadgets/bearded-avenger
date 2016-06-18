@@ -209,9 +209,14 @@ def indicators():
             response.status_code = 200
 
     else:
+        fireball = False
+        if request.headers.get('Content-Length'):
+            logger.debug('content-length: %s' % request.headers['Content-Length'])
+            if int(request.headers['Content-Length']) > 10000:
+                logger.info('fireball mode')
+                fireball = True
         try:
-            logger.debug(request.data)
-            r = Client(remote, pull_token()).indicators_create(request.data, fireball=True)
+            r = Client(remote, pull_token()).indicators_create(request.data, fireball=fireball)
         except RuntimeError as e:
             logger.error(e)
             response = jsonify({
