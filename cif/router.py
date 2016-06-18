@@ -92,7 +92,7 @@ class Router(object):
 
     def _init_hunters(self, threads, token):
         self.logger.info('launching hunters...')
-        for n in range(threads):
+        for n in range(int(threads)):
             self.logger.warn(token)
             t = threading.Thread(target=Hunter(self.context, token=token).start)
             t.daemon = True
@@ -100,7 +100,7 @@ class Router(object):
 
     def _init_gatherers(self, threads):
         self.logger.info('launching gatherers...')
-        for n in range(threads):
+        for n in range(int(threads)):
             t = threading.Thread(target=Gatherer(self.context).start)
             t.daemon = True
             t.start()
@@ -131,7 +131,7 @@ class Router(object):
 
         rv = json.dumps({'status': 'failed'})
 
-        if mtype in ['indicators_create']:
+        if mtype in ['indicators_create', 'indicators_search']:
             handler = getattr(self, "handle_" + mtype)
         else:
             handler = self.handle_message_default
@@ -188,6 +188,17 @@ class Router(object):
         self.logger.debug('sending to store')
         self.store_s.send_multipart([id, '', 'indicators_create', token, data])
         self.logger.debug('done')
+
+    def handle_indicators_search(self, id, mtype, token, data):
+        self.store_s.send_multipart([id, '', mtype, token, data])
+        data = json.loads(data)
+        data = Indicator(
+            indicator=data['indicator'],
+            tlp='green',
+            confidence=10,
+            tags=['search'],
+        )
+        self.gatherer_s.send_multipart([id, '', 'indicators_create', token, str(data)])
 
     def handle_indicators_create(self, id, mtype, token, data):
         self.logger.debug('sending to gatherers..')
