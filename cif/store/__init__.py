@@ -230,7 +230,7 @@ def main():
     p.add_argument('--token-create-admin', help='generate an admin token')
     p.add_argument('--token-create-smrt')
     p.add_argument('--token-create-smrt-remote', default=REMOTE_ADDR)
-    p.add_argument('--hunter-token-create')
+    p.add_argument('--token-create-hunter')
 
     args = p.parse_args()
 
@@ -254,17 +254,17 @@ def main():
             else:
                 logger.error('token not created')
 
-    if args.hunter_token_create:
+    if args.token_create_hunter:
         with Store(store_type=args.store) as s:
             t = s.token_create_hunter()
             if t:
                 data = {
                     'hunter_token': str(t),
                 }
-                with open(args.hunter_token_create, 'w') as f:
+                with open(args.token_create_hunter, 'w') as f:
                     f.write(yaml.dump(data, default_flow_style=False))
 
-                logger.info('token config generated: {}'.format(args.hunter_token_create))
+                logger.info('token config generated: {}'.format(args.token_create_hunter))
             else:
                 logger.error('token not created')
 
