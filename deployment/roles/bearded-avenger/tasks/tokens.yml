@@ -1,34 +1,33 @@
 ---
-
 - name: 'create cif sqlite db'
-  file: path=/var/lib/cif/cif.sqlite owner=cif group=cif mode=0660 state=touch
+  file: path={{ app_runtime_path }}/cif.sqlite owner=cif group=cif mode=0660 state=touch
 
-- stat: path=/home/cif/.cif.yml
+- stat: path={{ cif_admin_config_path }}
   register: f
 
 - name: 'generate cif admin token'
-  shell: CIF_RUNTIME_PATH=/var/lib/cif cif-store --store sqlite --token-create-admin /home/cif/.cif.yml -d
+  shell: CIF_RUNTIME_PATH={{ app_runtime_path }} cif-store --runtime-path {{ app_runtime_path }} --store sqlite --token-create-admin {{ cif_admin_config_path }} -d
   when: not f.stat.exists
 
 - name: 'update permissions'
-  file: path=/home/cif/.cif.yml owner=cif group=cif mode=0660
+  file: path={{ cif_admin_config_path }} owner=cif group=cif mode=0660
 
-- stat: path=/etc/cif/csirtg-smrt.yml
+- stat: path={{ csirtg_smrt_config_path }}
   register: f
 
-- name: 'generate cif smrt token'
-  shell: CIF_RUNTIME_PATH=/var/lib/cif cif-store --store sqlite --runtime-path /var/lib/cif --token-create-smrt /etc/cif/csirtg-smrt.yml -d
+- name: 'generate csirtg-smrt token'
+  shell: CIF_RUNTIME_PATH={{ app_runtime_path }} cif-store --store sqlite --runtime-path {{ app_runtime_path }} --token-create-smrt {{ csirtg_smrt_config_path }} -d
   when: not f.stat.exists
 
 - name: 'update permissions'
-  file: path=/etc/cif/csirtg-smrt.yml owner=cif group=cif mode=0660
+  file: path={{ csirtg_smrt_config_path }} owner=cif group=cif mode=0660
 
-- stat: path=/etc/cif/cif-hunter.yml
+- stat: path={{ cif_router_config_path }}
   register: f
 
 - name: 'generate cif hunter token'
-  shell: CIF_RUNTIME_PATH=/var/lib/cif cif-store --store sqlite  --runtime-path /var/lib/cif --hunter-token-create /etc/cif/cif-router.yml -d
+  shell: CIF_RUNTIME_PATH={{ app_runtime_path }} cif-store --store sqlite --runtime-path {{ app_runtime_path }} --token-create-hunter {{ cif_router_config_path }} -d
   when: not f.stat.exists
 
 - name: 'update permissions'
-  file: path=/etc/cif/cif-router.yml owner=cif group=cif mode=0660
+  file: path={{ cif_router_config_path }} owner=cif group=cif mode=0660

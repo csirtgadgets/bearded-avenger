@@ -1,6 +1,10 @@
 ---
 app_user: cif
 app_user_home: "/home/{{ app_user }}"
+app_runtime_path: '/var/lib/cif'
+csirtg_smrt_rules_path: '/etc/cif/rules'
+cif_router_config_path: '/etc/cif/cif-router.yml'
+cif_store_store: 'sqlite'
 development: False
 geoip_userid: 999999
 geoip_key: "000000000000"

@@ -15,4 +15,7 @@
     - csirtg-smrt.conf
 
 - name: copy /etc/defaults/cif
-  copy: src=defaults dest=/etc/default/cif mode=0660 owner="{{ app_user }}" group="{{ app_user }}"
+  template: src=defaults.j2 dest=/etc/default/cif mode=0660 owner="{{ app_user }}" group="{{ app_user }}"
+
+- name: configure /etc/security/limits.conf
+  lineinfile: dest=/etc/security/limits.conf line="cif             soft    core            0"

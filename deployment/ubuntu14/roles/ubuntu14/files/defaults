@@ -1,5 +1,0 @@
-CIF_RUNTIME_PATH=/var/lib/cif
-CIF_SMRT_RULES_PATH=/etc/cif/rules
-CIF_LOGLEVEL=INFO
-CIF_STORE_STORE=sqlite
-CIF_ROUTER_CONFIG_PATH=/etc/cif/cif-router.yml

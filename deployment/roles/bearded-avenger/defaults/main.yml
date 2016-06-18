@@ -7,6 +7,9 @@ app_user_home: "/home/{{ app_user }}"
 app_runtime_path: "/var/lib/cif"
 app_rules_path: "/etc/cif/rules"
 app_log_path: "/var/log/cif"
+cif_router_config_path: '/etc/cif/cif-router.yml'
+csirtg_smrt_config_path: '/etc/cif/csirtg-smrt.yml'
+cif_admin_config_path: '/home/cif/.cif.yml'
 
 venv: cif
 venv_user: vagrant

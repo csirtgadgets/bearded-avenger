@@ -10,8 +10,6 @@
   with_items:
     - cif-router.service
     - cif-httpd.service
-    - cif-store.service
     - csirtg-smrt.service
-    - cif-hunter.service
   notify:
     - reload systemd
