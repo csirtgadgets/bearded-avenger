@@ -18,4 +18,7 @@
   template: src=defaults.j2 dest=/etc/default/cif mode=0660 owner="{{ app_user }}" group="{{ app_user }}"
 
 - name: configure /etc/security/limits.conf
-  lineinfile: dest=/etc/security/limits.conf line="cif             soft    core            0"
+  lineinfile: dest=/etc/security/limits.conf line="cif             soft    nofile            20000"
+
+- name: configure /etc/security/limits.conf
+  lineinfile: dest=/etc/security/limits.conf line="cif             hard    nofile            30000"
