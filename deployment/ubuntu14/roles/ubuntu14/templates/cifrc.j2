@@ -2,8 +2,9 @@ if [ -f /etc/default/cif ] ; then
 	source /etc/default/cif
 fi
 
-export CIF_RUNTIME_PATH={{ app_runtime_path }}
-export CSIRTG_SMRT_RUNTIME_PATH={{ app_runtime_path }}
-export CSIRTG_SMRT_RULES_PATH={{ app_rules_path }}/default
-export CSIRTG_SMRT_CONFIG_PATH=/etc/cif/csirtg-smrt.yml
-export CIF_ROUTER_CONFIG_PATH=/etc/cif/cif-router.yml
+export CIF_RUNTIME_PATH=$CIF_RUNTIME_PATH
+export CIF_ROUTER_CONFIG_PATH=$CIF_ROUTER_CONFIG_PATH
+
+export CSIRTG_SMRT_RUNTIME_PATH=$CSIRTG_SMRT_RUNTIME_PATH
+export CSIRTG_SMRT_RULES_PATH=$CSIRTG_SMRT_RULES_PATH
+export CSIRTG_SMRT_CONFIG_PATH=$CSIRTG_SMRT_CONFIG_PATH

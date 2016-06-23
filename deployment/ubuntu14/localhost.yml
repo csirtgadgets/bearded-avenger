@@ -5,6 +5,11 @@
   roles:
     - { role: ubuntu14, tags: role-ubuntu14 }
     - { role: bearded-avenger, tags: role-bearded-avenger }
+
   post_tasks:
-    - name: start cif-services
-      command: service cif-services start
+    - name: enable services at boot
+      service: name={{ item }} enabled=yes state=started
+      with_items:
+        - cif-router
+        - cif-httpd
+        - csirtg-smrt

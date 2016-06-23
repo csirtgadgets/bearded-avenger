@@ -16,9 +16,10 @@ python_version: '2.7.10'
 app_user: cif
 app_user_home: "/home/{{ app_user }}"
 app_runtime_path: "/var/lib/cif"
-app_rules_path: "/etc/cif/rules"
+app_rules_path: "/etc/cif/rules/default"
 app_log_path: "/var/log/cif"
 cif_router_config_path: '/etc/cif/cif-router.yml'
+csir
 
 geoip_userid: 999999
 geoip_key: "000000000000"
