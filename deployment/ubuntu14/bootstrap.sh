@@ -19,11 +19,20 @@ sudo -u cif cif --config /home/cif/.cif.yml -p
 echo 'testing query'
 sudo -u cif cif --config /home/cif/.cif.yml --search example.com
 
+echo 'waiting...'
+sleep 5
+
 echo 'testing query'
 sudo -u cif cif --config /home/cif/.cif.yml --search example.com
+
+echo 'waiting...'
+sleep 5
 
 sudo -u cif cif --config /home/cif/.cif.yml --itype ipv4
 
 sudo -u cif cif --config /home/cif/.cif.yml -q 93.184.216.34
+
+echo 'waiting...'
+sleep 5
 
 sudo -u cif cif --config /home/cif/.cif.yml -q 93.184.216.34
