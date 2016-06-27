@@ -3,13 +3,18 @@ development: false
 ci: false
 
 app_user: cif
+app_group: cif
 app_user_home: "/home/{{ app_user }}"
-app_runtime_path: "/var/lib/cif"
-app_rules_path: "/etc/cif/rules"
-app_log_path: "/var/log/cif"
+
+cif_runtime_path: "/var/lib/cif"
+cif_log_path: '/var/log/cif'
 cif_router_config_path: '/etc/cif/cif-router.yml'
-csirtg_smrt_config_path: '/etc/cif/csirtg-smrt.yml'
 cif_admin_config_path: '/home/cif/.cif.yml'
+
+csirtg_smrt_runtime_path: '/varlib/cif'
+csirtg_smrt_cache_path: "{{ cif_runtime_path }}/smrt"
+csirtg_smrt_config_path: '/etc/cif/csirtg-smrt.yml'
+csirtg_smrt_rules_path: '/etc/cif/rules'
 
 venv: cif
 venv_user: vagrant

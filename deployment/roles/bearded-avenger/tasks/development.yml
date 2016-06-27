@@ -7,4 +7,7 @@
   when: GH_TOKEN is defined
 
 - name: Create logging path
-  file: path="{{ app_log_path }}" state=directory recurse=true mode=0770 owner="{{ app_user }}" group="{{ app_user }}"
+  file: path="{{ cif_log_path }}" state=directory recurse=true mode=0770 owner="{{ app_user }}" group="{{ app_user }}"
+
+- include: venv_tokens.yml
+  tags: tokens

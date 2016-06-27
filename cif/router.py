@@ -22,8 +22,8 @@ from cif.gatherer import Gatherer
 import time
 
 HUNTER_MIN_CONFIDENCE = 2
-HUNTER_THREADS = 8
-GATHERER_THREADS = 8
+HUNTER_THREADS = 4
+GATHERER_THREADS = 4
 STORE_DEFAULT = 'sqlite'
 STORE_PLUGINS = ['cif.store.dummy', 'cif.store.sqlite', 'cif.store.elasticsearch', 'cif.store.rdflib']
 
