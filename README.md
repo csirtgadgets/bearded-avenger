@@ -11,7 +11,7 @@ $ pip install -r requirements.txt
 $ python setup.py develop
 $ mkdir -p log && cp hacking/develop.conf hacking/local.conf
 $ cif-store -d --token-create-admin cif.yml
-$ cif-store -d --token-create-hunter cif-hunter.yml
+$ cif-store -d --token-create-hunter cif-router.yml
 $ cif-store -d --token-create-smrt csirtg-smrt.yml
 $ supervisord -c hacking/local.conf
 

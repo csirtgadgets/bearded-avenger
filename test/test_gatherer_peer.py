@@ -20,7 +20,4 @@ def test_gatherer_peer():
 
     pprint(x)
 
-    assert x.peers[0]['asn'] == '174'
-    #assert x.asn_desc.startswith('TEAM-CYMRU')
-
-
+    assert x.peers[0]['asn'] == '23352'

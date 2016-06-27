@@ -10,7 +10,5 @@
       command: systemctl start {{ item }}
       with_items:
         - cif-router
-        - cif-store
         - cif-httpd
-        - cif-hunter
         - csirtg-smrt

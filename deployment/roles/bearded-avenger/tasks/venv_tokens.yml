@@ -6,8 +6,9 @@
   register: f
 
 - name: 'generate cif admin token'
-  shell: CIF_RUNTIME_PATH={{ cif_runtime_path }} cif-store --runtime-path {{ cif_runtime_path }} --store sqlite --token-create-admin {{ cif_admin_config_path }} -d
+  shell: CIF_RUNTIME_PATH={{ cif_runtime_path }} vex cif cif-store --runtime-path {{ cif_runtime_path }} --store sqlite --token-create-admin {{ cif_admin_config_path }} -d
   when: not f.stat.exists
+  become_user: "{{ app_user }}"
 
 - name: 'update permissions'
   file: path={{ cif_admin_config_path }} owner={{ app_user }} group={{ app_group }} mode=0660
@@ -16,8 +17,10 @@
   register: f
 
 - name: 'generate csirtg-smrt token'
-  shell: CIF_RUNTIME_PATH={{ cif_runtime_path }} cif-store --store sqlite --runtime-path {{ cif_runtime_path }} --token-create-smrt {{ csirtg_smrt_config_path }} -d
+  shell: CIF_RUNTIME_PATH={{ cif_runtime_path }} vex cif cif-store --store sqlite --runtime-path {{ cif_runtime_path }} --token-create-smrt {{ csirtg_smrt_config_path }} -d
   when: not f.stat.exists
+  become: yes
+  become_user: "{{ app_user }}"
 
 - name: 'update permissions'
   file: path={{ csirtg_smrt_config_path }} owner={{ app_user }} group={{ app_group }} mode=0660
@@ -26,8 +29,10 @@
   register: f
 
 - name: 'generate cif hunter token'
-  shell: CIF_RUNTIME_PATH={{ cif_runtime_path }} cif-store --store sqlite --runtime-path {{ cif_runtime_path }} --token-create-hunter {{ cif_router_config_path }} -d
+  shell: CIF_RUNTIME_PATH={{ cif_runtime_path }} vex cif cif-store --store sqlite --runtime-path {{ cif_runtime_path }} --token-create-hunter {{ cif_router_config_path }} -d
   when: not f.stat.exists
+  become: yes
+  become_user: "{{ app_user }}"
 
 - name: 'update permissions'
   file: path={{ cif_router_config_path }} owner={{ app_user }} group={{ app_group }} mode=0660
