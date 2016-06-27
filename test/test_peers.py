@@ -21,5 +21,5 @@ def test_gatherer_peers():
     for pp in x.peers:
         mypeers.add(pp['asn'])
 
-    assert '174' in mypeers
+    assert '23352' in mypeers
 

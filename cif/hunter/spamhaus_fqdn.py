@@ -56,19 +56,19 @@ CODES = {
 
 class SpamhausFqdn(object):
 
-    def __init__(self, *args, **kv):
+    def __init__(self):
         self.logger = logging.getLogger(__name__)
 
     def _resolve(self, data):
         data = '{}.dbl.spamhaus.org'.format(data)
         answers = dns.resolver.query(data, 'A')
-        return answers[0]
+        return str(answers[0])
 
     def process(self, i, router):
         if i.itype == 'fqdn' and i.provider != 'spamhaus.org':
             try:
                 r = self._resolve(i.indicator)
-
+                self.logger.debug(r)
                 try:
                     r = CODES[r]
                 except Exception as e:
@@ -91,9 +91,9 @@ class SpamhausFqdn(object):
             except KeyError as e:
                 self.logger.error(e)
             except dns.resolver.NoAnswer:
-                self.logger.info('no answer...')
+                self.logger.debug('no answer...')
             except dns.resolver.NXDOMAIN:
-                self.logger.info('nxdomain...')
+                self.logger.debug('nxdomain...')
             except EmptyLabel:
                 self.logger.error('empty label: {}'.format(i.indicator))
 

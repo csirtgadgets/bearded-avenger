@@ -1,5 +1,6 @@
+kill*.sh
 cif.yml
-cif-hunter.yml
+cif-router.yml
 csirtg-smrt.yml
 *.retry
 coverage_html_report/

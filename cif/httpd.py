@@ -17,7 +17,7 @@ from cif.constants import ROUTER_ADDR
 from cifsdk.constants import TOKEN
 from cifsdk.utils import get_argument_parser, setup_logging, setup_signals, setup_runtime_path
 from pprint import pprint
-from cifsdk.exceptions import AuthError
+from cifsdk.exceptions import AuthError, TimeoutError
 
 TOKEN = os.environ.get('CIF_HTTPD_TOKEN', TOKEN)
 
@@ -30,8 +30,8 @@ HTTP_LISTEN_PORT = os.environ.get('CIF_HTTPD_LISTEN_PORT', HTTP_LISTEN_PORT)
 VALID_FILTERS = ['indicator', 'itype', 'confidence', 'provider', 'limit', 'application', 'nolog']
 TOKEN_FILTERS = ['username', 'token']
 
-LIMIT_DAY = os.environ.get('CIF_HTTPD_LIMIT_DAY', 5000)
-LIMIT_HOUR = os.environ.get('CIF_HTTPD_LIMIT_HOUR', 500)
+LIMIT_DAY = os.environ.get('CIF_HTTPD_LIMIT_DAY', 250000)
+LIMIT_HOUR = os.environ.get('CIF_HTTPD_LIMIT_HOUR', 100000)
 
 # https://github.com/mitsuhiko/flask/blob/master/examples/minitwit/minitwit.py
 
@@ -105,7 +105,15 @@ def ping():
     if app.config.get('dummy'):
         r = DummyClient(remote, pull_token()).ping(write=write)
     else:
-        r = Client(remote, pull_token()).ping(write=write)
+        try:
+            r = Client(remote, pull_token()).ping(write=write)
+        except TimeoutError:
+            resp = jsonify({
+                'message': 'failed',
+                'data': [],
+            })
+            resp.status_code = 408
+            return resp
 
     resp = jsonify({
         "message": "success",
@@ -201,10 +209,29 @@ def indicators():
             response.status_code = 200
 
     else:
+        fireball = False
+        if request.headers.get('Content-Length'):
+            logger.debug('content-length: %s' % request.headers['Content-Length'])
+            if int(request.headers['Content-Length']) > 10000:
+                logger.info('fireball mode')
+                fireball = True
         try:
-            logger.debug(request.data)
-            r = Client(remote, pull_token()).indicators_create(request.data)
+            r = Client(remote, pull_token()).indicators_create(request.data, fireball=fireball)
         except RuntimeError as e:
+            logger.error(e)
+            response = jsonify({
+                "message": "submission failed",
+                "data": []
+            })
+            response.status_code = 422
+        except TimeoutError as e:
+            logger.error(e)
+            response = jsonify({
+                "message": "submission failed",
+                "data": []
+            })
+            response.status_code = 408
+        except Exception as e:
             logger.error(e)
             response = jsonify({
                 "message": "submission failed",

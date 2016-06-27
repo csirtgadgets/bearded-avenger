@@ -48,7 +48,7 @@ CODES = {
 
 class SpamhausIp(object):
 
-    def __init__(self, *args, **kv):
+    def __init__(self):
         self.logger = logging.getLogger(__name__)
 
     def _resolve(self, data):

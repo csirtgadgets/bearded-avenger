@@ -1,6 +1,7 @@
 import logging
 from cif.utils import resolve_ns
 from csirtg_indicator import Indicator
+from dns.resolver import Timeout
 from pprint import pprint
 
 
@@ -12,13 +13,17 @@ def is_subdomain(i):
 
 class Fqdn(object):
 
-    def __init__(self, *args, **kv):
+    def __init__(self):
         self.logger = logging.getLogger(__name__)
 
     def process(self, i, router):
         if i.itype == 'fqdn':
-            r = resolve_ns(i.indicator, t='CNAME')
-            self.logger.debug('CNAME: {}'.format(r))
+            try:
+                r = resolve_ns(i.indicator, t='CNAME')
+            except Timeout:
+                self.logger.info('timeout trying to resolve: {}'.format(i.indicator))
+                r = []
+
             for rr in r:
                 fqdn = Indicator(**i.__dict__)
 
@@ -26,41 +31,54 @@ class Fqdn(object):
                 fqdn.itype = 'fqdn'
                 fqdn.confidence = (int(fqdn.confidence) / 2)
                 x = router.indicators_create(fqdn)
-                self.logger.debug(x)
 
             if i.is_subdomain():
                 fqdn = Indicator(**i.__dict__)
                 fqdn.indicator = i.is_subdomain()
                 fqdn.confidence = (int(fqdn.confidence) / 3)
                 x = router.indicators_create(fqdn)
-                self.logger.debug(x)
 
-            r = resolve_ns(i.indicator)
-            self.logger.debug(r)
+            try:
+                r = resolve_ns(i.indicator)
+            except Timeout:
+                self.logger.info('timeout trying to resolve: {}'.format(i.indicator))
+                r = []
+
             for rr in r:
                 ip = Indicator(**i.__dict__)
                 ip.indicator = str(rr)
                 ip.itype = 'ipv4'
+                ip.rdata = i.indicator
                 ip.confidence = (int(ip.confidence) / 4)
                 x = router.indicators_create(ip)
                 self.logger.debug(x)
 
-            r = resolve_ns(i.indicator, t='NS')
-            self.logger.debug('NS: {}'.format(r))
+            try:
+                r = resolve_ns(i.indicator, t='NS')
+            except Timeout:
+                self.logger.info('timeout trying to resolve NS for: {}'.format(i.indicator))
+                r = []
+
             for rr in r:
                 ip = Indicator(**i.__dict__)
                 ip.indicator = str(rr).rstrip('.')
                 ip.itype = 'fqdn'
+                ip.rdata = i.indicator
                 ip.confidence = (int(ip.confidence) / 5)
                 x = router.indicators_create(ip)
                 self.logger.debug(x)
 
-            r = resolve_ns(i.indicator, t='MX')
-            self.logger.debug('MX: {}'.format(r))
+            try:
+                r = resolve_ns(i.indicator, t='MX')
+            except Timeout:
+                self.logger.info('timeout trying to resolve MX for: {}'.format(i.indicator))
+                r = []
+
             for rr in r:
                 ip = Indicator(**i.__dict__)
                 ip.indicator = str(rr).rstrip('.')
                 ip.itype = 'fqdn'
+                ip.rdata = i.indicator
                 ip.confidence = (int(ip.confidence) / 6)
                 x = router.indicators_create(ip)
                 self.logger.debug(x)

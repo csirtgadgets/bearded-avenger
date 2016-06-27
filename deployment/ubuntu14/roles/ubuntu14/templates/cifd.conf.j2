@@ -5,24 +5,14 @@ loglevel = ERROR
 [program:cif-router]
 command = cif-router
 autostart = true
-stderr_logfile = "{{ shared_path/log }}/cif-router.log
-
-[program:cif-store]
-command = cif-store
-autostart = true
-stderr_logfile = cif-store.log
+stderr_logfile = {{ shared_path/log }}/cif-router.log
 
 [program:cif-httpd]
 command = cif-httpd
 autostart = true
-stderr_logfile = cif-httpd.log
-
-[program:cif-hunter]
-command = cif-hunter
-autostart = true
-stderr_logfile = cif-hunter.log
+stderr_logfile = {{ shared_path/log }}/cif-httpd.log
 
 [program:csirtg-smrt]
 command = csirtg-smrt
 autostart = true
-stderr_logfile = csirtg-smrt.log
+stderr_logfile = {{ shared_path/log }}/csirtg-smrt.log

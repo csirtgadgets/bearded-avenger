@@ -3,9 +3,9 @@ import os
 
 import arrow
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, create_engine, DateTime, UnicodeText, \
-    Text, Boolean
+    Text, Boolean, desc
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship, backref, class_mapper
+from sqlalchemy.orm import sessionmaker, relationship, backref, class_mapper, scoped_session
 
 from cifsdk.constants import RUNTIME_PATH
 from cif.store.plugin import Store
@@ -67,6 +67,7 @@ class Indicator(Base):
     peers = Column(String)
     description = Column(UnicodeText)
     additional_data = Column(UnicodeText)
+    rdata = Column(UnicodeText)
 
     tags = relationship(
         'Tag',
@@ -78,7 +79,7 @@ class Indicator(Base):
                  cc=None, protocol=None, firsttime=None, lasttime=None,
                  reporttime=None, group="everyone", tags=[], confidence=None,
                  reference=None, reference_tlp=None, application=None, timezone=None, city=None, longitude=None,
-                 latitude=None, peers=None, description=None, additional_data=None, **kvargs):
+                 latitude=None, peers=None, description=None, additional_data=None, rdata=None, version=None):
 
         self.indicator = indicator
         self.group = group
@@ -104,6 +105,7 @@ class Indicator(Base):
         self.peers = peers
         self.description = description
         self.additional_data = additional_data
+        self.rdata = rdata
 
         ## TODO - cleanup for py3
 
@@ -153,17 +155,16 @@ class SQLite(Store):
         #if self.logger.getEffectiveLevel() == logging.DEBUG:
         #    echo = True
 
+        # http://docs.sqlalchemy.org/en/latest/orm/contextual.html
         self.engine = create_engine(self.path, echo=echo)
-        self.handle = sessionmaker()
-        self.handle.configure(bind=self.engine)
+        self.handle = sessionmaker(bind=self.engine)
+        self.handle = scoped_session(self.handle)
 
         Base.metadata.create_all(self.engine)
 
         self.logger.debug('database path: {}'.format(self.path))
 
     def _as_dict(self, obj):
-        #return dict((col.name, getattr(obj, col.name))
-        #    for col in class_mapper(obj.__class__).mapped_table.c)
         d = {}
         for col in class_mapper(obj.__class__).mapped_table.c:
             d[col.name] = getattr(obj, col.name)
@@ -199,21 +200,19 @@ class SQLite(Store):
         self.logger.debug('running filter of itype')
 
         return [self._as_dict(x)
-                for x in self.handle().query(Indicator).filter(sql).limit(limit)]
+                for x in self.handle().query(Indicator).order_by(desc(Indicator.reporttime)).filter(sql).limit(limit)]
 
     def indicators_create(self, token, data):
         if self.token_write(token):
             if type(data) == dict:
                 data = [data]
 
-            self.logger.debug(data)
             s = self.handle()
 
             for d in data:
                 # namespace conflict with related self.tags
                 tags = d.get("tags", [])
                 if len(tags) > 0:
-                    print type(tags)
                     if type(tags) == str or type(tags) == unicode:
                         if '.' in tags:
                             tags = tags.split(',')
@@ -241,6 +240,7 @@ class SQLite(Store):
             .filter_by(token=str(token))\
             .filter_by(admin=True)\
             .filter(Token.revoked is not True)
+        
         if x.count():
             return True
 
@@ -323,7 +323,6 @@ class SQLite(Store):
             .filter_by(write=True) \
             .filter(Token.revoked is not True)
 
-        self.logger.debug(rv.count())
         if rv.count():
             return True
 
