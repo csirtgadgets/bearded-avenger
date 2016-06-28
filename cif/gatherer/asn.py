@@ -14,7 +14,7 @@ class Asn(object):
 
     def process(self, indicator):
         if indicator.itype == 'ipv4' and not indicator.is_private():
-            i = indicator.indicator
+            i = str(indicator.indicator)
             match = re.search('^(\S+)\/\d+$', i)
             if match:
                 i = match.group(1)
