@@ -1,5 +1,5 @@
 from elasticsearch import Elasticsearch
-from elasticsearch_dsl import Search, DocType, String, Date, Integer, Boolean, Float, Ip
+from elasticsearch_dsl import Search, DocType, String, Date, Integer, Boolean, Float, Ip, Mapping
 
 import elasticsearch.exceptions
 from elasticsearch_dsl.connections import connections
@@ -7,11 +7,22 @@ import os
 import logging
 from pprint import pprint
 import arrow
-from cifsdk.exceptions import AuthError
+from cifsdk.exceptions import AuthError, InvalidSearch
+from csirtg_indicator import resolve_itype
+from datetime import datetime
+import ipaddress
 
 from cif.store.plugin import Store
 ES_NODES = os.getenv('CIF_ES_NODES', '127.0.0.1:9200')
 VALID_FILTERS = ['indicator', 'confidence', 'provider', 'itype', 'group']
+
+LIMIT = 5000
+LIMIT = os.getenv('CIF_ES_LIMIT', LIMIT)
+
+LIMIT_HARD = 500000
+LIMIT_HARD = os.getenv('CIF_ES_LIMIT_HARD', LIMIT_HARD)
+
+TIMEOUT = '120'
 
 
 class Token(DocType):
@@ -27,7 +38,7 @@ class Token(DocType):
     last_activity_at = Date()
 
     class Meta:
-        index = 'cif-tokens'
+        index = 'tokens'
 
 
 class Indicator(DocType):
@@ -52,8 +63,9 @@ class Indicator(DocType):
     description = String()
     additional_data = String()
 
-    class Meta:
-        index = 'cif-tokens'
+    # set on insert
+    #class Meta:
+    #    index = 'indicators'
 
 
 class ElasticSearch_(Store):
@@ -70,12 +82,36 @@ class ElasticSearch_(Store):
         #self.handle = Elasticsearch(nodes)
         connections.create_connection(hosts=nodes)
 
+        m = Mapping('indicator')
+        m.field('indicator_ipv4', 'ip')
+        m.field('indicator_ipv4_mask', 'integer')
+        m.field('reporttime', 'date')
+        m.save('indicators-2016.06')
+
     def _dict(self, data):
         return [x.__dict__['_d_'] for x in data.hits]
 
     def indicators_create(self, token, data):
         # http://elasticsearch-py.readthedocs.org/en/master/api.html#elasticsearch.Elasticsearch.bulk
+        dt = datetime.utcnow()
+        dt = dt.strftime('%Y.%m')
+        index = 'indicators-{}'.format(dt)
+
+        self.logger.debug('index: {}'.format(index))
+        data['meta'] = {}
+        data['meta']['index'] = index
+
+        if resolve_itype(data['indicator']) == 'ipv4':
+            import re
+            match = re.search('^(\S+)\/(\d+)$', data['indicator'])
+            if match:
+                data['indicator_ipv4'] = match.group(1)
+                data['indicator_ipv4_mask'] = match.group(2)
+            else:
+                data['indicator_ipv4'] = data['indicator']
+
         i = Indicator(**data)
+        self.logger.debug(i)
         if i.save():
             return i.__dict__['_d_']
         else:
@@ -88,24 +124,53 @@ class ElasticSearch_(Store):
         limit = filters.get('limit')
         if limit:
             del filters['limit']
+        else:
+            limit = LIMIT
 
         nolog = filters.get('nolog')
         if nolog:
             del filters['nolog']
+
+        timeout = TIMEOUT
+        timeout = '{}s'.format(timeout)
+
+        s = Indicator.search()
+        s = s.params(size=limit, timeout=timeout, filter_path=['hits.hits._source', 'hits.hits._type'])
+        s = s.sort('-reporttime')
 
         q_filters = {}
         for f in VALID_FILTERS:
             if filters.get(f):
                 q_filters[f] = filters[f]
 
-        s = Indicator.search()
+        if q_filters.get('indicator'):
+            itype = resolve_itype(q_filters['indicator'])
+
+            if itype == 'ipv4':
+                ip = ipaddress.IPv4Network(q_filters['indicator'])
+                mask = ip.prefixlen
+                if mask < 8:
+                    raise InvalidSearch('prefix needs to be greater than or equal to 8')
+                start = str(ip.network_address)
+                end = str(ip.broadcast_address)
+
+                s = s.filter('range', indicator_ipv4={'gte': start, 'lte': end})
+                del q_filters['indicator']
 
         for f in q_filters:
-            s.filter('term', f=q_filters[f])
+            kwargs = {f: q_filters[f]}
+            s = s.filter('term', **kwargs)
 
-        rv = s.execute()
+        try:
+            rv = s.execute()
+        except elasticsearch.exceptions.RequestError as e:
+            self.logger.error(e)
+            return []
 
-        return self._dict(rv)
+        try:
+            return [x['_source'] for x in rv.hits.hits]
+        except KeyError:
+            return []
 
     def ping(self, token):
         # http://elasticsearch-py.readthedocs.org/en/master/api.html#elasticsearch.client.IndicesClient.stats

@@ -18,7 +18,7 @@ import zmq
 import cif.store
 from cif.constants import STORE_ADDR
 from cifsdk.constants import REMOTE_ADDR, CONFIG_PATH
-from cifsdk.exceptions import AuthError
+from cifsdk.exceptions import AuthError, InvalidSearch
 from cifsdk.utils import setup_logging, get_argument_parser, setup_signals
 
 MOD_PATH = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -39,6 +39,7 @@ class Store(object):
         return self
 
     def __init__(self, context=zmq.Context.instance(), store_type=STORE_DEFAULT, store_address=STORE_ADDR, **kvargs):
+
         self.logger = logging.getLogger(__name__)
         self.context = context
         self.store_addr = store_address
@@ -102,6 +103,8 @@ class Store(object):
             except AuthError as e:
                 self.logger.error(e)
                 rv = {'status': 'failed', 'message': 'unauthorized'}
+            except InvalidSearch as e:
+                rv = {'status': 'failed', 'message': 'invalid search'}
             except Exception as e:
                 self.logger.error(e)
                 traceback.print_exc()
@@ -123,7 +126,12 @@ class Store(object):
     def handle_indicators_search(self, token, data):
         if self.store.token_read(token):
             self.logger.debug('searching')
-            return self.store.indicators_search(token, data)
+            try:
+                x = self.store.indicators_search(token, data)
+            except Exception as e:
+                raise InvalidSearch('invalid search')
+            else:
+                return x
         else:
             raise AuthError('invalid token')
 

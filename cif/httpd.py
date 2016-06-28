@@ -17,7 +17,7 @@ from cif.constants import ROUTER_ADDR
 from cifsdk.constants import TOKEN
 from cifsdk.utils import get_argument_parser, setup_logging, setup_signals, setup_runtime_path
 from pprint import pprint
-from cifsdk.exceptions import AuthError, TimeoutError
+from cifsdk.exceptions import AuthError, TimeoutError, InvalidSearch
 
 TOKEN = os.environ.get('CIF_HTTPD_TOKEN', TOKEN)
 
@@ -173,6 +173,13 @@ def search():
             'status': 'failed'
         })
         response.status_code = 401
+    except InvalidSearch as e:
+        logger.error(e)
+        response = jsonify({
+            "message": "invalid search",
+            "data": []
+        })
+        response.status_code = 400
 
     return response
 
@@ -201,6 +208,13 @@ def indicators():
                 "data": []
             })
             response.status_code = 403
+        except InvalidSearch as e:
+            logger.error(e)
+            response = jsonify({
+                "message": "invalid search",
+                "data": []
+            })
+            response.status_code = 400
         else:
             response = jsonify({
                 "message": "success",
