@@ -2,6 +2,7 @@ import dns.resolver
 import logging
 from pprint import pprint
 from csirtg_indicator import Indicator
+from csirtg_indicator.utils import is_ipv4_net
 
 CONFIDENCE = 9
 PROVIDER = 'spamhaus.org'
@@ -59,7 +60,7 @@ class SpamhausIp(object):
         return answers[0]
 
     def process(self, i, router):
-        if (i.itype == 'ipv4' or i.itype == 'ipv6') and i.provider != 'spamhaus.org':
+        if (i.itype == 'ipv4' or i.itype == 'ipv6') and i.provider != 'spamhaus.org' and not is_ipv4_net(i.indicator):
             try:
                 r = self._resolve(i.indicator)
                 try:
