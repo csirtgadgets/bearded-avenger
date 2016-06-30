@@ -22,8 +22,8 @@ from cif.gatherer import Gatherer
 import time
 
 HUNTER_MIN_CONFIDENCE = 2
-HUNTER_THREADS = 4
-GATHERER_THREADS = 4
+HUNTER_THREADS = os.getenv('CIF_HUNTER_THREADS', 4)
+GATHERER_THREADS = os.getenv('CIF_GATHERER_THREADS', 4)
 STORE_DEFAULT = 'sqlite'
 STORE_PLUGINS = ['cif.store.dummy', 'cif.store.sqlite', 'cif.store.elasticsearch', 'cif.store.rdflib']
 
@@ -36,6 +36,9 @@ HUNTER_TOKEN = os.environ.get('CIF_HUNTER_TOKEN', None)
 CONFIG_PATH = os.environ.get('CIF_ROUTER_CONFIG_PATH', 'cif-router.yml')
 if not os.path.isfile(CONFIG_PATH):
     CONFIG_PATH = os.environ.get('CIF_ROUTER_CONFIG_PATH', os.path.join(os.path.expanduser('~'), 'cif-router.yml'))
+
+STORE_DEFAULT = os.getenv('CIF_STORE_TYPE', STORE_DEFAULT)
+STORE_NODES = os.getenv('CIF_STORE_NODES')
 
 
 class Router(object):
@@ -247,7 +250,7 @@ def main():
     p.add_argument("--store", help="specify a store type {} [default: %(default)s]".format(', '.join(STORE_PLUGINS)),
                    default=STORE_DEFAULT)
 
-    p.add_argument('--store-nodes', help='specify storage nodes address')
+    p.add_argument('--store-nodes', help='specify storage nodes address [default: %(default)]', default=STORE_NODES)
 
     p.add_argument('--p2p', action='store_true', help='enable experimental p2p support')
 

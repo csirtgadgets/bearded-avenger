@@ -1,12 +1,10 @@
-from elasticsearch import Elasticsearch
-from elasticsearch_dsl import Search, DocType, String, Date, Integer, Boolean, Float, Ip, Mapping
+from elasticsearch_dsl import Search, DocType, String, Date, Integer, Boolean, Float, Ip, Mapping, Index, Nested, GeoPoint
 
 import elasticsearch.exceptions
 from elasticsearch_dsl.connections import connections
 import os
 import logging
 from pprint import pprint
-import arrow
 from cifsdk.exceptions import AuthError, InvalidSearch
 from csirtg_indicator import resolve_itype
 from datetime import datetime
@@ -23,6 +21,8 @@ LIMIT_HARD = 500000
 LIMIT_HARD = os.getenv('CIF_ES_LIMIT_HARD', LIMIT_HARD)
 
 TIMEOUT = '120'
+TIMEOUT = os.getenv('CIF_ES_TIMEOUT', TIMEOUT)
+TIMEOUT = '{}s'.format(TIMEOUT)
 
 
 class Token(DocType):
@@ -42,26 +42,27 @@ class Token(DocType):
 
 
 class Indicator(DocType):
-    indicator = String()
+    indicator = String(index="not_analyzed")
     indicator_ipv4 = Ip()
-    group = String()
-    itype = String()
-    tlp = String()
-    provider = String()
+    group = String(multi=True, index="not_analyzed")
+    itype = String(index="not_analyzed")
+    tlp = String(index="not_analyzed")
+    provider = String(index="not_analyzed")
     portlist = String()
     asn = Float()
     asn_desc = String()
     cc = String()
-    protocol = Integer()
+    protocol = String()
     reporttime = Date()
     lasttime = Date()
     firsttime = Date()
-    confidence = Integer
+    confidence = Integer()
     timezone = String()
     city = String()
-    peers = String()
-    description = String()
-    additional_data = String()
+    description = String(index="not_analyzed")
+    additional_data = String(multi=True)
+    tags = String(multi=True)
+    rdata = String(index="not_analyzed")
 
     # set on insert
     #class Meta:
@@ -79,23 +80,31 @@ class ElasticSearch_(Store):
             nodes = nodes.split(',')
 
         self.logger.info('setting es nodes {}'.format(nodes))
-        #self.handle = Elasticsearch(nodes)
         connections.create_connection(hosts=nodes)
-
-        m = Mapping('indicator')
-        m.field('indicator_ipv4', 'ip')
-        m.field('indicator_ipv4_mask', 'integer')
-        m.field('reporttime', 'date')
-        m.save('indicators-2016.06')
 
     def _dict(self, data):
         return [x.__dict__['_d_'] for x in data.hits]
 
-    def indicators_create(self, token, data):
+    def _create_index(self):
+        # https://github.com/csirtgadgets/massive-octo-spice/blob/develop/elasticsearch/observables.json
         # http://elasticsearch-py.readthedocs.org/en/master/api.html#elasticsearch.Elasticsearch.bulk
         dt = datetime.utcnow()
         dt = dt.strftime('%Y.%m')
-        index = 'indicators-{}'.format(dt)
+        es = connections.get_connection()
+        if not es.indices.exists('indicators-{}'.format(dt)):
+            index = Index('indicators-{}'.format(dt))
+            index.aliases(live={})
+            index.doc_type(Indicator)
+            index.create()
+
+            m = Mapping('indicator')
+            m.field('indicator_ipv4', 'ip')
+            m.field('indicator_ipv4_mask', 'integer')
+            m.save('indicators-{}'.format(dt))
+        return 'indicators-{}'.format(dt)
+
+    def indicators_create(self, token, data):
+        index = self._create_index()
 
         self.logger.debug('index: {}'.format(index))
         data['meta'] = {}
@@ -110,6 +119,10 @@ class ElasticSearch_(Store):
             else:
                 data['indicator_ipv4'] = data['indicator']
 
+        if type(data['group']) != list:
+            data['group'] = [data['group']]
+
+        self.logger.debug(data)
         i = Indicator(**data)
         self.logger.debug(i)
         if i.save():
@@ -132,10 +145,9 @@ class ElasticSearch_(Store):
             del filters['nolog']
 
         timeout = TIMEOUT
-        timeout = '{}s'.format(timeout)
 
         s = Indicator.search()
-        s = s.params(size=limit, timeout=timeout, filter_path=['hits.hits._source', 'hits.hits._type'])
+        s = s.params(size=limit, timeout=timeout)
         s = s.sort('-reporttime')
 
         q_filters = {}
@@ -179,18 +191,22 @@ class ElasticSearch_(Store):
             return True
 
     def tokens_admin_exists(self):
-        s = Search(using=connections.get_connection(), index='cif-tokens') \
-                .filter("term", admin='True')
+        s = Token.search()
+        s.filter('term', admin=True)
 
-        response = []
         try:
-            response = s.execute()
+            rv = s.execute()
         except elasticsearch.exceptions.NotFoundError:
             return False
 
-        return True
+        #self.logger.warn(rv.to_dict())
+        if rv.hits.total > 0:
+            return True
+
+        return False
 
     def tokens_create(self, data):
+        self.logger.debug(data)
         if data.get('admin'):
             data['admin'] = True
 
@@ -205,45 +221,109 @@ class ElasticSearch_(Store):
 
         self.logger.debug(data)
         t = Token(**data)
+
         if t.save():
-            rv = t.__dict__['_d_']
-            return rv
+            return t.__dict__['_d_']
 
     def tokens_delete(self, data):
-        return True
+        if not (data.get('token') or data.get('username')):
+            return 'username or token required'
+
+        s = Token.search()
+
+        if data.get('username'):
+            s = s.filter('term', username=data['username'])
+
+        if data.get('token'):
+            s = s.filter('term', token=data['token'])
+
+        rv = s.execute()
+
+        if rv.hits.total > 0:
+            for t in rv.hits.hits:
+                t = Token.get(t['_id'])
+                t.delete()
+
+            return rv.hits.total
+        else:
+            return 0
 
     def tokens_search(self, data):
         s = Token.search()
 
         if data.get('token'):
-            s.filter('term', token=data['token'])
+            s = s.filter('term', token=data['token'])
 
         if data.get('username'):
-            s.filter('term', username=data['username'])
+            s = s.filter('term', username=data['username'])
 
         rv = s.execute()
 
-        return self._dict(rv)
+        return [x['_source'] for x in rv.hits.hits]
 
     def token_admin(self, token):
-        return True
+        s = Token.search()
+
+        s = s.filter('term', token=token)
+        s = s.filter('term', admin=True)
+
+        rv = s.execute()
+
+        if rv.hits.total > 0:
+            return True
 
     def token_read(self, token):
-        return True
+        s = Token.search()
+
+        s = s.filter('term', token=token)
+        s = s.filter('term', read=True)
+        rv = s.execute()
+
+        if rv.hits.total > 0:
+            return True
+
+        return False
 
     def token_write(self, token):
-        return True
+        s = Token.search()
+
+        s = s.filter('term', token=token)
+        s = s.filter('term', write=True)
+        rv = s.execute()
+
+        if rv.hits.total > 0:
+            return True
+
+        return False
 
     def token_edit(self, data):
-        return True
+        if not data.get('token'):
+            return 'token required for updating'
+
+        s = Token.search()
+
+        s = s.filter('term', token=data['token'])
+        rv = s.execute()
+
+        if not rv.hits.total > 0:
+            return 'token not found'
+
+        d = rv.hits.hits[0]
+        d.update(fields=data)
 
     def token_last_activity_at(self, token, timestamp=None):
-        if timestamp:
-            s = Token.search()
-            s = s.filter('term', token=token)
-            r = s.execute()
+        s = Token.search()
+        s = s.filter('term', token=token)
+        rv = s.execute()
+        rv = rv.hits.hits[0]
+        rv = Token.get(rv['_id'])
 
-        return arrow.utcnow()
+        if timestamp:
+            self.logger.debug('updating timestamp to: {}'.format(timestamp))
+            rv.update(last_activity_at=timestamp)
+            return timestamp
+        else:
+            return rv.last_activity_at
 
 Plugin = ElasticSearch_
 

@@ -38,7 +38,7 @@ class Store(object):
     def __exit__(self, type, value, traceback):
         return self
 
-    def __init__(self, context=zmq.Context.instance(), store_type=STORE_DEFAULT, store_address=STORE_ADDR, **kvargs):
+    def __init__(self, context=zmq.Context.instance(), store_type=STORE_DEFAULT, store_address=STORE_ADDR, **kwargs):
 
         self.logger = logging.getLogger(__name__)
         self.context = context
@@ -47,7 +47,7 @@ class Store(object):
 
         self.router = self.context.socket(zmq.ROUTER)
 
-        self._load_plugin(**kvargs)
+        self._load_plugin(**kwargs)
 
     def _load_plugin(self, **kwargs):
         # TODO replace with cif.utils.load_plugin
@@ -60,7 +60,6 @@ class Store(object):
                 self.store = self.store.Plugin(**kwargs)
 
     def start(self):
-        #self._load_plugin()
         self.token_create_admin()
 
         self.logger.debug('connecting to router: {}'.format(self.store_addr))
@@ -99,7 +98,10 @@ class Store(object):
             try:
                 rv = handler(token, data)
                 rv = {"status": "success", "data": rv}
-                self.store.token_last_activity_at(token, timestamp=arrow.utcnow())
+                self.logger.debug('updating last_active')
+                ts = arrow.utcnow().format('YYYY-MM-DDTHH:mm:ss.SSSSS')
+                ts = '{}Z'.format(ts)
+                self.store.token_last_activity_at(token, timestamp=ts)
             except AuthError as e:
                 self.logger.error(e)
                 rv = {'status': 'failed', 'message': 'unauthorized'}
@@ -172,7 +174,6 @@ class Store(object):
             raise AuthError('invalid token')
 
     def token_create_admin(self):
-        #self._load_plugin()
         self.logger.info('testing for tokens...')
         if not self.store.tokens_admin_exists():
             self.logger.info('admin token does not exist, generating..')
@@ -189,7 +190,6 @@ class Store(object):
             self.logger.info('admin token exists...')
 
     def token_create_smrt(self):
-        #self._load_plugin()
         self.logger.info('generating smrt token')
         rv = self.store.tokens_create({
             'username': u'csirtg-smrt',
@@ -200,7 +200,6 @@ class Store(object):
         return rv['token']
 
     def token_create_hunter(self):
-        #self._load_plugin()
         self.logger.info('generating hunter token')
         rv = self.store.tokens_create({
             'username': u'hunter',
@@ -233,6 +232,9 @@ def main():
     p.add_argument("--store", help="specify a store type {} [default: %(default)s]".format(', '.join(STORE_PLUGINS)),
                    default=STORE_DEFAULT)
 
+    p.add_argument('--store-type')
+    p.add_argument('--nodes')
+
     p.add_argument('--config', help='specify config path [default %(default)s]', default=CONFIG_PATH)
 
     p.add_argument('--token-create-admin', help='generate an admin token')
@@ -249,7 +251,7 @@ def main():
     setup_signals(__name__)
 
     if args.token_create_smrt:
-        with Store(store_type=args.store) as s:
+        with Store(store_type=args.store, nodes=args.nodes) as s:
             t = s.token_create_smrt()
             if t:
                 data = {
@@ -263,7 +265,7 @@ def main():
                 logger.error('token not created')
 
     if args.token_create_hunter:
-        with Store(store_type=args.store) as s:
+        with Store(store_type=args.store, nodes=args.nodes) as s:
             t = s.token_create_hunter()
             if t:
                 data = {
@@ -277,7 +279,7 @@ def main():
                 logger.error('token not created')
 
     if args.token_create_admin:
-        with Store(store_type=args.store) as s:
+        with Store(store_type=args.store, nodes=args.nodes) as s:
             t = s.token_create_admin()
             if t:
                 data = {

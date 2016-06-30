@@ -143,7 +143,7 @@ class SQLite(Store):
 
     name = 'sqlite'
 
-    def __init__(self, dbfile=DB_FILE, autocommit=False, dictrows=True):
+    def __init__(self, dbfile=DB_FILE, autocommit=False, dictrows=True, **kwargs):
         self.logger = logging.getLogger(__name__)
 
         self.dbfile = dbfile
