@@ -7,7 +7,7 @@
   template: src=GeoIP.conf.j2 dest=/etc/GeoIP.conf owner=root group=root mode=0660
 
 - name: create GeoIP path /usr/local/share/GeoIP
-  file: path=/usr/local/share/GeoIP state=directory owner=root group=root mode=0666
+  file: path=/usr/local/share/GeoIP state=directory owner=root group=root mode=0755
 
 - name: update geoip databases
   command: geoipupdate
