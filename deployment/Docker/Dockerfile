@@ -24,9 +24,9 @@ RUN adduser --disabled-password --gecos '' cif
 WORKDIR /
 RUN set -ex \
     && for path in \
-        ./data \
-        ./logs \
-        ./rules \
+        ./var/log/cif \
+        ./var/lib/cif \
+        ./etc/cif \
     ; do \
         mkdir -p "$path"; \
         chown -R cif:cif "$path"; \
@@ -36,22 +36,19 @@ RUN wget https://github.com/csirtgadgets/bearded-avenger/archive/$CIF_VERSION.ta
 RUN tar -zxvf $CIF_VERSION.tar.gz
 
 WORKDIR /bearded-avenger-$CIF_VERSION
-RUN cp -r rules /rules
+RUN cp -r rules /etc/cif/
 RUN pip install -r requirements.txt
 RUN py.test
 RUN python setup.py install
 
 COPY configs/cif.conf /
-
 COPY scripts/start.sh /
 COPY scripts/cif-entrypoint.sh /
 
-VOLUME /data
-VOLUME /rules
-VOLUME /logs
+VOLUME /etc/cif
+VOLUME /var/log/cif
+VOLUME /var/lib/cif
 
 EXPOSE 443 5000
 ENTRYPOINT ["/cif-entrypoint.sh"]
 CMD ["/bin/bash", "/start.sh"]
-
-# TODO - vars, create keys, check persistence..
