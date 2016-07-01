@@ -242,6 +242,8 @@ def main():
     p.add_argument('--token-create-smrt-remote', default=REMOTE_ADDR)
     p.add_argument('--token-create-hunter')
 
+    p.add_argument('--remote', help='specify remote')
+
     args = p.parse_args()
 
     setup_logging(args)
@@ -257,6 +259,8 @@ def main():
                 data = {
                     'token': str(t),
                 }
+                if args.remote:
+                    data['remote'] = args.remote
                 with open(args.token_create_smrt, 'w') as f:
                     f.write(yaml.dump(data, default_flow_style=False))
 
