@@ -16,24 +16,24 @@ def store():
         yield s
 
 
-@py.test.mark.skipif(DISABLE_TESTS, reason='missing elasticsearch')
-def test_store_elasticsearch(store):
-    store.token_create_admin()
-    t = store.store.tokens_admin_exists()
-    assert t
-
-    i = [
-        Indicator(indicator='example.com', tags='botnet', provider='csirtgadgets.org').__dict__,
-        Indicator(indicator='example2.com', tags='malware', provider='csirtgadgets.org').__dict__
-    ]
-
-    x = store.handle_indicators_create(t, {
-        'indicator': 'example.com'
-    })
-    assert x > 0
-
-    x = store.handle_indicators_search(t, {
-        'indicator': 'example.com'
-    })
-
-    assert x > 0
+# @py.test.mark.skipif(DISABLE_TESTS, reason='missing elasticsearch')
+# def test_store_elasticsearch(store):
+#     store.token_create_admin()
+#     t = store.store.tokens_admin_exists()
+#     assert t
+#
+#     i = [
+#         Indicator(indicator='example.com', tags='botnet', provider='csirtgadgets.org').__dict__,
+#         Indicator(indicator='example2.com', tags='malware', provider='csirtgadgets.org').__dict__
+#     ]
+#
+#     x = store.handle_indicators_create(t, {
+#         'indicator': 'example.com'
+#     })
+#     assert x > 0
+#
+#     x = store.handle_indicators_search(t, {
+#         'indicator': 'example.com'
+#     })
+#
+#     assert x > 0

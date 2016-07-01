@@ -148,7 +148,7 @@ class ElasticSearch_(Store):
 
         s = Indicator.search()
         s = s.params(size=limit, timeout=timeout)
-        s = s.sort('-reporttime')
+        #s = s.sort('-reporttime')
 
         q_filters = {}
         for f in VALID_FILTERS:
@@ -315,15 +315,18 @@ class ElasticSearch_(Store):
         s = Token.search()
         s = s.filter('term', token=token)
         rv = s.execute()
-        rv = rv.hits.hits[0]
-        rv = Token.get(rv['_id'])
+        if rv.hits.total > 0:
+            rv = rv.hits.hits[0]
+            rv = Token.get(rv['_id'])
 
-        if timestamp:
-            self.logger.debug('updating timestamp to: {}'.format(timestamp))
-            rv.update(last_activity_at=timestamp)
-            return timestamp
+            if timestamp:
+                self.logger.debug('updating timestamp to: {}'.format(timestamp))
+                rv.update(last_activity_at=timestamp)
+                return timestamp
+            else:
+                return rv.last_activity_at
         else:
-            return rv.last_activity_at
+            return timestamp
 
 Plugin = ElasticSearch_
 

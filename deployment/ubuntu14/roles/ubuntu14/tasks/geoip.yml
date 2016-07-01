@@ -1,8 +1,4 @@
 ---
-- name: create geoip update cron
-  cron: name="geoip update" user="root" job="/usr/bin/geoipupdate"
-        cron_file=geoipupdate day=01
-
 - name: create /etc/geopip.conf
   template: src=GeoIP.conf.j2 dest=/etc/GeoIP.conf owner=root group=root mode=0660
 
@@ -10,4 +6,8 @@
   file: path=/usr/local/share/GeoIP state=directory owner=root group=root mode=0755
 
 - name: update geoip databases
-  command: geoipupdate
+  command: geoipupdate -v
+
+- name: create geoip update cron
+  cron: name="geoip update" user="root" job="/usr/bin/geoipupdate"
+        cron_file=geoipupdate day=01
