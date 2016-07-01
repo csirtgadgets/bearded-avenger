@@ -196,7 +196,7 @@ class Store(object):
             'groups': [u'everyone'],
             'write': u'1',
         })
-        self.logger.info('admin token created: {}'.format(rv['token']))
+        self.logger.info('smrt token created: {}'.format(rv['token']))
         return rv['token']
 
     def token_create_hunter(self):
@@ -206,7 +206,7 @@ class Store(object):
             'groups': [u'everyone'],
             'write': u'1',
         })
-        self.logger.info('admin token created: {}'.format(rv['token']))
+        self.logger.info('hunter token created: {}'.format(rv['token']))
         return rv['token']
 
 
