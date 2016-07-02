@@ -32,13 +32,9 @@ RUN set -ex \
         chown -R cif:cif "$path"; \
     done
 
-#RUN wget https://github.com/csirtgadgets/bearded-avenger/archive/$CIF_VERSION.tar.gz
-#RUN tar -zxvf $CIF_VERSION.tar.gz
-#WORKDIR /bearded-avenger-$CIF_VERSION
-
-RUN wget https://github.com/csirtgadgets/bearded-avenger/archive/fix/24.tar.gz
-RUN tar -zxvf 24.tar.gz
-WORKDIR /bearded-avenger-fix-24
+RUN wget https://github.com/csirtgadgets/bearded-avenger/archive/$CIF_VERSION.tar.gz
+RUN tar -zxvf $CIF_VERSION.tar.gz
+WORKDIR /bearded-avenger-$CIF_VERSION
 
 RUN cp -r rules /etc/cif/
 RUN pip install -r requirements.txt
