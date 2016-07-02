@@ -7,8 +7,12 @@ include 'cif'
 include cif/_version.py
 include Vagrantfile
 include Vagrantfile.centos
+include Vagrantfile_es
+include Vagrantfile_prod
+include Vagrantfile_prod.centos
 recursive-include deployment *
 recursive-include hacking *
 recursive-include docs *
 recursive-include packaging *
 recursive-include rules *
+global-exclude *.retry

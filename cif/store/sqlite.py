@@ -143,7 +143,7 @@ class SQLite(Store):
 
     name = 'sqlite'
 
-    def __init__(self, dbfile=DB_FILE, autocommit=False, dictrows=True):
+    def __init__(self, dbfile=DB_FILE, autocommit=False, dictrows=True, **kwargs):
         self.logger = logging.getLogger(__name__)
 
         self.dbfile = dbfile
@@ -347,6 +347,7 @@ class SQLite(Store):
 
     def token_last_activity_at(self, token, timestamp=None):
         s = self.handle()
+        timestamp = arrow.get(timestamp)
         if timestamp:
             x = s.query(Token).filter_by(token=token).update({Token.last_activity_at: timestamp.datetime})
             s.commit()

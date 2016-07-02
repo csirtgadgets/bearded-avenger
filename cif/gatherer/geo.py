@@ -32,7 +32,7 @@ class Geo(object):
 
     def _resolve(self, indicator):
         if self.db:
-            g = self.db.city(indicator.indicator)
+            g = self.db.city(str(indicator.indicator))
 
             if g.country.iso_code:
                 indicator.cc = g.country.iso_code
@@ -52,16 +52,19 @@ class Geo(object):
     def process(self, indicator):
         if (indicator.itype == 'ipv4' or indicator.itype == 'ipv6') and not indicator.is_private():
             # https://geoip2.readthedocs.org/en/latest/
-            i = indicator.indicator
-            self.logger.debug(indicator.indicator)
-            match = re.search('^(\S+)\/\d+$', indicator.indicator)
+            i = str(indicator.indicator)
+            self.logger.debug(i)
+            match = re.search('^(\S+)\/\d+$', i)
+            tmp = indicator.indicator
             if match:
                 i = match.group(1)
+                indicator.indicator = i
 
-            self.logger.debug('looking up: %s' % indicator.indicator)
+            self.logger.debug('looking up: %s' % i)
 
             try:
                 self._resolve(indicator)
+                indicator.indicator = tmp
             except AddressNotFoundError as e:
                 self.logger.warn(e)
 

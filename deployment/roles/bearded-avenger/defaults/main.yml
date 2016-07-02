@@ -10,6 +10,7 @@ cif_runtime_path: "/var/lib/cif"
 cif_log_path: '/var/log/cif'
 cif_router_config_path: '/etc/cif/cif-router.yml'
 cif_admin_config_path: '/home/cif/.cif.yml'
+cif_store_store: 'sqlite'
 
 csirtg_smrt_runtime_path: '/varlib/cif'
 csirtg_smrt_cache_path: "{{ cif_runtime_path }}/smrt"

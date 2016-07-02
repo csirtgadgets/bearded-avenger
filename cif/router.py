@@ -22,8 +22,8 @@ from cif.gatherer import Gatherer
 import time
 
 HUNTER_MIN_CONFIDENCE = 2
-HUNTER_THREADS = 4
-GATHERER_THREADS = 4
+HUNTER_THREADS = os.getenv('CIF_HUNTER_THREADS', 4)
+GATHERER_THREADS = os.getenv('CIF_GATHERER_THREADS', 4)
 STORE_DEFAULT = 'sqlite'
 STORE_PLUGINS = ['cif.store.dummy', 'cif.store.sqlite', 'cif.store.elasticsearch', 'cif.store.rdflib']
 
@@ -37,6 +37,9 @@ CONFIG_PATH = os.environ.get('CIF_ROUTER_CONFIG_PATH', 'cif-router.yml')
 if not os.path.isfile(CONFIG_PATH):
     CONFIG_PATH = os.environ.get('CIF_ROUTER_CONFIG_PATH', os.path.join(os.path.expanduser('~'), 'cif-router.yml'))
 
+STORE_DEFAULT = os.getenv('CIF_STORE_STORE', STORE_DEFAULT)
+STORE_NODES = os.getenv('CIF_STORE_NODES')
+
 
 class Router(object):
 
@@ -48,7 +51,7 @@ class Router(object):
             self.p2p.send("$$STOP".encode('utf_8'))
 
     def __init__(self, listen=ROUTER_ADDR, hunter=HUNTER_ADDR, store_type=STORE_DEFAULT, store_address=STORE_ADDR,
-                 p2p=False, hunter_token=HUNTER_TOKEN, hunter_threads=HUNTER_THREADS,
+                 store_nodes=None, p2p=False, hunter_token=HUNTER_TOKEN, hunter_threads=HUNTER_THREADS,
                  gatherer_threads=GATHERER_THREADS):
 
         self.logger = logging.getLogger(__name__)
@@ -57,7 +60,7 @@ class Router(object):
 
         self.store_s = self.context.socket(zmq.DEALER)
         self.store_s.bind(store_address)
-        self._init_store(self.context, store_address, store_type)
+        self._init_store(self.context, store_address, store_type, nodes=store_nodes)
 
         self.gatherer_s = self.context.socket(zmq.PUSH)
         self.gatherer_sink_s = self.context.socket(zmq.PULL)
@@ -105,10 +108,10 @@ class Router(object):
             t.daemon = True
             t.start()
 
-    def _init_store(self, context, store_address, store_type):
+    def _init_store(self, context, store_address, store_type, nodes=False):
         self.logger.info('launching store...')
         t = threading.Thread(
-            target=Store(context=context, store_address=store_address, store_type=store_type).start)
+            target=Store(context=context, store_address=store_address, store_type=store_type, nodes=nodes).start)
         t.daemon = True
         t.start()
 
@@ -192,13 +195,15 @@ class Router(object):
     def handle_indicators_search(self, id, mtype, token, data):
         self.store_s.send_multipart([id, '', mtype, token, data])
         data = json.loads(data)
-        data = Indicator(
-            indicator=data['indicator'],
-            tlp='green',
-            confidence=10,
-            tags=['search'],
-        )
-        self.gatherer_s.send_multipart([id, '', 'indicators_create', token, str(data)])
+
+        if data.get('indicator'):
+            data = Indicator(
+                indicator=data['indicator'],
+                tlp='green',
+                confidence=10,
+                tags=['search'],
+            )
+            self.gatherer_s.send_multipart([id, '', 'indicators_create', token, str(data)])
 
     def handle_indicators_create(self, id, mtype, token, data):
         self.logger.debug('sending to gatherers..')
@@ -245,6 +250,8 @@ def main():
     p.add_argument("--store", help="specify a store type {} [default: %(default)s]".format(', '.join(STORE_PLUGINS)),
                    default=STORE_DEFAULT)
 
+    p.add_argument('--store-nodes', help='specify storage nodes address [default: %(default)s]', default=STORE_NODES)
+
     p.add_argument('--p2p', action='store_true', help='enable experimental p2p support')
 
     args = p.parse_args()
@@ -263,7 +270,7 @@ def main():
     setup_runtime_path(args.runtime_path)
 
     with Router(listen=args.listen, hunter=args.hunter, store_type=args.store, store_address=args.store_address,
-                p2p=args.p2p, hunter_token=args.hunter_token, hunter_threads=args.hunter_threads,
+                store_nodes=args.store_nodes, p2p=args.p2p, hunter_token=args.hunter_token, hunter_threads=args.hunter_threads,
                 gatherer_threads=args.gatherer_threads) as r:
         try:
             logger.info('starting router..')
