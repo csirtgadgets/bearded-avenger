@@ -44,7 +44,7 @@ class Geo(object):
                 indicator.longitude = g.location.longitude
 
             if g.location.latitude:
-                indicator.longitude = g.location.latitude
+                indicator.latitude = g.location.latitude
 
             if g.location.time_zone:
                 indicator.timezone = g.location.time_zone
