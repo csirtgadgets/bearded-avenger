@@ -1,0 +1,34 @@
+defaults:
+  provider: reputation.alienvault.com
+  tlp: white
+  altid_tlp: white
+  values: indicator
+
+feeds:
+  scanners:
+    remote: https://reputation.alienvault.com/reputation.data
+    pattern: (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})#\d+#\d+#Scanning Host
+    defaults:
+      confidence: 7
+      tags: scanner
+      description: scanning host
+
+  spammers:
+    remote: https://reputation.alienvault.com/reputation.data
+    pattern: (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})#\d+#\d+#Spamming
+    defaults:
+      confidence: 6
+      tags: spam
+      application: smtp
+      portlist: 25
+      description: spamming
+
+  malware:
+    remote: https://reputation.alienvault.com/reputation.data
+    pattern: (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})#\d+#\d+#Malicious Host
+    defaults:
+      confidence: 6
+      tags:
+        - malware
+        - suspicious
+      description: malicious host

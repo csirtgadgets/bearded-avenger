@@ -11,6 +11,14 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
+   httpd.rst
+
+Getting Started
+===============
+
+.. code-block:: bash
+
+   $ supervisord
 
 
 Indices and tables

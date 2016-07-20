@@ -1,0 +1,6 @@
+---
+- name: setup the rules directory
+  file: path="{{ csirtg_smrt_rules_path }}" state=directory mode=770 owner="{{ app_user }}" group="{{ app_group }}"
+
+- name: copy csirtg-smrt rules
+  copy: src="../../rules/" dest="{{ csirtg_smrt_rules_path }}" backup=yes owner="{{ app_user }}" group="{{ app_group }}"  mode="u=rw,g=rw,o-rwx"

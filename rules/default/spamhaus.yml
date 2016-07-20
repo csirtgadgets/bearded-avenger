@@ -1,6 +1,6 @@
 defaults:
   provider: spamhaus.org
-  confidence: 95
+  confidence: 9 
   tlp: green
   reference_tlp: white
   tags:
@@ -9,7 +9,7 @@ defaults:
   reference: http://www.spamhaus.org/sbl/sbl.lasso?query=<reference>
   pattern: '(.+)\s;\s(.+)'
   values:
-    - observable
+    - indicator
     - reference
 
 feeds:

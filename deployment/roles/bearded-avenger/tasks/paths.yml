@@ -1,0 +1,9 @@
+---
+- name: Create RUNTIME_PATH
+  file: path="{{ cif_runtime_path }}" state=directory recurse=true mode=0770 owner="{{ app_user }}" group="{{ app_group }}"
+
+- name: Create logging path
+  file: path="{{ cif_log_path }}" state=directory recurse=true mode=0770 owner="{{ app_user }}" group="{{ app_group }}"
+
+- name: create CSIRTG_SMRT_RUNTIME_PATH
+  file: path="{{ csirtg_smrt_cache_path }}" state=directory recurse=true mode=0770 owner="{{ app_user }}" group="{{ app_group }}"

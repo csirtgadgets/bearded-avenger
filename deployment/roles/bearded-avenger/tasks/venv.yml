@@ -1,0 +1,25 @@
+---
+# tasks file for bearded-avenger-dev
+- name: install virtualenvwrapper
+  pip: name=virtualenvwrapper
+
+- name: setup virtualenv
+  command: virtualenv "{{ venv_path }}"
+  become: yes
+  become_user: "{{ venv_user }}"
+
+- name: update pip
+  pip: name="{{ item }}" virtualenv="{{ venv_path }}" extra_args="--upgrade"
+  with_items: [ setuptools requests pip cython vex ] # requests first, old version conflicts with new pip
+  become: yes
+  become_user: "{{ venv_user }}"
+
+- name: install requirements
+  pip: requirements="{{ venv_source_path }}/requirements.txt" virtualenv="{{ venv_path }}"
+  become_user: "{{ venv_user }}"
+  become: yes
+
+- name: setup develop
+  shell: "cd {{ venv_source_path }}; {{ venv_path }}/bin/python setup.py develop"
+  become_user: "{{ venv_user }}"
+  become: yes

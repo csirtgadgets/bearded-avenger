@@ -1,0 +1,21 @@
+# https://github.com/whiskerlabs/ansible-python
+# https://monkeyswithbuttons.wordpress.com/2014/04/03/multi-os-support-in-ansible/
+---
+- name: Install bearded-avenger for CentOS
+  hosts: all
+  become: True
+  vars:
+    app_user: 'vagrant'
+    app_runtime_path: '/tmp/cif'
+    app_rules_path: '/vagrant/rules'
+    app_log_path: '/tmp/cif'
+    development: True
+  pre_tasks:
+    - name: make sure .profile exists
+      file: path="/home/{{ app_user }}/.profile" state=touch owner="{{ app_user }}" group="{{ app_user }}" mode=0660
+
+    - name: Add GH token to profile
+      lineinfile: dest="/home/{{ app_user }}/.profile" line="GH_TOKEN={{ GH_TOKEN }}"
+  roles:
+    - { role: centos7, tags: role-centos7 }
+    - { role: bearded-avenger, tags: role-bearded-avenger }

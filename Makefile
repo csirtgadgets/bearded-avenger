@@ -10,7 +10,7 @@ PYTHON = python
 all: build test
 
 test:
-	py.test
+	py.test --cov=cif
 
 pep8:
 	@echo "#############################################"
@@ -37,7 +37,13 @@ run:
 	supervisord
 
 vagrant:
-	vagrant up --provider virtualbox
+	vagrant up
+
+vagrant-ubuntu14:
+	vagrant up
+
+vagrant-centos7:
+	VAGRANT_VAGRANTFILE=Vagrantfile.centos7 vagrant up
 
 vagrant-destroy:
 	vagrant destroy --force

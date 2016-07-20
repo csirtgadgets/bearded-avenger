@@ -1,22 +1,50 @@
-from cif.store import Store
+from cif.store.plugin import Store
 from pprint import pprint
 
 
-class Plugin(Store):
+class Dummy(Store):
 
     name = 'dummy'
 
     def __init__(self, *args, **kwargs):
-        super(Plugin, self).__init__(*args, **kwargs)
+        #super(Plugin, self).__init__(*args, **kwargs)
+        pass
 
-    def auth_read(self, token):
-        return True
+    def tokens_admin_exists(self):
+        return False
 
-    def auth_write(self):
-        return True
+    def tokens_create(self, data):
+        data['token'] = self._token_generate()
+        return data
 
-    def search(self, data):
+    def tokens_delete(self, data):
         return [data]
 
-    def submit(self, data):
+    def tokens_search(self, data):
         return [data]
+
+    def token_admin(self, token):
+        return True
+
+    def token_read(self, token):
+        return True
+
+    def token_write(self, token):
+        return True
+
+    def indicators_search(self, token, data):
+        return [data]
+
+    def indicators_create(self, token, data):
+        return [data]
+
+    def token_last_activity_at(self, token, timestamp=None):
+        return timestamp
+
+    def token_edit(self, data):
+        return data
+
+    def ping(self):
+        return True
+
+Plugin = Dummy

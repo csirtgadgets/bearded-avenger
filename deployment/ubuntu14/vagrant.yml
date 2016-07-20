@@ -1,0 +1,30 @@
+---
+- name: Install bearded-avenger
+  hosts: all
+  become: True
+  vars:
+    development: True
+    app_user: vagrant
+    app_group: vagrant
+
+    cif_runtime_path: '/home/vagrant'
+    cif_config_path: '/home/vagrant'
+    cif_router_config_path: '/home/vagrant/cif-router.yml'
+    cif_admin_config_path: '/home/vagrant/.cif.yml'
+    cif_log_path: '/home/vagrant/log'
+
+    csirtg_smrt_rules_path: '/vagrant/rules/default'
+    csirtg_smrt_runtime_path: '/home/vagrant'
+    csirtg_smrt_config_path: '/home/vagrant/csirtg-smrt.yml'
+
+
+  pre_tasks:
+    - name: make sure .profile exists
+      file: path="/home/{{ app_user }}/.profile" state=touch owner="{{ app_user }}" group="{{ app_user }}" mode=0660
+
+    - name: Add GH token to profile
+      lineinfile: dest="/home/{{ app_user }}/.profile" line="GH_TOKEN={{ GH_TOKEN }}"
+
+  roles:
+    - { role: ubuntu14, tags: role-ubuntu14 }
+    - { role: bearded-avenger, tags: role-bearded-avenger }

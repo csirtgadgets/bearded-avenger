@@ -1,0 +1,18 @@
+parser: csv
+defaults:
+  provider: ransomware.abuse.ch
+  tlp: green
+  altid_tlp: white
+  confidence: 9
+  tags: botnet
+  application: https
+  protocol: tcp
+  values:
+    - reporttime
+    - null
+    - description
+    - null
+    - indicator
+feeds:
+  ransomware:
+    remote: http://ransomwaretracker.abuse.ch/feeds/csv

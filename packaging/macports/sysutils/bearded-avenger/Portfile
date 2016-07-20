@@ -4,7 +4,7 @@ PortSystem      1.0
 PortGroup       python 1.0
 
 name            bearded-avenger
-version         devel
+version         3.0.0a2
 categories      sysutils
 supported_archs noarch
 

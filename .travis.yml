@@ -1,0 +1,22 @@
+sudo: required
+dist: trusty
+language: python
+python:
+    - 2.7
+#    - 3.4
+
+script:
+    - sudo pip install -r requirements.txt
+    - py.test --cov=cif --cov-fail-under=35
+    #- python setup.py sdist
+    #- cp -f dist/bearded-avenger-*.tar.gz deployment/ubuntu14/roles/bearded-avenger/files/bearded-avenger3.tar.gz
+    #- sudo pip install 'ansible==1.9.6'
+    #- ansible-playbook -i "localhost," -c local deployment/ubuntu14/travis.yml
+    #- cif -d -p
+    #- cif -d --itype ipv4 --limit 5
+    #- cif -d --search example.com
+
+notifications:
+    email:
+        on_success: never
+        on_failure: never

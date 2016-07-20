@@ -4,10 +4,10 @@ defaults:
   provider: openphish.com
   tlp: green
   reference_tlp: white
-  confidence: 65
-  values: observable
+  confidence: 9
+  values: indicator
 feeds:
   urls:
-    otype: url
+    itype: url
     pattern: ^(.+)$
     remote: http://openphish.com/feed.txt
