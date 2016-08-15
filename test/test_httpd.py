@@ -31,3 +31,10 @@ def test_httpd_search(client):
 
     rv = client.get('/search', {'indicator': 'example.com'}, headers={'Authorization': 'Token token=1234'})
     assert rv.status_code == 200
+
+
+def test_httpd_search_v2(client):
+    rv = client.get('/observables',
+                    {'observable': 'example.com'},
+                    headers={'Authorization': 'Token token=1234', 'Accept': 'vnd.cif.v2+json'})
+    assert rv.status_code == 200
