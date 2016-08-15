@@ -1,12 +1,7 @@
-import pytest
-
-from cif import httpd, router
-from pprint import pprint
-import threading
-
-# http://stackoverflow.com/a/34843029
 import tempfile
-import os
+
+import pytest
+from cif import httpd
 from zmq.eventloop import ioloop
 ROUTER_ADDR = 'ipc://{}'.format(tempfile.NamedTemporaryFile().name)
 router_loop = ioloop.IOLoop.instance()

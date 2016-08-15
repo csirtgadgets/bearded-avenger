@@ -33,7 +33,12 @@ TOKEN_FILTERS = ['username', 'token']
 LIMIT_DAY = os.environ.get('CIF_HTTPD_LIMIT_DAY', 250000)
 LIMIT_HOUR = os.environ.get('CIF_HTTPD_LIMIT_HOUR', 100000)
 
+
 # https://github.com/mitsuhiko/flask/blob/master/examples/minitwit/minitwit.py
+# http://stackoverflow.com/questions/28795561/support-multiple-api-versions-in-flask
+# http://pycoder.net/bospy/presentation.html#api-structure
+# https://bitbucket.org/snippets/audriusk/4ARz
+# # http://flask.pocoo.org/snippets/45/
 
 app = Flask(__name__)
 remote = ROUTER_ADDR
@@ -132,6 +137,7 @@ def ping():
 
 # http://flask.pocoo.org/docs/0.10/api/#flask.Request
 @app.route("/search", methods=["GET"])
+@app.route("/observables", methods=["GET"])
 def search():
     """
     Search controller
@@ -161,6 +167,11 @@ def search():
         else:
             r = Client(remote, pull_token()).indicators_search(filters)
 
+        if request_v2():
+            for rr in r:
+                rr['observable'] = rr['indicator']
+                rr['otype'] = rr['itype']
+
         response = jsonify({
             "message": "success",
             "data": r
@@ -182,6 +193,12 @@ def search():
         response.status_code = 400
 
     return response
+
+
+def request_v2():
+    pprint(request.accept_mimetypes)
+    if request.accept_mimetypes['application/vnd.cif.v2+json']:
+        return True
 
 
 @app.route("/indicators", methods=["GET", "POST"])
@@ -216,6 +233,11 @@ def indicators():
             })
             response.status_code = 400
         else:
+            if request_v2():
+                for rr in r:
+                    r['observable'] = r['indicator']
+                    r['otype'] = r['itype']
+
             response = jsonify({
                 "message": "success",
                 "data": r
