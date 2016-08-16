@@ -5,9 +5,10 @@ python:
     - 2.7
 #    - 3.4
 
+before_install:
+    - pip install setuptools>=18.5
+
 script:
-    - sudo pip install setuptools>=18.5
-    - sudo pip install -r requirements.txt
     - py.test --cov=cif --cov-fail-under=35
     #- python setup.py sdist
     #- cp -f dist/bearded-avenger-*.tar.gz deployment/ubuntu14/roles/bearded-avenger/files/bearded-avenger3.tar.gz
