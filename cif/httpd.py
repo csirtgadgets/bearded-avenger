@@ -18,6 +18,7 @@ from cifsdk.constants import TOKEN
 from cifsdk.utils import get_argument_parser, setup_logging, setup_signals, setup_runtime_path
 from pprint import pprint
 from cifsdk.exceptions import AuthError, TimeoutError, InvalidSearch
+import zlib
 
 TOKEN = os.environ.get('CIF_HTTPD_TOKEN', TOKEN)
 
@@ -59,6 +60,11 @@ def pull_token():
         t = re.match("^Token token=(\S+)$", request.headers.get("Authorization")).group(1)
     return t
 
+
+def request_v2():
+    if request.headers.get('Accept'):
+        if 'vnd.cif.v2+json' in request.headers['Accept']:
+            return True
 
 @app.before_request
 def before_request():
@@ -161,6 +167,10 @@ def search():
     if request.args.get('q'):
         filters['indicator'] = request.args.get('q')
 
+    compress = False
+    if request.args.get('gzip'):
+        compress = True
+
     try:
         if app.config.get('dummy'):
             r = DummyClient(remote, pull_token()).indicators_search(filters)
@@ -170,12 +180,24 @@ def search():
         if request_v2():
             for rr in r:
                 rr['observable'] = rr['indicator']
-                rr['otype'] = rr['itype']
+                del rr['indicator']
+
+                if rr.get('itype'):
+                    rr['otype'] = rr['itype']
+                    del rr['itype']
 
         response = jsonify({
             "message": "success",
             "data": r
         })
+
+        if compress:
+            import json
+            import base64
+
+            response.data = zlib.compress(response.data)
+            response.data = base64.b64encode(response.data)
+
         response.status_code = 200
     except AuthError as e:
         response = jsonify({
@@ -193,12 +215,6 @@ def search():
         response.status_code = 400
 
     return response
-
-
-def request_v2():
-    pprint(request.accept_mimetypes)
-    if request.accept_mimetypes['application/vnd.cif.v2+json']:
-        return True
 
 
 @app.route("/indicators", methods=["GET", "POST"])
