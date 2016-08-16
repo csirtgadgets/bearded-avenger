@@ -15,5 +15,5 @@ elasticsearch<3.0.0,>=2.0.0
 elasticsearch_dsl<3.0.0,>=2.0.0
 rdflib==4.2.1
 ujson>=1.35
-pyzmq==14.7.0
+pyzmq==15.4.0
 setuptools>=18.5
