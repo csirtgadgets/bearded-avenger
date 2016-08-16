@@ -18,6 +18,7 @@ from cifsdk.constants import TOKEN
 from cifsdk.utils import get_argument_parser, setup_logging, setup_signals, setup_runtime_path
 from pprint import pprint
 from cifsdk.exceptions import AuthError, TimeoutError, InvalidSearch
+import zlib
 
 TOKEN = os.environ.get('CIF_HTTPD_TOKEN', TOKEN)
 
@@ -33,7 +34,12 @@ TOKEN_FILTERS = ['username', 'token']
 LIMIT_DAY = os.environ.get('CIF_HTTPD_LIMIT_DAY', 250000)
 LIMIT_HOUR = os.environ.get('CIF_HTTPD_LIMIT_HOUR', 100000)
 
+
 # https://github.com/mitsuhiko/flask/blob/master/examples/minitwit/minitwit.py
+# http://stackoverflow.com/questions/28795561/support-multiple-api-versions-in-flask
+# http://pycoder.net/bospy/presentation.html#api-structure
+# https://bitbucket.org/snippets/audriusk/4ARz
+# # http://flask.pocoo.org/snippets/45/
 
 app = Flask(__name__)
 remote = ROUTER_ADDR
@@ -54,6 +60,11 @@ def pull_token():
         t = re.match("^Token token=(\S+)$", request.headers.get("Authorization")).group(1)
     return t
 
+
+def request_v2():
+    if request.headers.get('Accept'):
+        if 'vnd.cif.v2+json' in request.headers['Accept']:
+            return True
 
 @app.before_request
 def before_request():
@@ -132,6 +143,7 @@ def ping():
 
 # http://flask.pocoo.org/docs/0.10/api/#flask.Request
 @app.route("/search", methods=["GET"])
+@app.route("/observables", methods=["GET"])
 def search():
     """
     Search controller
@@ -155,16 +167,37 @@ def search():
     if request.args.get('q'):
         filters['indicator'] = request.args.get('q')
 
+    compress = False
+    if request.args.get('gzip'):
+        compress = True
+
     try:
         if app.config.get('dummy'):
             r = DummyClient(remote, pull_token()).indicators_search(filters)
         else:
             r = Client(remote, pull_token()).indicators_search(filters)
 
+        if request_v2():
+            for rr in r:
+                rr['observable'] = rr['indicator']
+                del rr['indicator']
+
+                if rr.get('itype'):
+                    rr['otype'] = rr['itype']
+                    del rr['itype']
+
         response = jsonify({
             "message": "success",
             "data": r
         })
+
+        if compress:
+            import json
+            import base64
+
+            response.data = zlib.compress(response.data)
+            response.data = base64.b64encode(response.data)
+
         response.status_code = 200
     except AuthError as e:
         response = jsonify({
@@ -216,6 +249,11 @@ def indicators():
             })
             response.status_code = 400
         else:
+            if request_v2():
+                for rr in r:
+                    r['observable'] = r['indicator']
+                    r['otype'] = r['itype']
+
             response = jsonify({
                 "message": "success",
                 "data": r

@@ -1,13 +1,11 @@
-import pytest
-
-from cif import httpd, router
-from pprint import pprint
-import threading
-
-# http://stackoverflow.com/a/34843029
 import tempfile
 import os
+import pytest
+from cif import httpd
 from zmq.eventloop import ioloop
+from cif.store import Store
+import json
+
 ROUTER_ADDR = 'ipc://{}'.format(tempfile.NamedTemporaryFile().name)
 router_loop = ioloop.IOLoop.instance()
 
@@ -17,6 +15,15 @@ def client(request):
     httpd.app.config['CIF_ROUTER_ADDR'] = ROUTER_ADDR
     httpd.app.config['dummy'] = True
     return httpd.app.test_client()
+
+
+@pytest.yield_fixture
+def store():
+    dbfile = tempfile.mktemp()
+    with Store(store_type='sqlite', dbfile=dbfile) as s:
+        yield s
+
+    os.unlink(dbfile)
 
 
 def test_httpd_help(client):
@@ -34,5 +41,15 @@ def test_httpd_ping(client):
 
 def test_httpd_search(client):
 
-    rv = client.get('/search', {'indicator': 'example.com'}, headers={'Authorization': 'Token token=1234'})
+    rv = client.get('/search?q=example.com', headers={'Authorization': 'Token token=1234'})
     assert rv.status_code == 200
+    rv = json.loads(rv.data)
+    assert rv['data'][0]['indicator'] == 'example.com'
+
+
+def test_httpd_search_v2(client):
+    rv = client.get('/observables?q=example.com',
+                    headers={'Authorization': 'Token token=1234', 'Accept': 'vnd.cif.v2+json'})
+    assert rv.status_code == 200
+    rv = json.loads(rv.data)
+    assert rv['data'][0]['observable'] == 'example.com'
