@@ -6,6 +6,7 @@ python:
 #    - 3.4
 
 script:
+    - sudo pip install setuptools>=18.5
     - sudo pip install -r requirements.txt
     - py.test --cov=cif --cov-fail-under=35
     #- python setup.py sdist
