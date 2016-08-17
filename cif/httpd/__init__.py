@@ -2,7 +2,6 @@
 
 import logging
 import os
-import re
 import textwrap
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
@@ -12,13 +11,17 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
 from cifsdk.client.zeromq import ZMQ as Client
+from cifsdk.client import Client as base_client
 from cifsdk.client.dummy import Dummy as DummyClient
 from cif.constants import ROUTER_ADDR
 from cifsdk.constants import TOKEN
 from cifsdk.utils import get_argument_parser, setup_logging, setup_signals, setup_runtime_path
-from pprint import pprint
 from cifsdk.exceptions import AuthError, TimeoutError, InvalidSearch
-import zlib
+from .common import VALID_FILTERS, pull_token, request_v2, compress, response_compress, aggregate
+import arrow
+import copy
+
+from pprint import pprint
 
 TOKEN = os.environ.get('CIF_HTTPD_TOKEN', TOKEN)
 
@@ -54,18 +57,6 @@ limiter = Limiter(
 )
 
 
-def pull_token():
-    t = None
-    if request.headers.get("Authorization"):
-        t = re.match("^Token token=(\S+)$", request.headers.get("Authorization")).group(1)
-    return t
-
-
-def request_v2():
-    if request.headers.get('Accept'):
-        if 'vnd.cif.v2+json' in request.headers['Accept']:
-            return True
-
 @app.before_request
 def before_request():
     """
@@ -93,6 +84,7 @@ def help():
         'GET /search': 'search for an indicator',
         'GET /indicators': 'search for a set of indicators',
         'POST /indicators': 'post indicators to the router',
+        'GET /feed': 'filter for a data-set, aggregate and apply respective whitelist',
         'GET /tokens': 'search for a set of tokens',
         'POST /tokens': 'create a token or set of tokens',
         'DELETE /tokens': 'delete a token or set of tokens',
@@ -167,10 +159,6 @@ def search():
     if request.args.get('q'):
         filters['indicator'] = request.args.get('q')
 
-    compress = False
-    if request.args.get('gzip'):
-        compress = True
-
     try:
         if app.config.get('dummy'):
             r = DummyClient(remote, pull_token()).indicators_search(filters)
@@ -191,12 +179,8 @@ def search():
             "data": r
         })
 
-        if compress:
-            import json
-            import base64
-
-            response.data = zlib.compress(response.data)
-            response.data = base64.b64encode(response.data)
+        if response_compress():
+            response.data = compress(response.data)
 
         response.status_code = 200
     except AuthError as e:
@@ -213,6 +197,78 @@ def search():
             "data": []
         })
         response.status_code = 400
+
+    return response
+
+
+@app.route("/feed", methods=["GET"])
+def feed():
+    filters = {}
+    for f in VALID_FILTERS:
+        if request.args.get(f):
+            filters[f] = request.args.get(f)
+
+    DAYS = request.args.get('days', 30)
+    LIMIT = request.args.get('limit', 50000)
+
+    now = arrow.utcnow()
+    filters['reporttimeend'] = '{}Z'.format(now.format('YYYY-MM-DDTHH:mm:ss'))
+    now = now.replace(days=-DAYS)
+    filters['reporttime'] = '{}Z'.format(now.format('YYYY-MM-DDTHH:mm:ss'))
+
+    try:
+        if app.config.get('dummy'):
+            r = DummyClient(remote, pull_token()).indicators_search(filters)
+        else:
+            r = Client(remote, pull_token()).indicators_search(filters)
+    except RuntimeError as e:
+        logger.error(e)
+        response = jsonify({
+            "message": "search failed",
+            "data": []
+        })
+        response.status_code = 403
+    except InvalidSearch as e:
+        logger.error(e)
+        response = jsonify({
+            "message": "invalid search",
+            "data": []
+        })
+        response.status_code = 400
+    else:
+        r = aggregate(r)
+
+        wl_filters = copy.deepcopy(filters)
+        wl_filters['tags'] = 'whitelist'
+        wl_filters['confidence'] = 25
+
+        now = arrow.utcnow()
+        now = now.replace(days=-DAYS)
+        wl_filters['reporttime'] = '{}Z'.format(now.format('YYYY-MM-DDTHH:mm:ss'))
+        wl_filters['nolog'] = True
+        wl_filters['limit'] = 25000
+
+        if app.config.get('dummy'):
+            wl = DummyClient(remote, pull_token()).indicators_search(wl_filters)
+        else:
+            wl = Client(remote, pull_token()).indicators_search(wl_filters)
+
+        wl = aggregate(wl)
+
+        from .feed import factory as feed_factory
+
+        f = feed_factory(filters['itype'])
+
+        r = f().process(r, wl)
+
+        response = jsonify({
+            "message": "success",
+            "data": r
+        })
+        if response_compress():
+            response.data = compress(response.data)
+
+        response.status_code = 200
 
     return response
 
@@ -249,15 +305,12 @@ def indicators():
             })
             response.status_code = 400
         else:
-            if request_v2():
-                for rr in r:
-                    r['observable'] = r['indicator']
-                    r['otype'] = r['itype']
-
             response = jsonify({
                 "message": "success",
                 "data": r
             })
+            if request.args.get('gzip'):
+                response.data = compress(response.data)
             response.status_code = 200
 
     else:

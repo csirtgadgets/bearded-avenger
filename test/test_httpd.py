@@ -1,10 +1,11 @@
-import tempfile
+import json
 import os
+import tempfile
+
 import pytest
 from cif import httpd
-from zmq.eventloop import ioloop
 from cif.store import Store
-import json
+from zmq.eventloop import ioloop
 
 ROUTER_ADDR = 'ipc://{}'.format(tempfile.NamedTemporaryFile().name)
 router_loop = ioloop.IOLoop.instance()
@@ -53,3 +54,10 @@ def test_httpd_search_v2(client):
     assert rv.status_code == 200
     rv = json.loads(rv.data)
     assert rv['data'][0]['observable'] == 'example.com'
+
+
+def test_httpd_feed(client):
+    rv = client.get('/feed?itype=fqdn&indicator=example.com&confidence=85', headers={'Authorization': 'Token token=1234'})
+
+    assert rv.status_code == 200
+

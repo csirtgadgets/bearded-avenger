@@ -180,7 +180,7 @@ class SQLite(Store):
         return d
 
     # TODO - normalize this out into filters
-    def indicators_search(self, token, filters, limit=5):
+    def indicators_search(self, token, filters, limit=500):
         self.logger.debug('running search')
 
         if filters.get('limit'):
@@ -193,14 +193,24 @@ class SQLite(Store):
         sql = []
         for k in filters:
             if filters[k] is not None:
-                sql.append("{} = '{}'".format(k, filters[k]))
+                if k == 'reporttime':
+                    sql.append("{} >= '{}'".format('reporttime', filters[k]))
+                elif k == 'reporttimeend':
+                    sql.append("{} <= '{}'".format('reporttime', filters[k]))
+                elif k == 'tags':
+                    sql.append("tags.tag == '{}'".format(filters[k]))
+                elif k == 'confidence':
+                    sql.append("{} >= '{}'".format(k, filters[k]))
+                else:
+                    sql.append("{} = '{}'".format(k, filters[k]))
 
         sql = ' AND '.join(sql)
 
         self.logger.debug('running filter of itype')
+        self.logger.debug(sql)
 
         return [self._as_dict(x)
-                for x in self.handle().query(Indicator).order_by(desc(Indicator.reporttime)).filter(sql).limit(limit)]
+                for x in self.handle().query(Indicator).join(Tag).order_by(desc(Indicator.reporttime)).filter(sql).limit(limit)]
 
     def indicators_create(self, token, data):
         if self.token_write(token):

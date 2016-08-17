@@ -131,6 +131,7 @@ class Store(object):
             try:
                 x = self.store.indicators_search(token, data)
             except Exception as e:
+                self.logger.error(e)
                 raise InvalidSearch('invalid search')
             else:
                 return x
