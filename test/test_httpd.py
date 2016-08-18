@@ -7,6 +7,8 @@ from cif import httpd
 from cif.store import Store
 from zmq.eventloop import ioloop
 
+from cifsdk.constants import PYVERSION
+
 ROUTER_ADDR = 'ipc://{}'.format(tempfile.NamedTemporaryFile().name)
 router_loop = ioloop.IOLoop.instance()
 
@@ -44,7 +46,12 @@ def test_httpd_search(client):
 
     rv = client.get('/search?q=example.com', headers={'Authorization': 'Token token=1234'})
     assert rv.status_code == 200
-    rv = json.loads(rv.data)
+
+    data = rv.data
+    if PYVERSION > 2:
+        data = data.decode('utf-8')
+
+    rv = json.loads(data)
     assert rv['data'][0]['indicator'] == 'example.com'
 
 
@@ -52,7 +59,12 @@ def test_httpd_search_v2(client):
     rv = client.get('/observables?q=example.com',
                     headers={'Authorization': 'Token token=1234', 'Accept': 'vnd.cif.v2+json'})
     assert rv.status_code == 200
-    rv = json.loads(rv.data)
+    data = rv.data
+
+    if PYVERSION > 2:
+        data = data.decode('utf-8')
+
+    rv = json.loads(data)
     assert rv['data'][0]['observable'] == 'example.com'
 
 

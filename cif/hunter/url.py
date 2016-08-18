@@ -1,7 +1,11 @@
-from urlparse import urlparse
+from cifsdk.constants import PYVERSION
 import logging
-import copy
 from csirtg_indicator import Indicator
+
+if PYVERSION > 2:
+    from urllib.parse import urlparse
+else:
+    from urlparse import urlparse
 
 
 class Url(object):

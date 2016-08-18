@@ -1,5 +1,10 @@
 import os.path
 from cifsdk.constants import RUNTIME_PATH
+import sys
+
+PYVERSION = 2
+if sys.version_info > (3,):
+    PYVERSION = 3
 
 from ._version import get_versions
 VERSION = get_versions()['version']
