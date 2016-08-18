@@ -321,7 +321,8 @@ def indicators():
                 logger.info('fireball mode')
                 fireball = True
         try:
-            r = Client(remote, pull_token()).indicators_create(request.data, fireball=fireball)
+            data = request.data.decode('utf-8')
+            r = Client(remote, pull_token()).indicators_create(data, fireball=fireball)
         except RuntimeError as e:
             logger.error(e)
             response = jsonify({

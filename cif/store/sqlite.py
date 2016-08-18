@@ -20,6 +20,9 @@ Base = declarative_base()
 from sqlalchemy.engine import Engine
 from sqlalchemy import event
 
+if PYVERSION > 2:
+    basestring = (str, bytes)
+
 
 @event.listens_for(Engine, "connect")
 def set_sqlite_pragma(dbapi_connection, connection_record):
@@ -107,9 +110,6 @@ class Indicator(Base):
         self.description = description
         self.additional_data = additional_data
         self.rdata = rdata
-
-        if PYVERSION > 2:
-            basestring = (str, bytes)
 
         if self.reporttime and isinstance(self.reporttime, basestring):
             self.reporttime = arrow.get(self.reporttime).datetime
@@ -230,7 +230,7 @@ class SQLite(Store):
                 # namespace conflict with related self.tags
                 tags = d.get("tags", [])
                 if len(tags) > 0:
-                    if type(tags) == str or type(tags) == unicode:
+                    if isinstance(tags, basestring):
                         if '.' in tags:
                             tags = tags.split(',')
                         else:

@@ -16,7 +16,7 @@ import arrow
 import zmq
 
 import cif.store
-from cif.constants import STORE_ADDR
+from cif.constants import STORE_ADDR, PYVERSION
 from cifsdk.constants import REMOTE_ADDR, CONFIG_PATH
 from cifsdk.exceptions import AuthError, InvalidSearch
 from cifsdk.utils import setup_logging, get_argument_parser, setup_signals
@@ -29,6 +29,8 @@ SNDTIMEO = 2000
 LINGER = 3
 STORE_DEFAULT = 'sqlite'
 STORE_PLUGINS = ['cif.store.dummy', 'cif.store.sqlite', 'cif.store.elasticsearch', 'cif.store.rdflib']
+if PYVERSION > 2:
+    basestring = (str, bytes)
 
 
 class Store(object):
@@ -83,14 +85,15 @@ class Store(object):
         self.logger.debug(data)
 
         if isinstance(data, basestring):
+
             try:
-                data = json.loads(data)
+                data = json.loads(data.decode('utf-8'))
             except ValueError as e:
                 self.logger.error(e)
-                self.router.send_multipart([id, json.dumps({"status": "failed"})])
+                self.router.send_multipart([id, client_id, null, mtype, json.dumps({"status": "failed"}).encode('utf-8')])
                 return
 
-        handler = getattr(self, "handle_" + mtype)
+        handler = getattr(self, "handle_" + mtype.decode('utf-8'))
         if handler:
             self.logger.debug("mtype: {0}".format(mtype))
             self.logger.debug('running handler: {}'.format(mtype))
@@ -115,7 +118,7 @@ class Store(object):
             self.router.send_multipart([id, client_id, null, mtype, json.dumps(rv).encode('utf-8')])
         else:
             self.logger.error('message type {0} unknown'.format(mtype))
-            self.router.send_multipart([id, null, '0'])
+            self.router.send_multipart([id, null, '0'.encode('utf-8')])
 
     def handle_ping(self, token, data='[]'):
         self.logger.debug('handling ping message')
@@ -258,7 +261,7 @@ def main():
             t = s.token_create_smrt()
             if t:
                 data = {
-                    'token': str(t),
+                    'token': t.decode('utf-8'),
                 }
                 if args.remote:
                     data['remote'] = args.remote
@@ -274,7 +277,7 @@ def main():
             t = s.token_create_hunter()
             if t:
                 data = {
-                    'hunter_token': str(t),
+                    'hunter_token': t.decode('utf-8'),
                 }
                 with open(args.token_create_hunter, 'w') as f:
                     f.write(yaml.dump(data, default_flow_style=False))
@@ -288,7 +291,7 @@ def main():
             t = s.token_create_admin()
             if t:
                 data = {
-                    'token': str(t),
+                    'token': t.decode('utf-8'),
                 }
                 with open(args.token_create_admin, 'w') as f:
                     f.write(yaml.dump(data, default_flow_style=False))
