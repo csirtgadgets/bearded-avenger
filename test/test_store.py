@@ -51,12 +51,33 @@ def test_store_sqlite(store):
     ]
 
     x = store.handle_indicators_create(t, {
-        'indicator': 'example.com'
+        'indicator': 'example.com',
+        'tags': 'malware'
     })
+
     assert x > 0
 
     x = store.handle_indicators_search(t, {
-        'indicator': 'example.com'
+        'indicator': 'example.com',
+    })
+
+    x = store.handle_indicators_create(t, {
+        'indicator': 'example2.com',
+        'tags': 'botnet'
     })
 
     assert x > 0
+
+    x = store.handle_indicators_search(t, {
+        'indicator': 'example2.com',
+    })
+
+    assert len(x) > 0
+
+    x = store.handle_indicators_search(t, {
+        'indicator': 'example2.com',
+        'tags': 'malware'
+    })
+
+    assert len(x) == 0
+

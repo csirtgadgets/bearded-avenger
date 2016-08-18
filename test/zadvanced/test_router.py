@@ -12,7 +12,6 @@ ROUTER_ADDR = 'ipc://{}'.format(tempfile.NamedTemporaryFile().name)
 
 
 def _router_start():
-    print ROUTER_ADDR
     r = Router(listen=ROUTER_ADDR)
     global thread
     thread = threading.Thread(target=r.run, args=[loop])

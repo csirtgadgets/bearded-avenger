@@ -36,4 +36,4 @@ def test_store_rdflib(store):
         'indicator': 'example.com'
     })
 
-    assert x > 0
+    assert len(x) > 0

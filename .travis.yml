@@ -3,10 +3,12 @@ dist: trusty
 language: python
 python:
     - 2.7
-#    - 3.4
+    - 3.4
+    - 3.5
 
 before_install:
     - pip install 'setuptools>=18.5'
+    - pip install pytest-cov
 
 script:
     - py.test --cov=cif --cov-fail-under=35

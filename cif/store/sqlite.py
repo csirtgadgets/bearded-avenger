@@ -11,6 +11,7 @@ from cifsdk.constants import RUNTIME_PATH
 from cif.store.plugin import Store
 import json
 from cifsdk.exceptions import AuthError
+from cifsdk.constants import PYVERSION
 from pprint import pprint
 
 DB_FILE = os.path.join(RUNTIME_PATH, 'cif.sqlite')
@@ -46,7 +47,7 @@ class Indicator(Base):
     __tablename__ = "indicators"
 
     id = Column(Integer, primary_key=True)
-    indicator = Column(Text)
+    indicator = Column(UnicodeText)
     group = Column(String)
     itype = Column(String)
     tlp = Column(String)
@@ -107,15 +108,16 @@ class Indicator(Base):
         self.additional_data = additional_data
         self.rdata = rdata
 
-        ## TODO - cleanup for py3
+        if PYVERSION > 2:
+            basestring = (str, bytes)
 
-        if self.reporttime and isinstance(self.reporttime, str) or isinstance(self.reporttime, unicode):
+        if self.reporttime and isinstance(self.reporttime, basestring):
             self.reporttime = arrow.get(self.reporttime).datetime
 
-        if self.lasttime and isinstance(self.lasttime, str) or isinstance(self.lasttime, unicode):
+        if self.lasttime and isinstance(self.lasttime,  basestring):
             self.lasttime = arrow.get(self.lasttime).datetime
 
-        if self.firsttime and isinstance(self.firsttime, str) or isinstance(self.firsttime, unicode):
+        if self.firsttime and isinstance(self.firsttime,  basestring):
             self.firsttime = arrow.get(self.firsttime).datetime
 
         if self.peers:
@@ -209,8 +211,13 @@ class SQLite(Store):
         self.logger.debug('running filter of itype')
         self.logger.debug(sql)
 
-        return [self._as_dict(x)
-                for x in self.handle().query(Indicator).join(Tag).order_by(desc(Indicator.reporttime)).filter(sql).limit(limit)]
+        rv = self.handle().query(Indicator)
+        if filters.get('tags'):
+            rv = rv.join(Tag)
+
+        rv = rv.order_by(desc(Indicator.reporttime)).filter(sql).limit(limit)
+
+        return [self._as_dict(x) for x in rv]
 
     def indicators_create(self, token, data):
         if self.token_write(token):
