@@ -156,7 +156,7 @@ class Router(object):
 
     def handle_message_default(self, id, mtype, token, data='[]'):
         self.logger.debug('sending message to store...')
-        self.store_s.send_multipart([id, '', mtype, token, data])
+        self.store_s.send_multipart([id, ''.encode('utf-8'), mtype, token, data])
 
     def handle_message_store(self, s, e):
         self.logger.debug('msg from store received')
