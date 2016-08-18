@@ -109,15 +109,15 @@ class Indicator(Base):
         self.rdata = rdata
 
         if PYVERSION > 2:
-            unicode = bytes
+            basestring = (str, bytes)
 
-        if self.reporttime and isinstance(self.reporttime, str) or isinstance(self.reporttime, unicode):
+        if self.reporttime and isinstance(self.reporttime, basestring):
             self.reporttime = arrow.get(self.reporttime).datetime
 
-        if self.lasttime and isinstance(self.lasttime, str) or isinstance(self.lasttime, unicode):
+        if self.lasttime and isinstance(self.lasttime,  basestring):
             self.lasttime = arrow.get(self.lasttime).datetime
 
-        if self.firsttime and isinstance(self.firsttime, str) or isinstance(self.firsttime, unicode):
+        if self.firsttime and isinstance(self.firsttime,  basestring):
             self.firsttime = arrow.get(self.firsttime).datetime
 
         if self.peers:
