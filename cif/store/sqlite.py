@@ -272,7 +272,7 @@ class SQLite(Store):
 
         t = Token(
             username=data.get('username'),
-            token=self._token_generate(),
+            token=self._token_generate().decode('utf-8'),
             groups=groups,
             acl=acl,
             read=data.get('read'),
@@ -330,6 +330,7 @@ class SQLite(Store):
             .filter_by(token=token)\
             .filter_by(read=True) \
             .filter(Token.revoked is not True)
+        pprint(x.count())
         if x.count():
             return True
 

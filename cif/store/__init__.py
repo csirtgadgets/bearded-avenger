@@ -99,7 +99,7 @@ class Store(object):
             self.logger.debug('running handler: {}'.format(mtype))
 
             try:
-                rv = handler(token, data)
+                rv = handler(token.decode('utf-8'), data)
                 rv = {"status": "success", "data": rv}
                 self.logger.debug('updating last_active')
                 ts = arrow.utcnow().format('YYYY-MM-DDTHH:mm:ss.SSSSS')
