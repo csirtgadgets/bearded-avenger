@@ -38,6 +38,9 @@ class Dummy(Store):
     def indicators_create(self, token, data):
         return [data]
 
+    def indicators_upsert(self, token, data):
+        return [data]
+
     def token_last_activity_at(self, token, timestamp=None):
         return timestamp
 

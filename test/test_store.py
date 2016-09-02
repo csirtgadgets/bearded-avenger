@@ -33,10 +33,10 @@ def test_store_dummy(obs):
     with Store(store_type='dummy') as s:
         t = s.store.tokens_admin_exists()
 
-        x = s.handle_indicators_search(t, obs.__dict__)
+        x = s.handle_indicators_search(t, obs.__dict__())
         assert x[0]['indicator'] == 'example.com'
 
-        x = s.handle_indicators_create(t, obs.__dict__)
+        x = s.handle_indicators_create(t, obs.__dict__())
         assert x[0]['indicator'] == 'example.com'
 
 
@@ -46,8 +46,8 @@ def test_store_sqlite(store):
     assert t
 
     i = [
-        Indicator(indicator='example.com', tags='botnet', provider='csirtgadgets.org').__dict__,
-        Indicator(indicator='example2.com', tags='malware', provider='csirtgadgets.org').__dict__
+        Indicator(indicator='example.com', tags='botnet', provider='csirtgadgets.org').__dict__(),
+        Indicator(indicator='example2.com', tags='malware', provider='csirtgadgets.org').__dict__()
     ]
 
     x = store.handle_indicators_create(t, {

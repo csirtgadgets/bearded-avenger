@@ -25,8 +25,8 @@ def test_store_rdflib(store):
     assert t
 
     i = [
-        Indicator(indicator='example.com', tags='botnet', provider='csirtgadgets.org').__dict__,
-        Indicator(indicator='example2.com', tags='malware', provider='csirtgadgets.org').__dict__
+        Indicator(indicator='example.com', tags='botnet', provider='csirtgadgets.org').__dict__(),
+        Indicator(indicator='example2.com', tags='malware', provider='csirtgadgets.org').__dict__()
     ]
 
     x = store.handle_indicators_create(t, i)

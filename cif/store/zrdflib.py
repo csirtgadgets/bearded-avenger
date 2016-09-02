@@ -42,7 +42,7 @@ class Rdflib(Store):
 
     # http://en.wikipedia.org/wiki/Resource_Description_Framework
     def indicators_create(self, token, data):
-        if type(data) is not list:
+        if not isinstance(data, list):
             data = [data]
 
         for d in data:
