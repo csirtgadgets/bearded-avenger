@@ -1,5 +1,5 @@
 parser: rss
-remote: http://malc0de.com/rss
+remote: http://malc0de.com/rss/
 defaults:
   confidence: 9
   tlp: green
