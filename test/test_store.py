@@ -8,6 +8,7 @@ import py.test
 from cif.store import Store
 from cifsdk.utils import setup_logging
 from csirtg_indicator import Indicator
+from cifsdk.constants import PYVERSION
 
 args = Namespace(debug=True, verbose=None)
 setup_logging(args)
@@ -26,17 +27,22 @@ def store():
 
 @py.test.fixture
 def obs():
-    return Indicator(indicator='example.com', tags=['botnet'], provider='csirtgadgets.org')
+    return {
+        'indicator': 'example.com',
+        'tags': ['botnet'],
+        'provider': 'csirtgadgets.org'
+    }
 
 
 def test_store_dummy(obs):
     with Store(store_type='dummy') as s:
         t = s.store.tokens_admin_exists()
 
-        x = s.handle_indicators_search(t, obs.__dict__)
+
+        x = s.handle_indicators_search(t, obs)
         assert x[0]['indicator'] == 'example.com'
 
-        x = s.handle_indicators_create(t, obs.__dict__)
+        x = s.handle_indicators_create(t, dict(obs))
         assert x[0]['indicator'] == 'example.com'
 
 
@@ -45,14 +51,10 @@ def test_store_sqlite(store):
     t = store.store.tokens_admin_exists()
     assert t
 
-    i = [
-        Indicator(indicator='example.com', tags='botnet', provider='csirtgadgets.org').__dict__,
-        Indicator(indicator='example2.com', tags='malware', provider='csirtgadgets.org').__dict__
-    ]
-
     x = store.handle_indicators_create(t, {
         'indicator': 'example.com',
-        'tags': 'malware'
+        'tags': 'malware',
+        'provider': 'csirtgadgets.org',
     })
 
     assert x > 0
@@ -63,7 +65,8 @@ def test_store_sqlite(store):
 
     x = store.handle_indicators_create(t, {
         'indicator': 'example2.com',
-        'tags': 'botnet'
+        'tags': 'botnet',
+        'provider': 'csirtgadgets.org',
     })
 
     assert x > 0

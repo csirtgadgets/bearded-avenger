@@ -78,11 +78,7 @@ class Store(object):
     def handle_message(self, m):
         self.logger.debug('message received')
 
-        self.logger.debug(m)
-
         id, client_id, null, mtype, token, data = m
-
-        self.logger.debug(data)
 
         if isinstance(data, basestring):
 
@@ -144,7 +140,7 @@ class Store(object):
     # TODO group check
     def handle_indicators_create(self, token, data):
         if self.store.token_write(token):
-            return self.store.indicators_create(token, data)
+            return self.store.indicators_upsert(token, data)
         else:
             raise AuthError('invalid token')
 

@@ -42,7 +42,7 @@ class Rdflib(Store):
 
     # http://en.wikipedia.org/wiki/Resource_Description_Framework
     def indicators_create(self, token, data):
-        if type(data) is not list:
+        if not isinstance(data, list):
             data = [data]
 
         for d in data:
@@ -58,6 +58,9 @@ class Rdflib(Store):
         self.logger.debug(self.handle.serialize(format="trig"))
 
         return len(data)
+
+    def indicators_upsert(self, token, data):
+        return self.indicators_create(token, data)
 
     def ping(self, token):
         return True
