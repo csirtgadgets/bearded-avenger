@@ -65,6 +65,6 @@ class Store(object):
     def indicators_create(self, token, data):
         raise NotImplementedError
 
-    @abc.abstractclassmethod
+    @abc.abstractmethod
     def indicators_upsert(self, token, data):
         raise NotImplementedError
