@@ -3,7 +3,7 @@ import os
 
 import arrow
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, create_engine, DateTime, UnicodeText, \
-    Text, Boolean, desc
+    Text, Boolean, desc, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, backref, class_mapper, scoped_session
 
@@ -13,12 +13,16 @@ import json
 from cifsdk.exceptions import AuthError
 from cifsdk.constants import PYVERSION
 from pprint import pprint
+import base64
+import zlib
 
 DB_FILE = os.path.join(RUNTIME_PATH, 'cif.sqlite')
 Base = declarative_base()
 
 from sqlalchemy.engine import Engine
 from sqlalchemy import event
+
+logger = logging.getLogger(__name__)
 
 if PYVERSION > 2:
     basestring = (str, bytes)
@@ -72,6 +76,8 @@ class Indicator(Base):
     description = Column(UnicodeText)
     additional_data = Column(UnicodeText)
     rdata = Column(UnicodeText)
+    msg = Column(UnicodeText)
+    count = Column(Integer)
 
     tags = relationship(
         'Tag',
@@ -83,7 +89,8 @@ class Indicator(Base):
                  cc=None, protocol=None, firsttime=None, lasttime=None,
                  reporttime=None, group="everyone", tags=[], confidence=None,
                  reference=None, reference_tlp=None, application=None, timezone=None, city=None, longitude=None,
-                 latitude=None, peers=None, description=None, additional_data=None, rdata=None, version=None):
+                 latitude=None, peers=None, description=None, additional_data=None, rdata=None, msg=None, count=1,
+                 version=None, **kwargs):
 
         self.indicator = indicator
         self.group = group
@@ -110,6 +117,8 @@ class Indicator(Base):
         self.description = description
         self.additional_data = additional_data
         self.rdata = rdata
+        self.msg = msg
+        self.count = count
 
         if self.reporttime and isinstance(self.reporttime, basestring):
             self.reporttime = arrow.get(self.reporttime).datetime
@@ -125,6 +134,13 @@ class Indicator(Base):
 
         if self.additional_data:
             self.additional_data = json.dumps(self.additional_data)
+
+        if self.msg:
+            try:
+                self.msg = base64.b64decode(self.msg)
+                logger.debug(self.msg)
+            except Exception as e:
+                logger.error(e)
 
 
 class Tag(Base):
@@ -179,6 +195,9 @@ class SQLite(Store):
         except AttributeError:
             pass
 
+        if d.get('msg'):
+            d['msg'] = base64.b64encode(d['msg'])
+
         return d
 
     # TODO - normalize this out into filters
@@ -218,6 +237,54 @@ class SQLite(Store):
         rv = rv.order_by(desc(Indicator.reporttime)).filter(sql).limit(limit)
 
         return [self._as_dict(x) for x in rv]
+
+    def indicators_upsert(self, token, data):
+        if not self.token_write(token):
+            raise AuthError('invalid token')
+
+        if type(data) == dict:
+            data = [data]
+
+        s = self.handle()
+
+        for d in data:
+            tags = d.get("tags", [])
+            if len(tags) > 0:
+                if isinstance(tags, basestring):
+                    if '.' in tags:
+                        tags = tags.split(',')
+                    else:
+                        tags = [str(tags)]
+
+                del d['tags']
+
+            i = s.query(Indicator).filter_by(
+                indicator=d['indicator'],
+                provider=d['provider'],
+            ).order_by(Indicator.lasttime.desc())
+
+            if i.count() > 0:
+                r = i.first()
+                if arrow.get(r.lasttime).datetime > arrow.get(d['lasttime']).datetime:
+                    self.logger.debug('{} {}'.format(arrow.get(r.lasttime).datetime, arrow.get(d['lasttime']).datetime))
+                    self.logger.debug('upserting: %s' % d['indicator'])
+                    r.count += 1
+                    r.lasttime = arrow.get(d['lasttime']).datetime
+                    r.reporttime = arrow.get(d['reporttime']).datetime
+                else:
+                    self.logger.debug('skipping: %s' % d['indicator'])
+            else:
+                if not d.get('firsttime'):
+                    d['firsttime'] = arrow.utcnow().datetime
+                ii = Indicator(**d)
+                s.add(ii)
+
+                for t in tags:
+                    t = Tag(tag=t, indicator=ii)
+                    s.add(t)
+
+        self.logger.debug('committing')
+        s.commit()
 
     def indicators_create(self, token, data):
         if self.token_write(token):
