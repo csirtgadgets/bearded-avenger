@@ -246,6 +246,7 @@ class SQLite(Store):
             data = [data]
 
         s = self.handle()
+        n = 0
 
         for d in data:
             tags = d.get("tags", [])
@@ -271,6 +272,7 @@ class SQLite(Store):
                     r.count += 1
                     r.lasttime = arrow.get(d['lasttime']).datetime
                     r.reporttime = arrow.get(d['reporttime']).datetime
+                    n += 1
                 else:
                     self.logger.debug('skipping: %s' % d['indicator'])
             else:
@@ -283,8 +285,11 @@ class SQLite(Store):
                     t = Tag(tag=t, indicator=ii)
                     s.add(t)
 
+                n += 1
+
         self.logger.debug('committing')
         s.commit()
+        return n
 
     def indicators_create(self, token, data):
         if self.token_write(token):

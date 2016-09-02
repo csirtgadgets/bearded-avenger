@@ -59,6 +59,9 @@ class Rdflib(Store):
 
         return len(data)
 
+    def indicators_upsert(self, token, data):
+        return self.indicators_create(token, data)
+
     def ping(self, token):
         return True
 

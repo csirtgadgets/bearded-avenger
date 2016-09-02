@@ -52,7 +52,8 @@ def test_store_sqlite(store):
 
     x = store.handle_indicators_create(t, {
         'indicator': 'example.com',
-        'tags': 'malware'
+        'tags': 'malware',
+        'provider': 'csirtgadgets.org',
     })
 
     assert x > 0
@@ -63,7 +64,8 @@ def test_store_sqlite(store):
 
     x = store.handle_indicators_create(t, {
         'indicator': 'example2.com',
-        'tags': 'botnet'
+        'tags': 'botnet',
+        'provider': 'csirtgadgets.org',
     })
 
     assert x > 0

@@ -130,6 +130,9 @@ class ElasticSearch_(Store):
         else:
             raise AuthError('invalid token')
 
+    def indicators_upsert(self, token, data):
+        return self.indicators_upsert(token, data)
+
     def indicators_search(self, token, filters):
         # build filters with elasticsearch-dsl
         # http://elasticsearch-dsl.readthedocs.org/en/latest/search_dsl.html
