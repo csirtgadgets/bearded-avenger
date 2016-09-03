@@ -201,7 +201,7 @@ class SQLite(Store):
         return d
 
     # TODO - normalize this out into filters
-    def indicators_search(self, token, filters, limit=500):
+    def indicators_search(self, filters, limit=500):
         self.logger.debug('running search')
 
         if filters.get('limit'):
@@ -238,10 +238,7 @@ class SQLite(Store):
 
         return [self._as_dict(x) for x in rv]
 
-    def indicators_upsert(self, token, data):
-        if not self.token_write(token):
-            raise AuthError('invalid token')
-
+    def indicators_upsert(self, data):
         if type(data) == dict:
             data = [data]
 
@@ -291,38 +288,35 @@ class SQLite(Store):
         s.commit()
         return n
 
-    def indicators_create(self, token, data):
-        if self.token_write(token):
-            if type(data) == dict:
-                data = [data]
+    def indicators_create(self, data):
+        if type(data) == dict:
+            data = [data]
 
-            s = self.handle()
+        s = self.handle()
 
-            for d in data:
-                # namespace conflict with related self.tags
-                tags = d.get("tags", [])
-                if len(tags) > 0:
-                    if isinstance(tags, basestring):
-                        if '.' in tags:
-                            tags = tags.split(',')
-                        else:
-                            tags = [str(tags)]
+        for d in data:
+            # namespace conflict with related self.tags
+            tags = d.get("tags", [])
+            if len(tags) > 0:
+                if isinstance(tags, basestring):
+                    if '.' in tags:
+                        tags = tags.split(',')
+                    else:
+                        tags = [str(tags)]
 
-                    del d['tags']
+                del d['tags']
 
-                o = Indicator(**d)
+            o = Indicator(**d)
 
-                s.add(o)
+            s.add(o)
 
-                for t in tags:
-                    t = Tag(tag=t, indicator=o)
-                    s.add(t)
+            for t in tags:
+                t = Tag(tag=t, indicator=o)
+                s.add(t)
 
-            s.commit()
-            self.logger.debug('oid: {}'.format(o.id))
-            return o.id
-        else:
-            raise AuthError('invalid token')
+        s.commit()
+        self.logger.debug('oid: {}'.format(o.id))
+        return o.id
 
     def token_admin(self, token):
         x = self.handle().query(Token)\
@@ -344,7 +338,7 @@ class SQLite(Store):
 
         t = Token(
             username=data.get('username'),
-            token=self._token_generate().decode('utf-8'),
+            token=self._token_generate(),
             groups=groups,
             acl=acl,
             read=data.get('read'),

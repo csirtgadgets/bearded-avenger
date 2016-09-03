@@ -9,6 +9,8 @@ from csirtg_indicator import resolve_itype
 from datetime import datetime
 import ipaddress
 import arrow
+import re
+
 ES_NODES = os.getenv('CIF_ES_NODES', '127.0.0.1:9200')
 VALID_FILTERS = ['indicator', 'confidence', 'provider', 'itype', 'group']
 
@@ -49,22 +51,23 @@ class Indicator(DocType):
     count = Integer()
 
 
-class _Indicator(object):
+class IndicatorMixin(object):
     def _dict(self, data):
         return [x.__dict__['_d_'] for x in data.hits]
 
     def _current_index(self):
         dt = datetime.utcnow()
         dt = dt.strftime('%Y.%m')
-        return dt
+        idx = '{}-{}'.format('indicators', dt)
+        return idx
 
     def _create_index(self):
         # https://github.com/csirtgadgets/massive-octo-spice/blob/develop/elasticsearch/observables.json
         # http://elasticsearch-py.readthedocs.org/en/master/api.html#elasticsearch.Elasticsearch.bulk
-        dt = self._current_index()
+        idx = self._current_index()
         es = connections.get_connection()
-        if not es.indices.exists('indicators-{}'.format(dt)):
-            index = Index('indicators-{}'.format(dt))
+        if not es.indices.exists(idx):
+            index = Index(idx)
             index.aliases(live={})
             index.doc_type(Indicator)
             index.create()
@@ -73,10 +76,10 @@ class _Indicator(object):
             m.field('indicator_ipv4', 'ip')
             m.field('indicator_ipv4_mask', 'integer')
             m.field('lasttime', 'date')
-            m.save('indicators-{}'.format(dt))
-        return 'indicators-{}'.format(dt)
+            m.save(idx)
+        return idx
 
-    def indicators_create(self, token, data):
+    def indicators_create(self, data):
         index = self._create_index()
 
         self.logger.debug('index: {}'.format(index))
@@ -84,7 +87,6 @@ class _Indicator(object):
         data['meta']['index'] = index
 
         if resolve_itype(data['indicator']) == 'ipv4':
-            import re
             match = re.search('^(\S+)\/(\d+)$', data['indicator'])
             if match:
                 data['indicator_ipv4'] = match.group(1)
@@ -95,18 +97,14 @@ class _Indicator(object):
         if type(data['group']) != list:
             data['group'] = [data['group']]
 
-        self.logger.debug(data)
         i = Indicator(**data)
-        self.logger.debug(i)
+
         if i.save():
             return i.__dict__['_d_']
         else:
             raise AuthError('invalid token')
 
-    def indicators_upsert(self, token, data):
-        if not self.token_write(token):
-            raise AuthError('invalid token')
-
+    def indicators_upsert(self, data):
         index = self._create_index()
 
         if isinstance(data, dict):
@@ -126,19 +124,29 @@ class _Indicator(object):
             }
 
             # TODO -- make sure the initial list is sorted first (by lasttime)
-            rv = self.indicators_search(token, filters, sort='-lasttime', raw=True)
+            rv = self.indicators_search(filters, sort='-lasttime', raw=True)
 
             # if we have results
             if len(rv) > 0:
                 r = rv[0]
 
-                self.logger.debug(r)
                 # if it's a newer result
-                if arrow.get(d['lasttime']).datetime > arrow.get(r['_source']['lasttime']).datetime:
+                if d['lasttime'] and (arrow.get(d['lasttime']).datetime > arrow.get(r['_source']['lasttime']).datetime):
                     # carry the index'd data forward and remove the old index
                     i = es.get(index=r['_index'], id=r['_id'])
-                    i['_source']['count'] += 1
-                    meta = es.update(index=r['_index'], doc_type='indicator', id=r['_id'], body={'doc': i['_source']})
+
+                    if r['_index'] == self._current_index():
+                        i['_source']['count'] += 1
+                        meta = es.update(index=r['_index'], doc_type='indicator', id=r['_id'], body={'doc': i['_source']})
+                    else:
+                        # carry the information forward
+                        d['count'] = i['_source']['count'] + 1
+                        self.indicators_create(d)
+                        es.delete(index=r['_index'], doc_type='indicator', id=r['_id'])
+
+                    es.indices.flush(index=self._current_index())
+
+                # else do nothing, it's prob a duplicate
             else:
                 if tmp.get(d['indicator']):
                     if d['lasttime'] in tmp[d['indicator']]:
@@ -151,18 +159,18 @@ class _Indicator(object):
                 if not d.get('firsttime'):
                     d['firsttime'] = arrow.utcnow().datetime
 
-                rv = self.indicators_create(token, d)
-                es.indices.flush(index='indicators-{}'.format(self._current_index()))
+                if not d.get('lasttime'):
+                    d['lasttime'] = arrow.utcnow().datetime
+
+                rv = self.indicators_create(d)
+                es.indices.flush(index=self._current_index())
                 if rv:
                     n += 1
                     tmp[d['indicator']].add(d['lasttime'])
 
-                pprint(tmp)
-                pprint(d)
-
         return n
 
-    def indicators_search(self, token, filters, sort=None, raw=False):
+    def indicators_search(self, filters, sort=None, raw=False):
         # build filters with elasticsearch-dsl
         # http://elasticsearch-dsl.readthedocs.org/en/latest/search_dsl.html
 

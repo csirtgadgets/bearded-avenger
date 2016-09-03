@@ -32,7 +32,7 @@ class Token(DocType):
         index = 'tokens'
 
 
-class _Token(object):
+class TokenMixin(object):
 
     def tokens_admin_exists(self):
         s = Token.search()
