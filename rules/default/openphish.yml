@@ -6,8 +6,9 @@ defaults:
   reference_tlp: white
   confidence: 9
   values: indicator
+
 feeds:
   urls:
     itype: url
     pattern: ^(.+)$
-    remote: http://openphish.com/feed.txt
+    remote: https://openphish.com/feed.txt
