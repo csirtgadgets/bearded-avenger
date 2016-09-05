@@ -7,17 +7,6 @@ from cif.store.zelasticsearch.indicator import IndicatorMixin
 from elasticsearch_dsl.connections import connections
 
 ES_NODES = os.getenv('CIF_ES_NODES', '127.0.0.1:9200')
-VALID_FILTERS = ['indicator', 'confidence', 'provider', 'itype', 'group']
-
-LIMIT = 5000
-LIMIT = os.getenv('CIF_ES_LIMIT', LIMIT)
-
-LIMIT_HARD = 500000
-LIMIT_HARD = os.getenv('CIF_ES_LIMIT_HARD', LIMIT_HARD)
-
-TIMEOUT = '120'
-TIMEOUT = os.getenv('CIF_ES_TIMEOUT', TIMEOUT)
-TIMEOUT = '{}s'.format(TIMEOUT)
 
 
 class _ElasticSearch(IndicatorMixin, TokenMixin, Store):
@@ -37,7 +26,8 @@ class _ElasticSearch(IndicatorMixin, TokenMixin, Store):
     def ping(self, token):
         # http://elasticsearch-py.readthedocs.org/en/master/api.html#elasticsearch.client.IndicesClient.stats
         x = connections.get_connection().cluster.health()
-        if x['status'] == 'green':
+
+        if ('green', 'yellow') in x['status']:
             return True
 
 Plugin = _ElasticSearch

@@ -11,7 +11,6 @@ import ipaddress
 import arrow
 import re
 
-ES_NODES = os.getenv('CIF_ES_NODES', '127.0.0.1:9200')
 VALID_FILTERS = ['indicator', 'confidence', 'provider', 'itype', 'group']
 
 LIMIT = 5000
@@ -51,36 +50,40 @@ class Indicator(DocType):
     count = Integer()
 
 
+def _current_index():
+    dt = datetime.utcnow()
+    dt = dt.strftime('%Y.%m')
+    idx = '{}-{}'.format('indicators', dt)
+    return idx
+
+
+def _create_index():
+    # https://github.com/csirtgadgets/massive-octo-spice/blob/develop/elasticsearch/observables.json
+    # http://elasticsearch-py.readthedocs.org/en/master/api.html#elasticsearch.Elasticsearch.bulk
+    idx = _current_index()
+    es = connections.get_connection()
+    if not es.indices.exists(idx):
+        index = Index(idx)
+        index.aliases(live={})
+        index.doc_type(Indicator)
+        index.create()
+
+        m = Mapping('indicator')
+        m.field('indicator_ipv4', 'ip')
+        m.field('indicator_ipv4_mask', 'integer')
+        m.field('lasttime', 'date')
+        m.save(idx)
+    return idx
+
+
+# def _dict(data):
+#     return [x.__dict__['_d_'] for x in data.hits]
+
+
 class IndicatorMixin(object):
-    def _dict(self, data):
-        return [x.__dict__['_d_'] for x in data.hits]
 
-    def _current_index(self):
-        dt = datetime.utcnow()
-        dt = dt.strftime('%Y.%m')
-        idx = '{}-{}'.format('indicators', dt)
-        return idx
-
-    def _create_index(self):
-        # https://github.com/csirtgadgets/massive-octo-spice/blob/develop/elasticsearch/observables.json
-        # http://elasticsearch-py.readthedocs.org/en/master/api.html#elasticsearch.Elasticsearch.bulk
-        idx = self._current_index()
-        es = connections.get_connection()
-        if not es.indices.exists(idx):
-            index = Index(idx)
-            index.aliases(live={})
-            index.doc_type(Indicator)
-            index.create()
-
-            m = Mapping('indicator')
-            m.field('indicator_ipv4', 'ip')
-            m.field('indicator_ipv4_mask', 'integer')
-            m.field('lasttime', 'date')
-            m.save(idx)
-        return idx
-
-    def indicators_create(self, data):
-        index = self._create_index()
+    def indicators_create(self, data, raw=False):
+        index = _create_index()
 
         self.logger.debug('index: {}'.format(index))
         data['meta'] = {}
@@ -100,12 +103,15 @@ class IndicatorMixin(object):
         i = Indicator(**data)
 
         if i.save():
-            return i.__dict__['_d_']
+            if raw:
+                return i
+            else:
+                return i.__dict__['_d_']
         else:
             raise AuthError('invalid token')
 
     def indicators_upsert(self, data):
-        index = self._create_index()
+        index = _create_index()
 
         if isinstance(data, dict):
             data = [data]
@@ -133,18 +139,19 @@ class IndicatorMixin(object):
                 # if it's a newer result
                 if d['lasttime'] and (arrow.get(d['lasttime']).datetime > arrow.get(r['_source']['lasttime']).datetime):
                     # carry the index'd data forward and remove the old index
-                    i = es.get(index=r['_index'], id=r['_id'])
-
-                    if r['_index'] == self._current_index():
+                    i = es.get(index=r['_index'], doc_type='indicator', id=r['_id'])
+                    pprint(r)
+                    print(_current_index())
+                    if r['_index'] == _current_index():
                         i['_source']['count'] += 1
                         meta = es.update(index=r['_index'], doc_type='indicator', id=r['_id'], body={'doc': i['_source']})
                     else:
                         # carry the information forward
                         d['count'] = i['_source']['count'] + 1
                         self.indicators_create(d)
-                        es.delete(index=r['_index'], doc_type='indicator', id=r['_id'])
+                        es.delete(index=r['_index'], doc_type='indicator', id=r['_id'], refresh=True)
 
-                    es.indices.flush(index=self._current_index())
+                    es.indices.flush(index=_current_index())
 
                 # else do nothing, it's prob a duplicate
             else:
@@ -163,7 +170,7 @@ class IndicatorMixin(object):
                     d['lasttime'] = arrow.utcnow().datetime
 
                 rv = self.indicators_create(d)
-                es.indices.flush(index=self._current_index())
+                es.indices.flush(index=_current_index())
                 if rv:
                     n += 1
                     tmp[d['indicator']].add(d['lasttime'])
