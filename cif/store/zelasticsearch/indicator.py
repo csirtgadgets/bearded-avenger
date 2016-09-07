@@ -43,10 +43,8 @@ class Indicator(DocType):
     timezone = String()
     city = String()
     description = String(index="not_analyzed")
-    additional_data = String(multi=True)
     tags = String(multi=True)
     rdata = String(index="not_analyzed")
-    msg = String()
     count = Integer()
 
 
@@ -130,7 +128,7 @@ class IndicatorMixin(object):
             }
 
             # TODO -- make sure the initial list is sorted first (by lasttime)
-            rv = self.indicators_search(filters, sort='-lasttime', raw=True)
+            rv = self.indicators_search(filters, sort='lasttime', raw=True)
 
             # if we have results
             if len(rv) > 0:
@@ -140,14 +138,16 @@ class IndicatorMixin(object):
                 if d['lasttime'] and (arrow.get(d['lasttime']).datetime > arrow.get(r['_source']['lasttime']).datetime):
                     # carry the index'd data forward and remove the old index
                     i = es.get(index=r['_index'], doc_type='indicator', id=r['_id'])
-                    pprint(r)
-                    print(_current_index())
                     if r['_index'] == _current_index():
                         i['_source']['count'] += 1
+                        i['_source']['lasttime'] = d['lasttime']
+                        i['_source']['reporttime'] = d['reporttime']
                         meta = es.update(index=r['_index'], doc_type='indicator', id=r['_id'], body={'doc': i['_source']})
                     else:
                         # carry the information forward
                         d['count'] = i['_source']['count'] + 1
+                        i['_source']['lasttime'] = d['lasttime']
+                        i['_source']['reporttime'] = d['reporttime']
                         self.indicators_create(d)
                         es.delete(index=r['_index'], doc_type='indicator', id=r['_id'], refresh=True)
 
@@ -163,14 +163,16 @@ class IndicatorMixin(object):
                     tmp[d['indicator']] = set()
 
                 d['count'] = 1
-                if not d.get('firsttime'):
-                    d['firsttime'] = arrow.utcnow().datetime
 
                 if not d.get('lasttime'):
                     d['lasttime'] = arrow.utcnow().datetime
 
+                if not d.get('firsttime'):
+                    d['firsttime'] = d['lasttime']
+
                 rv = self.indicators_create(d)
                 es.indices.flush(index=_current_index())
+
                 if rv:
                     n += 1
                     tmp[d['indicator']].add(d['lasttime'])
