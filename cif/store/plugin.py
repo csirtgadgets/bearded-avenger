@@ -19,7 +19,7 @@ class Store(object):
         return True
 
     def _token_generate(self):
-        return binascii.b2a_hex(os.urandom(TOKEN_LENGTH))
+        return binascii.b2a_hex(os.urandom(TOKEN_LENGTH)).decode('utf-8')
 
     @abc.abstractmethod
     def tokens_admin_exists(self):

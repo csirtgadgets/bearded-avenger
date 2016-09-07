@@ -38,11 +38,10 @@ def test_store_dummy(obs):
     with Store(store_type='dummy') as s:
         t = s.store.tokens_admin_exists()
 
-
-        x = s.handle_indicators_search(t, obs)
+        x = s.handle_indicators_search(obs)
         assert x[0]['indicator'] == 'example.com'
 
-        x = s.handle_indicators_create(t, dict(obs))
+        x = s.handle_indicators_create(dict(obs))
         assert x[0]['indicator'] == 'example.com'
 
 

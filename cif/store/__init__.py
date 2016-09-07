@@ -128,7 +128,7 @@ class Store(object):
         if self.store.token_read(token):
             self.logger.debug('searching')
             try:
-                x = self.store.indicators_search(token, data)
+                x = self.store.indicators_search(data)
             except Exception as e:
                 self.logger.error(e)
                 raise InvalidSearch('invalid search')
@@ -140,7 +140,7 @@ class Store(object):
     # TODO group check
     def handle_indicators_create(self, token, data):
         if self.store.token_write(token):
-            return self.store.indicators_upsert(token, data)
+            return self.store.indicators_upsert(data)
         else:
             raise AuthError('invalid token')
 

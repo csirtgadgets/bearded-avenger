@@ -1,4 +1,4 @@
-import py.test
+import pytest
 
 from cif.store import Store
 from csirtg_indicator import Indicator
@@ -10,30 +10,29 @@ try:
 except ImportError as e:
     DISABLE_TESTS = True
 
-@py.test.yield_fixture
-def store():
-    with Store(store_type='elasticsearch') as s:
-        yield s
-
-
-# @py.test.mark.skipif(DISABLE_TESTS, reason='missing elasticsearch')
-# def test_store_elasticsearch(store):
+# @pytest.yield_fixture
+# def store():
+#     with Store(store_type='elasticsearch') as s:
+#         yield s
+#
+# @pytest.fixture
+# def indicator():
+#     return {
+#         'indicator': 'example.com',
+#         'tags': ['botnet'],
+#         'provider': 'csirtgadgets.org'
+#     }
+#
+#
+# @pytest.mark.skipif(DISABLE_TESTS, reason='missing elasticsearch')
+# def test_store_elasticsearch(store, indicator):
 #     store.token_create_admin()
-#     t = store.store.tokens_admin_exists()
-#     assert t
-#
-#     i = [
-#         Indicator(indicator='example.com', tags='botnet', provider='csirtgadgets.org').__dict__(),
-#         Indicator(indicator='example2.com', tags='malware', provider='csirtgadgets.org').__dict__()
-#     ]
-#
-#     x = store.handle_indicators_create(t, {
-#         'indicator': 'example.com'
-#     })
-#     assert x > 0
-#
-#     x = store.handle_indicators_search(t, {
-#         'indicator': 'example.com'
-#     })
-#
-#     assert x > 0
+#     # t = store.store.tokens_admin_exists()
+#     # assert t
+#     #
+#     # x = store.handle_indicators_create(t, indicator)
+#     # assert x > 0
+#     #
+#     # x = store.handle_indicators_search(t, indicator)
+#     #
+#     # assert x > 0
