@@ -6,10 +6,13 @@ import os
 from pprint import pprint
 from cifsdk.exceptions import AuthError, InvalidSearch
 from csirtg_indicator import resolve_itype
+from csirtg_indicator.exceptions import InvalidIndicator
 from datetime import datetime
 import ipaddress
 import arrow
 import re
+from base64 import b64decode, b64encode
+import binascii
 
 VALID_FILTERS = ['indicator', 'confidence', 'provider', 'itype', 'group']
 
@@ -97,6 +100,12 @@ class IndicatorMixin(object):
 
         if type(data['group']) != list:
             data['group'] = [data['group']]
+
+        if data.get('msg'):
+            try:
+                data['msg'] = str(b64decode(data['msg']))
+            except (TypeError, binascii.Error) as e:
+                pass
 
         i = Indicator(**data)
 
@@ -205,19 +214,28 @@ class IndicatorMixin(object):
             if filters.get(f):
                 q_filters[f] = filters[f]
 
+        search_terms = False
+
         if q_filters.get('indicator'):
-            itype = resolve_itype(q_filters['indicator'])
+            try:
+                itype = resolve_itype(q_filters['indicator'])
 
-            if itype == 'ipv4':
-                ip = ipaddress.IPv4Network(q_filters['indicator'])
-                mask = ip.prefixlen
-                if mask < 8:
-                    raise InvalidSearch('prefix needs to be greater than or equal to 8')
-                start = str(ip.network_address)
-                end = str(ip.broadcast_address)
+                if itype == 'ipv4':
+                    ip = ipaddress.IPv4Network(q_filters['indicator'])
+                    mask = ip.prefixlen
+                    if mask < 8:
+                        raise InvalidSearch('prefix needs to be greater than or equal to 8')
+                    start = str(ip.network_address)
+                    end = str(ip.broadcast_address)
 
-                s = s.filter('range', indicator_ipv4={'gte': start, 'lte': end})
-                del q_filters['indicator']
+                    s = s.filter('range', indicator_ipv4={'gte': start, 'lte': end})
+                elif itype in ('email', 'url', 'fqdn'):
+                    s = s.filter('term', q_filters['indicator'])
+
+            except InvalidIndicator:
+                s = s.query("match", msg=q_filters['indicator'])
+
+            del q_filters['indicator']
 
         for f in q_filters:
             kwargs = {f: q_filters[f]}
@@ -236,6 +254,12 @@ class IndicatorMixin(object):
                 return []
         else:
             try:
-                return [x['_source'] for x in rv.hits.hits]
-            except KeyError:
+                data = []
+                for x in rv.hits.hits:
+                    if x['_source'].get('msg'):
+                        x['_source']['msg'] = b64encode(x['_source']['msg'].encode('utf-8'))
+                    data.append(x['_source'])
+                return data
+            except KeyError as e:
+                self.logger.error(e)
                 return []
