@@ -83,3 +83,17 @@ def test_store_sqlite(store):
 
     assert len(x) == 0
 
+    x = store.handle_indicators_create(t, {
+        'indicator': '192.168.1.1',
+        'tags': 'botnet',
+        'provider': 'csirtgadgets.org',
+    })
+
+    assert x > 0
+
+    x = store.handle_indicators_search(t, {
+        'indicator': '192.168.1.1',
+    })
+
+    assert len(x) > 0
+

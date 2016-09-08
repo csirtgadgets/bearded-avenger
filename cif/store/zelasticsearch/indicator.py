@@ -14,7 +14,7 @@ import re
 from base64 import b64decode, b64encode
 import binascii
 
-VALID_FILTERS = ['indicator', 'confidence', 'provider', 'itype', 'group']
+VALID_FILTERS = ['indicator', 'confidence', 'provider', 'itype', 'group', 'tags']
 
 LIMIT = 5000
 LIMIT = os.getenv('CIF_ES_LIMIT', LIMIT)

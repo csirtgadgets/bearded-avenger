@@ -26,7 +26,7 @@ from sqlalchemy import event
 
 logger = logging.getLogger(__name__)
 
-VALID_FILTERS = ['indicator', 'confidence', 'provider', 'itype', 'group']
+VALID_FILTERS = ['indicator', 'confidence', 'provider', 'itype', 'group', 'tags']
 
 if PYVERSION > 2:
     basestring = (str, bytes)
