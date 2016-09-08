@@ -10,8 +10,6 @@ from cifsdk.constants import PYVERSION
 from pprint import pprint
 from cif.store.sqlite import Base
 
-DB_FILE = os.path.join(RUNTIME_PATH, 'cif.sqlite')
-
 logger = logging.getLogger(__name__)
 
 VALID_FILTERS = ['indicator', 'confidence', 'provider', 'itype', 'group', 'tags']

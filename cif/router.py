@@ -52,7 +52,7 @@ class Router(object):
 
     def __init__(self, listen=ROUTER_ADDR, hunter=HUNTER_ADDR, store_type=STORE_DEFAULT, store_address=STORE_ADDR,
                  store_nodes=None, p2p=False, hunter_token=HUNTER_TOKEN, hunter_threads=HUNTER_THREADS,
-                 gatherer_threads=GATHERER_THREADS):
+                 gatherer_threads=GATHERER_THREADS, test=False):
 
         self.logger = logging.getLogger(__name__)
 
@@ -60,7 +60,9 @@ class Router(object):
 
         self.store_s = self.context.socket(zmq.DEALER)
         self.store_s.bind(store_address)
-        self._init_store(self.context, store_address, store_type, nodes=store_nodes)
+
+        if not test:
+            self._init_store(self.context, store_address, store_type, nodes=store_nodes)
 
         self.gatherer_s = self.context.socket(zmq.PUSH)
         self.gatherer_sink_s = self.context.socket(zmq.PULL)
