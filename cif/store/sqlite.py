@@ -275,6 +275,9 @@ class SQLite(Store):
 
         return [self._as_dict(x) for x in rv]
 
+    def indicators_create(self, data):
+        return self.indicators_upsert(data)
+
     def indicators_upsert(self, data):
         if type(data) == dict:
             data = [data]
