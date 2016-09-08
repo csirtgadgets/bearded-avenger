@@ -6,12 +6,15 @@ import os
 from pprint import pprint
 from cifsdk.exceptions import AuthError, InvalidSearch
 from csirtg_indicator import resolve_itype
+from csirtg_indicator.exceptions import InvalidIndicator
 from datetime import datetime
 import ipaddress
 import arrow
 import re
+from base64 import b64decode, b64encode
+import binascii
 
-VALID_FILTERS = ['indicator', 'confidence', 'provider', 'itype', 'group']
+VALID_FILTERS = ['indicator', 'confidence', 'provider', 'itype', 'group', 'tags']
 
 LIMIT = 5000
 LIMIT = os.getenv('CIF_ES_LIMIT', LIMIT)
@@ -46,6 +49,7 @@ class Indicator(DocType):
     tags = String(multi=True)
     rdata = String(index="not_analyzed")
     count = Integer()
+    message = String(multi=True)
 
 
 def _current_index():
@@ -98,6 +102,12 @@ class IndicatorMixin(object):
         if type(data['group']) != list:
             data['group'] = [data['group']]
 
+        if data.get('message'):
+            try:
+                data['message'] = str(b64decode(data['message']))
+            except (TypeError, binascii.Error) as e:
+                pass
+
         i = Indicator(**data)
 
         if i.save():
@@ -142,12 +152,21 @@ class IndicatorMixin(object):
                         i['_source']['count'] += 1
                         i['_source']['lasttime'] = d['lasttime']
                         i['_source']['reporttime'] = d['reporttime']
+                        if d.get('message'):
+                            if not i['_source'].get('message'):
+                                i['_source']['message'] = []
+                            i['_source']['message'].append(d['message'])
+
                         meta = es.update(index=r['_index'], doc_type='indicator', id=r['_id'], body={'doc': i['_source']})
                     else:
                         # carry the information forward
                         d['count'] = i['_source']['count'] + 1
                         i['_source']['lasttime'] = d['lasttime']
                         i['_source']['reporttime'] = d['reporttime']
+                        if d.get('message'):
+                            if not i['_source'].get('message'):
+                                i['_source']['message'] = []
+                            i['_source']['message'].append(d['message'])
                         self.indicators_create(d)
                         es.delete(index=r['_index'], doc_type='indicator', id=r['_id'], refresh=True)
 
@@ -206,18 +225,25 @@ class IndicatorMixin(object):
                 q_filters[f] = filters[f]
 
         if q_filters.get('indicator'):
-            itype = resolve_itype(q_filters['indicator'])
+            try:
+                itype = resolve_itype(q_filters['indicator'])
 
-            if itype == 'ipv4':
-                ip = ipaddress.IPv4Network(q_filters['indicator'])
-                mask = ip.prefixlen
-                if mask < 8:
-                    raise InvalidSearch('prefix needs to be greater than or equal to 8')
-                start = str(ip.network_address)
-                end = str(ip.broadcast_address)
+                if itype == 'ipv4':
+                    ip = ipaddress.IPv4Network(q_filters['indicator'])
+                    mask = ip.prefixlen
+                    if mask < 8:
+                        raise InvalidSearch('prefix needs to be greater than or equal to 8')
+                    start = str(ip.network_address)
+                    end = str(ip.broadcast_address)
 
-                s = s.filter('range', indicator_ipv4={'gte': start, 'lte': end})
-                del q_filters['indicator']
+                    s = s.filter('range', indicator_ipv4={'gte': start, 'lte': end})
+                elif itype in ('email', 'url', 'fqdn'):
+                    s = s.filter('term', q_filters['indicator'])
+
+            except InvalidIndicator:
+                s = s.query("match", message=q_filters['indicator'])
+
+            del q_filters['indicator']
 
         for f in q_filters:
             kwargs = {f: q_filters[f]}
@@ -236,6 +262,12 @@ class IndicatorMixin(object):
                 return []
         else:
             try:
-                return [x['_source'] for x in rv.hits.hits]
-            except KeyError:
+                data = []
+                for x in rv.hits.hits:
+                    if x['_source'].get('message'):
+                        x['_source']['message'] = b64encode(x['_source']['message'].encode('utf-8'))
+                    data.append(x['_source'])
+                return data
+            except KeyError as e:
+                self.logger.error(e)
                 return []
