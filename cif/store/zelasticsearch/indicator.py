@@ -49,6 +49,7 @@ class Indicator(DocType):
     tags = String(multi=True)
     rdata = String(index="not_analyzed")
     count = Integer()
+    message = String(multi=True)
 
 
 def _current_index():
@@ -101,9 +102,9 @@ class IndicatorMixin(object):
         if type(data['group']) != list:
             data['group'] = [data['group']]
 
-        if data.get('msg'):
+        if data.get('message'):
             try:
-                data['msg'] = str(b64decode(data['msg']))
+                data['message'] = str(b64decode(data['message']))
             except (TypeError, binascii.Error) as e:
                 pass
 
@@ -151,12 +152,21 @@ class IndicatorMixin(object):
                         i['_source']['count'] += 1
                         i['_source']['lasttime'] = d['lasttime']
                         i['_source']['reporttime'] = d['reporttime']
+                        if d.get('message'):
+                            if not i['_source'].get('message'):
+                                i['_source']['message'] = []
+                            i['_source']['message'].append(d['message'])
+
                         meta = es.update(index=r['_index'], doc_type='indicator', id=r['_id'], body={'doc': i['_source']})
                     else:
                         # carry the information forward
                         d['count'] = i['_source']['count'] + 1
                         i['_source']['lasttime'] = d['lasttime']
                         i['_source']['reporttime'] = d['reporttime']
+                        if d.get('message'):
+                            if not i['_source'].get('message'):
+                                i['_source']['message'] = []
+                            i['_source']['message'].append(d['message'])
                         self.indicators_create(d)
                         es.delete(index=r['_index'], doc_type='indicator', id=r['_id'], refresh=True)
 
@@ -214,8 +224,6 @@ class IndicatorMixin(object):
             if filters.get(f):
                 q_filters[f] = filters[f]
 
-        search_terms = False
-
         if q_filters.get('indicator'):
             try:
                 itype = resolve_itype(q_filters['indicator'])
@@ -233,7 +241,7 @@ class IndicatorMixin(object):
                     s = s.filter('term', q_filters['indicator'])
 
             except InvalidIndicator:
-                s = s.query("match", msg=q_filters['indicator'])
+                s = s.query("match", message=q_filters['indicator'])
 
             del q_filters['indicator']
 
@@ -256,8 +264,8 @@ class IndicatorMixin(object):
             try:
                 data = []
                 for x in rv.hits.hits:
-                    if x['_source'].get('msg'):
-                        x['_source']['msg'] = b64encode(x['_source']['msg'].encode('utf-8'))
+                    if x['_source'].get('message'):
+                        x['_source']['message'] = b64encode(x['_source']['message'].encode('utf-8'))
                     data.append(x['_source'])
                 return data
             except KeyError as e:

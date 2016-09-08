@@ -13,7 +13,9 @@ import json
 from cifsdk.exceptions import AuthError
 from cifsdk.constants import PYVERSION
 from pprint import pprint
-import base64
+from base64 import b64decode, b64encode
+from csirtg_indicator import resolve_itype
+from csirtg_indicator.exceptions import InvalidIndicator
 import zlib
 
 DB_FILE = os.path.join(RUNTIME_PATH, 'cif.sqlite')
@@ -24,8 +26,12 @@ from sqlalchemy import event
 
 logger = logging.getLogger(__name__)
 
+VALID_FILTERS = ['indicator', 'confidence', 'provider', 'itype', 'group']
+
 if PYVERSION > 2:
     basestring = (str, bytes)
+
+# PRAGMA foreign_keys = ON;
 
 
 @event.listens_for(Engine, "connect")
@@ -76,18 +82,25 @@ class Indicator(Base):
     description = Column(UnicodeText)
     additional_data = Column(UnicodeText)
     rdata = Column(UnicodeText)
-    msg = Column(UnicodeText)
     count = Column(Integer)
 
     tags = relationship(
         'Tag',
         primaryjoin='and_(Indicator.id==Tag.indicator_id)',
         backref=backref('tags', uselist=True),
+        cascade="all,delete"
+    )
+
+    messages = relationship(
+        'Message',
+        primaryjoin='and_(Indicator.id==Message.indicator_id)',
+        backref=backref('messages', uselist=True),
+        cascade="all,delete"
     )
 
     def __init__(self, indicator=None, itype=None, tlp=None, provider=None, portlist=None, asn=None, asn_desc=None,
                  cc=None, protocol=None, firsttime=None, lasttime=None,
-                 reporttime=None, group="everyone", tags=[], confidence=None,
+                 reporttime=None, group="everyone", confidence=None,
                  reference=None, reference_tlp=None, application=None, timezone=None, city=None, longitude=None,
                  latitude=None, peers=None, description=None, additional_data=None, rdata=None, msg=None, count=1,
                  version=None, **kwargs):
@@ -105,7 +118,6 @@ class Indicator(Base):
         self.reporttime = reporttime
         self.firsttime = firsttime
         self.lasttime = lasttime
-        self.tags = tags
         self.confidence = confidence
         self.reference = reference
         self.reference_tlp = reference_tlp
@@ -117,7 +129,6 @@ class Indicator(Base):
         self.description = description
         self.additional_data = additional_data
         self.rdata = rdata
-        self.msg = msg
         self.count = count
 
         if self.reporttime and isinstance(self.reporttime, basestring):
@@ -135,13 +146,6 @@ class Indicator(Base):
         if self.additional_data:
             self.additional_data = json.dumps(self.additional_data)
 
-        if self.msg:
-            try:
-                self.msg = base64.b64decode(self.msg)
-                logger.debug(self.msg)
-            except Exception as e:
-                logger.error(e)
-
 
 class Tag(Base):
     __tablename__ = "tags"
@@ -152,7 +156,18 @@ class Tag(Base):
     indicator_id = Column(Integer, ForeignKey('indicators.id', ondelete='CASCADE'))
     indicator = relationship(
         Indicator,
-        backref=backref('indicators', uselist=True)
+    )
+
+
+class Message(Base):
+    __tablename__ = 'messages'
+
+    id = Column(Integer, primary_key=True)
+    message = Column(UnicodeText)
+
+    indicator_id = Column(Integer, ForeignKey('indicators.id', ondelete='CASCADE'))
+    indicator = relationship(
+        Indicator,
     )
 
 
@@ -195,8 +210,10 @@ class SQLite(Store):
         except AttributeError:
             pass
 
-        if d.get('msg'):
-            d['msg'] = base64.b64encode(d['msg'])
+        try:
+            d['message'] = [b64encode(m.message) for m in obj.messages]
+        except AttributeError:
+            pass
 
         return d
 
@@ -211,30 +228,50 @@ class SQLite(Store):
         if filters.get('nolog'):
             del filters['nolog']
 
+        q_filters = {}
+        for f in VALID_FILTERS:
+            if filters.get(f):
+                q_filters[f] = filters[f]
+
+        s = self.handle().query(Indicator)
+
+        filters = q_filters
+
         sql = []
+
+        if filters.get('indicator'):
+            try:
+                itype = resolve_itype(filters['indicator'])
+
+                if itype in ('ipv4', 'ipv6', 'fqdn', 'email', 'url'):
+                    sql.append("indicator = '{}'".format(filters['indicator']))
+            except InvalidIndicator as e:
+                sql.append("message LIKE '%{}%'".format(filters['indicator']))
+                s = s.join(Message)
+
+            del filters['indicator']
+
         for k in filters:
-            if filters[k] is not None:
-                if k == 'reporttime':
-                    sql.append("{} >= '{}'".format('reporttime', filters[k]))
-                elif k == 'reporttimeend':
-                    sql.append("{} <= '{}'".format('reporttime', filters[k]))
-                elif k == 'tags':
-                    sql.append("tags.tag == '{}'".format(filters[k]))
-                elif k == 'confidence':
-                    sql.append("{} >= '{}'".format(k, filters[k]))
-                else:
-                    sql.append("{} = '{}'".format(k, filters[k]))
+            if k == 'reporttime':
+                sql.append("{} >= '{}'".format('reporttime', filters[k]))
+            elif k == 'reporttimeend':
+                sql.append("{} <= '{}'".format('reporttime', filters[k]))
+            elif k == 'tags':
+                sql.append("tags.tag == '{}'".format(filters[k]))
+            elif k == 'confidence':
+                sql.append("{} >= '{}'".format(k, filters[k]))
+            else:
+                sql.append("{} = '{}'".format(k, filters[k]))
 
         sql = ' AND '.join(sql)
 
         self.logger.debug('running filter of itype')
         self.logger.debug(sql)
 
-        rv = self.handle().query(Indicator)
         if filters.get('tags'):
-            rv = rv.join(Tag)
+            s = s.join(Tag)
 
-        rv = rv.order_by(desc(Indicator.reporttime)).filter(sql).limit(limit)
+        rv = s.order_by(desc(Indicator.reporttime)).filter(sql).limit(limit)
 
         return [self._as_dict(x) for x in rv]
 
@@ -244,6 +281,7 @@ class SQLite(Store):
 
         s = self.handle()
         n = 0
+        tmp_added = {}
 
         for d in data:
             tags = d.get("tags", [])
@@ -263,18 +301,37 @@ class SQLite(Store):
 
             if i.count() > 0:
                 r = i.first()
-                if arrow.get(r.lasttime).datetime > arrow.get(d['lasttime']).datetime:
+                if d['lasttime'] and  arrow.get(d['lasttime']).datetime > arrow.get(r.lasttime).datetime:
                     self.logger.debug('{} {}'.format(arrow.get(r.lasttime).datetime, arrow.get(d['lasttime']).datetime))
                     self.logger.debug('upserting: %s' % d['indicator'])
                     r.count += 1
                     r.lasttime = arrow.get(d['lasttime']).datetime
                     r.reporttime = arrow.get(d['reporttime']).datetime
+                    if d.get('message'):
+                        try:
+                            d['message'] = b64decode(d['message'])
+                        except Exception as e:
+                            pass
+                        m = Message(message=d['message'], indicator=r)
+                        s.add(m)
+
                     n += 1
                 else:
                     self.logger.debug('skipping: %s' % d['indicator'])
             else:
+                if tmp_added.get(d['indicator']):
+                    if d['lasttime'] in tmp_added[d['indicator']]:
+                        self.logger.debug('skipping: %s' % d['indicator'])
+                        continue
+                else:
+                    tmp_added[d['indicator']] = set()
+
+                if not d.get('lasttime'):
+                    d['lasttime'] = arrow.utcnow().datetime
+
                 if not d.get('firsttime'):
-                    d['firsttime'] = arrow.utcnow().datetime
+                    d['firsttime'] = d['lasttime']
+
                 ii = Indicator(**d)
                 s.add(ii)
 
@@ -282,41 +339,21 @@ class SQLite(Store):
                     t = Tag(tag=t, indicator=ii)
                     s.add(t)
 
+                if d.get('message'):
+                    try:
+                        d['message'] = b64decode(d['message'])
+                    except Exception as e:
+                        pass
+
+                    m = Message(message=d['message'], indicator=ii)
+                    s.add(m)
+
                 n += 1
+                tmp_added[d['indicator']].add(d['lasttime'])
 
         self.logger.debug('committing')
         s.commit()
         return n
-
-    def indicators_create(self, data):
-        if type(data) == dict:
-            data = [data]
-
-        s = self.handle()
-
-        for d in data:
-            # namespace conflict with related self.tags
-            tags = d.get("tags", [])
-            if len(tags) > 0:
-                if isinstance(tags, basestring):
-                    if '.' in tags:
-                        tags = tags.split(',')
-                    else:
-                        tags = [str(tags)]
-
-                del d['tags']
-
-            o = Indicator(**d)
-
-            s.add(o)
-
-            for t in tags:
-                t = Tag(tag=t, indicator=o)
-                s.add(t)
-
-        s.commit()
-        self.logger.debug('oid: {}'.format(o.id))
-        return o.id
 
     def token_admin(self, token):
         x = self.handle().query(Token)\
