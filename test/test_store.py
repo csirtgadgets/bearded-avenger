@@ -97,3 +97,9 @@ def test_store_sqlite(store):
 
     assert len(x) > 0
 
+    x = store.handle_indicators_search(t, {
+        'indicator': '192.168.1.0/24',
+    })
+
+    assert len(x) > 0
+
