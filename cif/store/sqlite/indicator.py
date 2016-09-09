@@ -14,6 +14,7 @@ import ipaddress
 from .ip import Ip
 from cif.store.sqlite import Base
 from pprint import pprint
+import re
 
 DB_FILE = os.path.join(RUNTIME_PATH, 'cif.sqlite')
 VALID_FILTERS = ['indicator', 'confidence', 'provider', 'itype', 'group', 'tags']
@@ -126,6 +127,19 @@ class Ipv4(Base):
     )
 
 
+class Ipv6(Base):
+    __tablename__ = 'indicators_ipv6'
+
+    id = Column(Integer, primary_key=True)
+    ip = Column(Ip(version=6))
+    mask = Column(Integer, default=64)
+
+    indicator_id = Column(Integer, ForeignKey('indicators.id', ondelete='CASCADE'))
+    indicator = relationship(
+        Indicator,
+    )
+
+
 class Tag(Base):
     __tablename__ = "tags"
 
@@ -196,6 +210,7 @@ class IndicatorMixin(object):
         if filters.get('indicator'):
             try:
                 itype = resolve_itype(filters['indicator'])
+                self.logger.debug('itype %s' % itype)
                 if itype == 'ipv4':
 
                     if PYVERSION < 3 and (filters['indicator'], str):
@@ -215,9 +230,30 @@ class IndicatorMixin(object):
                     s = s.join(Ipv4).filter(Ipv4.ipv4 >= start)
                     s = s.filter(Ipv4.ipv4 <= end)
 
-                elif itype in ('ipv6', 'fqdn', 'email', 'url'):
+                elif itype == 'ipv6':
+                    for m in self.handle().query(Indicator).join(Ipv6).all():
+                        pprint(m.indicator)
+                    if PYVERSION < 3 and (filters['indicator'], str):
+                        filters['indicator'] = filters['indicator'].decode('utf-8')
+
+                    ip = ipaddress.IPv6Network(filters['indicator'])
+                    mask = ip.prefixlen
+
+                    if mask < 32:
+                        raise InvalidSearch('prefix needs to be >= 32')
+
+                    start = str(ip.network_address)
+                    end = str(ip.broadcast_address)
+
+                    self.logger.debug('{} - {}'.format(start, end))
+
+                    s = s.join(Ipv6).filter(Ipv6.ip >= start)
+                    s = s.filter(Ipv6.ip <= end)
+
+                elif itype in ('fqdn', 'email', 'url'):
                     sql.append("indicator = '{}'".format(filters['indicator']))
             except InvalidIndicator as e:
+                self.logger.error(e)
                 sql.append("message LIKE '%{}%'".format(filters['indicator']))
                 s = s.join(Message)
 
@@ -237,7 +273,6 @@ class IndicatorMixin(object):
 
         sql = ' AND '.join(sql)
 
-        self.logger.debug('running filter of itype')
         if sql:
             self.logger.debug(sql)
 
@@ -312,15 +347,24 @@ class IndicatorMixin(object):
                 ii = Indicator(**d)
                 s.add(ii)
 
-                import re
-                if resolve_itype(d['indicator']) == 'ipv4':
-                    match = re.search('^(\S+)\/(\d+)$', d['indicator'])
+                itype = resolve_itype(d['indicator'])
+                if itype is 'ipv4':
+                    match = re.search('^(\S+)\/(\d+)$', d['indicator'])  # TODO -- use ipaddress
                     if match:
                         ipv4 = Ipv4(ipv4=match.group(1), mask=match.group(2), indicator=ii)
                     else:
                         ipv4 = Ipv4(ipv4=d['indicator'], indicator=ii)
 
                     s.add(ipv4)
+
+                elif itype is 'ipv6':
+                    match = re.search('^(\S+)\/(\d+)$', d['indicator']) # TODO -- use ipaddress
+                    if match:
+                        ip = Ipv6(ip=match.group(1), mask=match.group(2), indicator=ii)
+                    else:
+                        ip = Ipv6(ip=d['indicator'], indicator=ii)
+
+                    s.add(ip)
 
                 for t in tags:
                     t = Tag(tag=t, indicator=ii)
