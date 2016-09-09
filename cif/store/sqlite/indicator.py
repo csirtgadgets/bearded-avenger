@@ -231,8 +231,6 @@ class IndicatorMixin(object):
                     s = s.filter(Ipv4.ipv4 <= end)
 
                 elif itype == 'ipv6':
-                    for m in self.handle().query(Indicator).join(Ipv6).all():
-                        pprint(m.indicator)
                     if PYVERSION < 3 and (filters['indicator'], str):
                         filters['indicator'] = filters['indicator'].decode('utf-8')
 
