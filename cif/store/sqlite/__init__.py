@@ -53,9 +53,6 @@ class SQLite(IndicatorMixin, TokenMixin, Store):
         self.handle = sessionmaker(bind=self.engine)
         self.handle = scoped_session(self.handle)
 
-        if PYVERSION < 3:
-            self.engine.raw_connection().connection.text_factory = str
-
         Base.metadata.create_all(self.engine)
 
         self.logger.debug('database path: {}'.format(self.path))
