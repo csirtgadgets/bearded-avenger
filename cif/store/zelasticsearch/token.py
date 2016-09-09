@@ -1,5 +1,6 @@
 from elasticsearch_dsl import DocType, String, Date, Integer, Boolean, Float, Ip, GeoPoint
 import elasticsearch.exceptions
+from elasticsearch_dsl.connections import connections
 import os
 
 ES_NODES = os.getenv('CIF_ES_NODES', '127.0.0.1:9200')
@@ -68,6 +69,7 @@ class TokenMixin(object):
         t = Token(**data)
 
         if t.save():
+            connections.get_connection().indices.flush(index='tokens')
             return t.__dict__['_d_']
 
     def tokens_delete(self, data):
@@ -89,6 +91,7 @@ class TokenMixin(object):
                 t = Token.get(t['_id'])
                 t.delete()
 
+            connections.get_connection().indices.flush(index='tokens')
             return rv.hits.total
         else:
             return 0
@@ -155,6 +158,7 @@ class TokenMixin(object):
 
         d = rv.hits.hits[0]
         d.update(fields=data)
+        connections.get_connection().indices.flush(index='tokens')
 
     def token_last_activity_at(self, token, timestamp=None):
         s = Token.search()
@@ -167,6 +171,7 @@ class TokenMixin(object):
             if timestamp:
                 self.logger.debug('updating timestamp to: {}'.format(timestamp))
                 rv.update(last_activity_at=timestamp)
+                connections.get_connection().indices.flush(index='tokens')
                 return timestamp
             else:
                 return rv.last_activity_at

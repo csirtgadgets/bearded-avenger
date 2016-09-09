@@ -3,7 +3,7 @@ import os
 import tempfile
 from argparse import Namespace
 
-import py.test
+import pytest
 
 from cif.store import Store
 from cifsdk.utils import setup_logging
@@ -16,7 +16,7 @@ setup_logging(args)
 logger = logging.getLogger(__name__)
 
 
-@py.test.yield_fixture
+@pytest.yield_fixture
 def store():
     dbfile = tempfile.mktemp()
     with Store(store_type='sqlite', dbfile=dbfile) as s:
@@ -25,7 +25,7 @@ def store():
     os.unlink(dbfile)
 
 
-@py.test.fixture
+@pytest.fixture
 def obs():
     return {
         'indicator': 'example.com',
@@ -93,6 +93,32 @@ def test_store_sqlite(store):
 
     x = store.handle_indicators_search(t, {
         'indicator': '192.168.1.1',
+    })
+
+    assert len(x) > 0
+
+    x = store.handle_indicators_search(t, {
+        'indicator': '192.168.1.0/24',
+    })
+
+    assert len(x) > 0
+
+    x = store.handle_indicators_create(t, {
+        'indicator': '2001:4860:4860::8888',
+        'tags': 'botnet',
+        'provider': 'csirtgadgets.org',
+    })
+
+    assert x > 0
+
+    x = store.handle_indicators_search(t, {
+        'indicator': '2001:4860:4860::8888',
+    })
+
+    assert len(x) > 0
+
+    x = store.handle_indicators_search(t, {
+        'indicator': '2001:4860::/32',
     })
 
     assert len(x) > 0

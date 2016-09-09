@@ -1,4 +1,4 @@
-from elasticsearch_dsl import DocType, String, Date, Integer, Float, Ip, Mapping, Index, GeoPoint
+from elasticsearch_dsl import DocType, String, Date, Integer, Float, Ip, Mapping, Index, GeoPoint, Byte
 
 import elasticsearch.exceptions
 from elasticsearch_dsl.connections import connections
@@ -13,6 +13,7 @@ import arrow
 import re
 from base64 import b64decode, b64encode
 import binascii
+import socket
 
 VALID_FILTERS = ['indicator', 'confidence', 'provider', 'itype', 'group', 'tags']
 
@@ -30,6 +31,8 @@ TIMEOUT = '{}s'.format(TIMEOUT)
 class Indicator(DocType):
     indicator = String(index="not_analyzed")
     indicator_ipv4 = Ip()
+    indicator_ipv6 = String(index='not_analyzed')
+    indicator_ipv6_mask = Integer()
     group = String(multi=True, index="not_analyzed")
     itype = String(index="not_analyzed")
     tlp = String(index="not_analyzed")
@@ -91,13 +94,22 @@ class IndicatorMixin(object):
         data['meta'] = {}
         data['meta']['index'] = index
 
-        if resolve_itype(data['indicator']) == 'ipv4':
+        itype = resolve_itype(data['indicator'])
+        if itype is 'ipv4':
             match = re.search('^(\S+)\/(\d+)$', data['indicator'])
             if match:
                 data['indicator_ipv4'] = match.group(1)
                 data['indicator_ipv4_mask'] = match.group(2)
             else:
                 data['indicator_ipv4'] = data['indicator']
+        elif itype is 'ipv6':
+            match = re.search('^(\S+)\/(\d+)$', data['indicator'])
+            if match:
+
+                data['indicator_ipv6'] = binascii.b2a_hex(socket.inet_pton(socket.AF_INET6, match.group(1))).decode('utf-8')
+                data['indicator_ipv6_mask'] = match.group(2)
+            else:
+                data['indicator_ipv6'] = binascii.b2a_hex(socket.inet_pton(socket.AF_INET6, data['indicator'])).decode('utf-8')
 
         if type(data['group']) != list:
             data['group'] = [data['group']]
@@ -237,8 +249,19 @@ class IndicatorMixin(object):
                     end = str(ip.broadcast_address)
 
                     s = s.filter('range', indicator_ipv4={'gte': start, 'lte': end})
+                elif itype is 'ipv6':
+                    ip = ipaddress.IPv6Network(q_filters['indicator'])
+                    mask = ip.prefixlen
+                    if mask < 32:
+                        raise InvalidSearch('prefix needs to be greater than or equal to 32')
+
+                    start = binascii.b2a_hex(socket.inet_pton(socket.AF_INET6, str(ip.network_address))).decode('utf-8')
+                    end = binascii.b2a_hex(socket.inet_pton(socket.AF_INET6, str(ip.broadcast_address))).decode('utf-8')
+
+                    s = s.filter('range', indicator_ipv6={'gte': start, 'lte': end})
+
                 elif itype in ('email', 'url', 'fqdn'):
-                    s = s.filter('term', q_filters['indicator'])
+                    s = s.filter('term', indicator=q_filters['indicator'])
 
             except InvalidIndicator:
                 s = s.query("match", message=q_filters['indicator'])

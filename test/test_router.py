@@ -3,5 +3,5 @@ from cif.router import Router
 
 
 def test_router_basics():
-    with Router() as r:
+    with Router(test=True) as r:
         pass
