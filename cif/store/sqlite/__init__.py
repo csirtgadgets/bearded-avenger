@@ -5,6 +5,7 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.engine import Engine
+import sqlite3
 
 from cifsdk.constants import RUNTIME_PATH
 from cif.store.plugin import Store
@@ -51,6 +52,9 @@ class SQLite(IndicatorMixin, TokenMixin, Store):
         self.engine = create_engine(self.path, echo=echo)
         self.handle = sessionmaker(bind=self.engine)
         self.handle = scoped_session(self.handle)
+
+        if PYVERSION < 3:
+            self.engine.raw_connection().connection.text_factory = str
 
         Base.metadata.create_all(self.engine)
 

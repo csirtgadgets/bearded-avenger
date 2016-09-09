@@ -2,7 +2,6 @@ import os
 
 import arrow
 from sqlalchemy import Column, Integer, String, Float, DateTime, UnicodeText, desc, ForeignKey
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref, class_mapper
 
 from cifsdk.constants import RUNTIME_PATH, PYVERSION
@@ -12,9 +11,9 @@ from csirtg_indicator import resolve_itype
 from csirtg_indicator.exceptions import InvalidIndicator
 from cifsdk.exceptions import InvalidSearch
 import ipaddress
-import socket
 from .ip import Ip
 from cif.store.sqlite import Base
+from pprint import pprint
 
 DB_FILE = os.path.join(RUNTIME_PATH, 'cif.sqlite')
 VALID_FILTERS = ['indicator', 'confidence', 'provider', 'itype', 'group', 'tags']
@@ -198,9 +197,13 @@ class IndicatorMixin(object):
             try:
                 itype = resolve_itype(filters['indicator'])
                 if itype == 'ipv4':
-                    #s = s.join(Ipv4).filter(Ipv4.ipv4 == filters['indicator'])
+
+                    if PYVERSION < 3 and (filters['indicator'], str):
+                        filters['indicator'] = filters['indicator'].decode('utf-8')
+
                     ip = ipaddress.IPv4Network(filters['indicator'])
                     mask = ip.prefixlen
+
                     if mask < 8:
                         raise InvalidSearch('prefix needs to be >= 8')
 
@@ -235,7 +238,8 @@ class IndicatorMixin(object):
         sql = ' AND '.join(sql)
 
         self.logger.debug('running filter of itype')
-        self.logger.debug(sql)
+        if sql:
+            self.logger.debug(sql)
 
         if filters.get('tags'):
             s = s.join(Tag)
@@ -252,6 +256,7 @@ class IndicatorMixin(object):
             data = [data]
 
         s = self.handle()
+
         n = 0
         tmp_added = {}
 
