@@ -60,4 +60,4 @@ class Gatherer(object):
             data = str(i)
 
             self.logger.debug('sending back to router...')
-            self.push_s.send_multipart([id, null, mtype, token, data])
+            self.push_s.send_multipart([id, null, mtype, token, data.encode('utf-8')])

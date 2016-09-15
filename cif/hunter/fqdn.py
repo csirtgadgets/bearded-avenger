@@ -3,7 +3,8 @@ from cif.utils import resolve_ns
 from csirtg_indicator import Indicator
 from dns.resolver import Timeout
 from pprint import pprint
-
+from cifsdk.constants import PYVERSION
+import re
 
 def is_subdomain(i):
     bits = i.split('.')
@@ -25,15 +26,14 @@ class Fqdn(object):
                 r = []
 
             for rr in r:
-                fqdn = Indicator(**i.__dict__)
-
+                fqdn = Indicator(**i.__dict__())
                 fqdn.indicator = str(rr).rstrip('.')
                 fqdn.itype = 'fqdn'
                 fqdn.confidence = (int(fqdn.confidence) / 2)
                 x = router.indicators_create(fqdn)
 
             if i.is_subdomain():
-                fqdn = Indicator(**i.__dict__)
+                fqdn = Indicator(**i.__dict__())
                 fqdn.indicator = i.is_subdomain()
                 fqdn.confidence = (int(fqdn.confidence) / 3)
                 x = router.indicators_create(fqdn)
@@ -45,7 +45,7 @@ class Fqdn(object):
                 r = []
 
             for rr in r:
-                ip = Indicator(**i.__dict__)
+                ip = Indicator(**i.__dict__())
                 ip.indicator = str(rr)
                 ip.itype = 'ipv4'
                 ip.rdata = i.indicator
@@ -60,7 +60,7 @@ class Fqdn(object):
                 r = []
 
             for rr in r:
-                ip = Indicator(**i.__dict__)
+                ip = Indicator(**i.__dict__())
                 ip.indicator = str(rr).rstrip('.')
                 ip.itype = 'fqdn'
                 ip.rdata = i.indicator
@@ -75,8 +75,10 @@ class Fqdn(object):
                 r = []
 
             for rr in r:
-                ip = Indicator(**i.__dict__)
-                ip.indicator = str(rr).rstrip('.')
+                ip = Indicator(**i.__dict__())
+
+                rr = re.sub(r'^\d{1,2} ', '', str(rr))
+                ip.indicator = rr.rstrip('.')
                 ip.itype = 'fqdn'
                 ip.rdata = i.indicator
                 ip.confidence = (int(ip.confidence) / 6)

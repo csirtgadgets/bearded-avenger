@@ -3,6 +3,7 @@ import logging
 from dns.name import EmptyLabel
 from csirtg_indicator import Indicator
 from pprint import pprint
+from cifsdk.constants import PYVERSION
 
 CONFIDENCE = 9
 PROVIDER = 'spamhaus.org'
@@ -78,7 +79,7 @@ class SpamhausFqdn(object):
                     r = None
 
                 if r:
-                    f = Indicator(**i.__dict__)
+                    f = Indicator(**i.__dict__())
 
                     f.tags = [r['tags']]
                     f.description = r['description']
