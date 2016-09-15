@@ -131,6 +131,7 @@ class Router(object):
         self.logger.debug(m)
 
         id, null, token, mtype, data = m
+        mtype = mtype.decode('utf-8')
 
         self.logger.debug("mtype: {0}".format(mtype))
 
@@ -158,7 +159,7 @@ class Router(object):
 
     def handle_message_default(self, id, mtype, token, data='[]'):
         self.logger.debug('sending message to store...')
-        self.store_s.send_multipart([id, ''.encode('utf-8'), mtype, token, data])
+        self.store_s.send_multipart([id, ''.encode('utf-8'), mtype.encode('utf-8'), token, data])
 
     def handle_message_store(self, s, e):
         self.logger.debug('msg from store received')
@@ -188,14 +189,14 @@ class Router(object):
                 self.p2p.send(data.encode('utf-8'))
 
             self.logger.debug('sending to hunters...')
-            self.hunters_s.send(data)
+            self.hunters_s.send_string(data)
 
         self.logger.debug('sending to store')
-        self.store_s.send_multipart([id, '', 'indicators_create', token, data])
+        self.store_s.send_multipart([id, b'', b'indicators_create', token, data.encode('utf-8')])
         self.logger.debug('done')
 
     def handle_indicators_search(self, id, mtype, token, data):
-        self.store_s.send_multipart([id, '', mtype, token, data])
+        self.store_s.send_multipart([id, b'', mtype.encode('utf-8'), token, data])
         data = json.loads(data)
 
         if data.get('indicator'):
@@ -209,7 +210,7 @@ class Router(object):
 
     def handle_indicators_create(self, id, mtype, token, data):
         self.logger.debug('sending to gatherers..')
-        self.gatherer_s.send_multipart([id, '', mtype, token, data])
+        self.gatherer_s.send_multipart([id, ''.encode('utf-8'), mtype.encode('utf-8'), token, data])
 
 
 def main():

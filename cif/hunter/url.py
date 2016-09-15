@@ -1,6 +1,7 @@
 from cifsdk.constants import PYVERSION
 import logging
 from csirtg_indicator import Indicator
+import json
 
 if PYVERSION > 2:
     from urllib.parse import urlparse
@@ -18,7 +19,7 @@ class Url(object):
         if i.itype == 'url':
             u = urlparse(i.indicator)
             if u.netloc:
-                fqdn = Indicator(**i.__dict__)
+                fqdn = Indicator(**i.__dict__())
                 fqdn.indicator = u.netloc
                 fqdn.itype = 'fqdn'
                 fqdn.confidence = (int(fqdn.confidence) / 2)

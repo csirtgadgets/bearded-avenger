@@ -3,6 +3,7 @@ import logging
 from pprint import pprint
 from csirtg_indicator import Indicator
 from csirtg_indicator.utils import is_ipv4_net
+from cifsdk.constants import PYVERSION
 
 CONFIDENCE = 9
 PROVIDER = 'spamhaus.org'
@@ -72,7 +73,7 @@ class SpamhausIp(object):
                     r = None
 
                 if r:
-                    f = Indicator(**i.__dict__)
+                    f = Indicator(**i.__dict__())
 
                     f.tags = [r['tags']]
                     f.description = r['description']
