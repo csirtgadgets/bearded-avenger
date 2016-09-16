@@ -47,17 +47,23 @@ class Gatherer(object):
             id, null, mtype, token, data = m
 
             data = json.loads(data)
-            i = Indicator(**data)
+            if isinstance(data, dict):
+                data = [data]
 
-            for g in self.gatherers:
-                try:
-                    g.process(i)
-                except Exception as e:
-                    self.logger.error('gatherer failed: %s' % g)
-                    self.logger.error(e)
-                    traceback.print_exc()
+            rv = []
+            for d in data:
+                i = Indicator(**d)
 
-            data = str(i)
+                for g in self.gatherers:
+                    try:
+                        g.process(i)
+                    except Exception as e:
+                        self.logger.error('gatherer failed: %s' % g)
+                        self.logger.error(e)
+                        traceback.print_exc()
 
+                rv.append(i.__dict__())
+
+            data = json.dumps(rv)
             self.logger.debug('sending back to router...')
             self.push_s.send_multipart([id, null, mtype, token, data.encode('utf-8')])

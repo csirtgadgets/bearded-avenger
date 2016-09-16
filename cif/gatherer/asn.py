@@ -37,9 +37,17 @@ class Asn(object):
                 indicator.prefix = bits[1]
                 indicator.cc = bits[2]
                 indicator.rir = bits[3]
-
                 answers = resolve_ns('as{}.{}'.format(asns[0], 'asn.cymru.com'), t='TXT')
-                bits = str(answers[0]).replace('"', '').strip().split(' | ')
+
+
+                ## TODO - not fixed yet
+                try:
+                    tmp = str(answers[0])
+                except UnicodeDecodeError:
+                    tmp = bytes(answers[0], 'latin-1')
+                    tmp = str(tmp)
+
+                bits = tmp.replace('"', '').strip().split(' | ')
                 if len(bits) > 4:
                     indicator.asn_desc = bits[4]
 

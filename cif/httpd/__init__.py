@@ -317,7 +317,7 @@ def indicators():
         fireball = False
         if request.headers.get('Content-Length'):
             logger.debug('content-length: %s' % request.headers['Content-Length'])
-            if int(request.headers['Content-Length']) > 1000000:
+            if int(request.headers['Content-Length']) > 10:
                 logger.info('fireball mode')
                 fireball = True
         try:

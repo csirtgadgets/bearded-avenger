@@ -43,20 +43,23 @@ class Hunter(object):
         self.logger.debug('starting hunter')
 
         while True:
-            m = self.socket.recv()
-            self.logger.debug(m)
+            data = self.socket.recv()
+            self.logger.debug(data)
 
-            m = json.loads(m)
+            data = json.loads(data)
+            if isinstance(data, dict):
+                data = [data]
 
-            m = Indicator(**m)
+            for d in data:
+                d = Indicator(**d)
 
-            for p in self.plugins:
-                try:
-                    p.process(m, self.router)
-                except Exception as e:
-                    self.logger.error(e)
-                    traceback.print_exc()
-                    self.logger.error('giving up on: {}'.format(m))
+                for p in self.plugins:
+                    try:
+                        p.process(d, self.router)
+                    except Exception as e:
+                        self.logger.error(e)
+                        traceback.print_exc()
+                        self.logger.error('giving up on: {}'.format(d))
 
     def __enter__(self):
         return self

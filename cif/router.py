@@ -179,18 +179,23 @@ class Router(object):
         id, null, mtype, token, data = m
 
         data = json.loads(data)
-        i = Indicator(**data)
+        if isinstance(data, dict):
+            data = [data]
+
+        for d in data:
+            i = Indicator(**d)
+
+            d = json.dumps(d)
+
+            if i.confidence >= HUNTER_MIN_CONFIDENCE:
+                if self.p2p:
+                    self.logger.info('sending to peers...')
+                    self.p2p.send(data.encode('utf-8'))
+
+                self.logger.debug('sending to hunters...')
+                self.hunters_s.send_string(d)
 
         data = json.dumps(data)
-
-        if i.confidence >= HUNTER_MIN_CONFIDENCE:
-            if self.p2p:
-                self.logger.info('sending to peers...')
-                self.p2p.send(data.encode('utf-8'))
-
-            self.logger.debug('sending to hunters...')
-            self.hunters_s.send_string(data)
-
         self.logger.debug('sending to store')
         self.store_s.send_multipart([id, b'', b'indicators_create', token, data.encode('utf-8')])
         self.logger.debug('done')
@@ -206,11 +211,20 @@ class Router(object):
                 confidence=10,
                 tags=['search'],
             )
-            self.gatherer_s.send_multipart([id, '', 'indicators_create', token, str(data)])
+            data = str(data).encode('utf-8')
+            self.gatherer_s.send_multipart([id, b'', b'indicators_create', token, data])
 
     def handle_indicators_create(self, id, mtype, token, data):
         self.logger.debug('sending to gatherers..')
-        self.gatherer_s.send_multipart([id, ''.encode('utf-8'), mtype.encode('utf-8'), token, data])
+        data = json.loads(data)
+        if isinstance(data, dict):
+            data = [data]
+
+        for d in data:
+            d = json.dumps(d).encode('utf-8')
+            self.gatherer_s.send_multipart([id, ''.encode('utf-8'), mtype.encode('utf-8'), token, d])
+
+        #self.gatherer_s.send_multipart([id, ''.encode('utf-8'), mtype.encode('utf-8'), token, data])
 
 
 def main():
