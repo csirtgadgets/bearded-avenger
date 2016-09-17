@@ -32,3 +32,5 @@ GATHERER_ADDR = os.environ.get('CIF_GATHERER_ADDR', GATHERER_ADDR)
 
 GATHERER_SINK_ADDR = 'ipc://{}'.format(os.path.join(RUNTIME_PATH, 'gatherer_sink.ipc'))
 GATHERER_SINK_ADDR = os.environ.get('CIF_GATHERER_SINK_ADDR', GATHERER_SINK_ADDR)
+
+TOKEN_CACHE_DELAY = 5

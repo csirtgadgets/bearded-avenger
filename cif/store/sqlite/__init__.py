@@ -10,6 +10,8 @@ import sqlite3
 from cifsdk.constants import RUNTIME_PATH
 from cif.store.plugin import Store
 from cifsdk.constants import PYVERSION
+from cif.constants import TOKEN_CACHE_DELAY
+import arrow
 
 Base = declarative_base()
 from .token import TokenMixin, Token
@@ -56,6 +58,9 @@ class SQLite(IndicatorMixin, TokenMixin, Store):
         Base.metadata.create_all(self.engine)
 
         self.logger.debug('database path: {}'.format(self.path))
+
+        self.token_cache = {}
+        self.token_cache_check = arrow.utcnow().timestamp + TOKEN_CACHE_DELAY
 
     def ping(self, token):
         if self.token_read(token) or self.token_write(token):

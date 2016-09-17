@@ -10,6 +10,8 @@ from cifsdk.constants import PYVERSION
 from pprint import pprint
 from cif.store.sqlite import Base
 
+from cif.constants import TOKEN_CACHE_DELAY
+
 logger = logging.getLogger(__name__)
 
 VALID_FILTERS = ['indicator', 'confidence', 'provider', 'itype', 'group', 'tags']
@@ -105,15 +107,40 @@ class TokenMixin(object):
             return 0
 
     def token_read(self, token):
+        if arrow.utcnow().timestamp > self.token_cache_check:
+            self.token_cache = {}
+            self.token_cache_check = arrow.utcnow().timestamp + TOKEN_CACHE_DELAY
+
+        if token in self.token_cache:
+            try:
+                if self.token_cache[token]['read'] is True:
+                    return True
+            except KeyError:
+                pass
+
         x = self.handle().query(Token) \
             .filter_by(token=token) \
             .filter_by(read=True) \
             .filter(Token.revoked is not True)
-        pprint(x.count())
+
         if x.count():
+            if not self.token_cache.get('token'):
+                self.token_cache[token] = {}
+            self.token_cache[token]['read'] = True
             return True
 
     def token_write(self, token):
+        if arrow.utcnow().timestamp > self.token_cache_check:
+            self.token_cache = {}
+            self.token_cache_check = arrow.utcnow().timestamp + TOKEN_CACHE_DELAY
+
+        if token in self.token_cache:
+            try:
+                if self.token_cache[token]['write'] is True:
+                    return True
+            except KeyError:
+                pass
+
         self.logger.debug('testing token: {}'.format(token))
         rv = self.handle().query(Token) \
             .filter_by(token=token) \
@@ -121,6 +148,9 @@ class TokenMixin(object):
             .filter(Token.revoked is not True)
 
         if rv.count():
+            if not self.token_cache.get('token'):
+                self.token_cache[token] = {}
+            self.token_cache[token]['write'] = True
             return True
 
     def token_edit(self, data):
@@ -145,11 +175,26 @@ class TokenMixin(object):
     def token_last_activity_at(self, token, timestamp=None):
         s = self.handle()
         timestamp = arrow.get(timestamp)
+        token = token.decode('utf-8')
         if timestamp:
-            x = s.query(Token).filter_by(token=token).update({Token.last_activity_at: timestamp.datetime})
-            s.commit()
-            if x:
-                return timestamp.datetime
+            if arrow.utcnow().timestamp > self.token_cache_check:
+                self.token_cache = {}
+                self.token_cache_check = arrow.utcnow().timestamp + TOKEN_CACHE_DELAY
+
+            if token in self.token_cache:
+                try:
+                    if self.token_cache[token]['last_activity_at']:
+                        return self.token_cache[token]['last_activity_at']
+                except KeyError:
+                    x = s.query(Token).filter_by(token=token).update({Token.last_activity_at: timestamp.datetime})
+                    s.commit()
+
+                    if x:
+                        self.token_cache[token]['last_activity_at'] = timestamp.datetime
+                        return timestamp.datetime
+                    else:
+                        self.logger.error('failed to update token: {}'.format(token))
+
         else:
             x = s.query(Token).filter_by(token=token)
             if x.count():

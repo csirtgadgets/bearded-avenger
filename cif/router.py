@@ -70,10 +70,13 @@ class Router(object):
         self.gatherer_sink_s.bind(GATHERER_SINK_ADDR)
         self._init_gatherers(gatherer_threads)
 
-        self.hunters_s = self.context.socket(zmq.PUSH)
-        self.hunters_s.bind(hunter)
-        self.hunters = []
-        self._init_hunters(hunter_threads, hunter_token)
+        if int(hunter_threads):
+            self.hunters_s = self.context.socket(zmq.PUSH)
+            self.hunters_s.bind(hunter)
+            self.hunters = []
+            self._init_hunters(hunter_threads, hunter_token)
+        else:
+            self.hunters_s = None
 
         self.p2p = p2p
         if self.p2p:
@@ -192,8 +195,9 @@ class Router(object):
                     self.logger.info('sending to peers...')
                     self.p2p.send(data.encode('utf-8'))
 
-                self.logger.debug('sending to hunters...')
-                self.hunters_s.send_string(d)
+                if self.hunters_s:
+                    self.logger.debug('sending to hunters...')
+                    self.hunters_s.send_string(d)
 
         data = json.dumps(data)
         self.logger.debug('sending to store')
@@ -220,11 +224,11 @@ class Router(object):
         if isinstance(data, dict):
             data = [data]
 
-        for d in data:
-            d = json.dumps(d).encode('utf-8')
-            self.gatherer_s.send_multipart([id, ''.encode('utf-8'), mtype.encode('utf-8'), token, d])
-
-        #self.gatherer_s.send_multipart([id, ''.encode('utf-8'), mtype.encode('utf-8'), token, data])
+        #for d in data:
+        #    d = json.dumps(d).encode('utf-8')
+        #    self.gatherer_s.send_multipart([id, ''.encode('utf-8'), mtype.encode('utf-8'), token, d])
+        data = json.dumps(data).encode('utf-8')
+        self.gatherer_s.send_multipart([id, ''.encode('utf-8'), mtype.encode('utf-8'), token, data])
 
 
 def main():
