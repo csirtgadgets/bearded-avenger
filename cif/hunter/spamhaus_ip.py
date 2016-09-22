@@ -1,9 +1,8 @@
-import dns.resolver
 import logging
-from pprint import pprint
 from csirtg_indicator import Indicator
 from csirtg_indicator.utils import is_ipv4_net
-from cifsdk.constants import PYVERSION
+from cif.utils import resolve_ns
+from pprint import pprint
 
 CONFIDENCE = 9
 PROVIDER = 'spamhaus.org'
@@ -56,9 +55,9 @@ class SpamhausIp(object):
     def _resolve(self, data):
         data = reversed(data.split('.'))
         data = '{}.zen.spamhaus.org'.format('.'.join(data))
-        self.logger.debug(data)
-        answers = dns.resolver.query(data, 'A')
-        return answers[0]
+        data = resolve_ns(data)
+        if data and data[0]:
+            return data[0]
 
     def process(self, i, router):
         if (i.itype == 'ipv4' or i.itype == 'ipv6') and i.provider != 'spamhaus.org' and not is_ipv4_net(i.indicator):
@@ -83,10 +82,7 @@ class SpamhausIp(object):
                     f.reference = 'http://www.spamhaus.org/query/bl?ip={}'.format(f.indicator)
                     x = router.indicators_create(f)
                     self.logger.debug(x)
-            except dns.resolver.NoAnswer:
-                self.logger.info('no answer...')
-            except dns.resolver.NXDOMAIN:
-                self.logger.info('nxdomain...')
+
             except Exception as e:
                 self.logger.error(e)
                 import traceback

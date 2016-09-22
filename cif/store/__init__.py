@@ -19,6 +19,7 @@ import cif.store
 from cif.constants import STORE_ADDR, PYVERSION
 from cifsdk.constants import REMOTE_ADDR, CONFIG_PATH
 from cifsdk.exceptions import AuthError, InvalidSearch
+from csirtg_indicator import InvalidIndicator
 from cifsdk.utils import setup_logging, get_argument_parser, setup_signals
 
 MOD_PATH = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -31,6 +32,8 @@ STORE_DEFAULT = 'sqlite'
 STORE_PLUGINS = ['cif.store.dummy', 'cif.store.sqlite', 'cif.store.elasticsearch', 'cif.store.rdflib']
 if PYVERSION > 2:
     basestring = (str, bytes)
+    
+logger = logging.getLogger(__name__)
 
 
 class Store(object):
@@ -40,43 +43,45 @@ class Store(object):
     def __exit__(self, type, value, traceback):
         return self
 
-    def __init__(self, context=zmq.Context.instance(), store_type=STORE_DEFAULT, store_address=STORE_ADDR, **kwargs):
+    def __init__(self, store_type=STORE_DEFAULT, store_address=STORE_ADDR, **kwargs):
 
-        self.logger = logging.getLogger(__name__)
-        self.context = context
         self.store_addr = store_address
         self.store = store_type
-
-        self.router = self.context.socket(zmq.ROUTER)
-
-        self._load_plugin(**kwargs)
+        self.kwargs = kwargs
 
     def _load_plugin(self, **kwargs):
         # TODO replace with cif.utils.load_plugin
-        self.logger.debug('store is: {}'.format(self.store))
+        logger.debug('store is: {}'.format(self.store))
         for loader, modname, is_pkg in pkgutil.iter_modules(cif.store.__path__, 'cif.store.'):
-            self.logger.debug('testing store plugin: {}'.format(modname))
+            logger.debug('testing store plugin: {}'.format(modname))
             if modname == 'cif.store.{}'.format(self.store) or modname == 'cif.store.z{}'.format(self.store):
-                self.logger.debug('Loading plugin: {0}'.format(modname))
+                logger.debug('Loading plugin: {0}'.format(modname))
                 self.store = loader.find_module(modname).load_module(modname)
-                self.store = self.store.Plugin(**kwargs)
+                self.store = self.store.Plugin(**self.kwargs)
 
     def start(self):
+        self._load_plugin()
+        self.context = zmq.Context()
+        self.router = self.context.socket(zmq.ROUTER)
+
         self.token_create_admin()
 
-        self.logger.debug('connecting to router: {}'.format(self.store_addr))
+        logger.debug('connecting to router: {}'.format(self.store_addr))
         self.router.connect(self.store_addr)
 
-        self.logger.info('connected')
+        logger.info('connected')
 
-        self.logger.debug('staring loop')
-        while True:
-            self.logger.debug('waiting on message')
-            m = self.router.recv_multipart()
-            self.handle_message(m)
+        logger.debug('staring loop')
+        try:
+            while True:
+                m = self.router.recv_multipart()
+                self.handle_message(m)
+        except KeyboardInterrupt:
+            logger.info('shutting down store...')
+            return
 
     def handle_message(self, m):
-        self.logger.debug('message received')
+        logger.debug('message received')
 
         id, client_id, null, mtype, token, data = m
 
@@ -85,52 +90,57 @@ class Store(object):
             try:
                 data = json.loads(data.decode('utf-8'))
             except ValueError as e:
-                self.logger.error(e)
+                logger.error(e)
                 self.router.send_multipart([id, client_id, null, mtype, json.dumps({"status": "failed"}).encode('utf-8')])
                 return
 
         handler = getattr(self, "handle_" + mtype.decode('utf-8'))
         if handler:
-            self.logger.debug("mtype: {0}".format(mtype))
-            self.logger.debug('running handler: {}'.format(mtype))
+            logger.debug("mtype: {0}".format(mtype))
+            logger.debug('running handler: {}'.format(mtype))
 
             try:
                 rv = handler(token.decode('utf-8'), data)
                 rv = {"status": "success", "data": rv}
-                self.logger.debug('updating last_active')
+                logger.debug('updating last_active')
                 ts = arrow.utcnow().format('YYYY-MM-DDTHH:mm:ss.SSSSS')
                 ts = '{}Z'.format(ts)
                 self.store.token_last_activity_at(token, timestamp=ts)
             except AuthError as e:
-                self.logger.error(e)
+                logger.error(e)
                 rv = {'status': 'failed', 'message': 'unauthorized'}
             except InvalidSearch as e:
                 rv = {'status': 'failed', 'message': 'invalid search'}
+            except InvalidIndicator as e:
+                logger.error(data)
+                logger.error(e)
+                traceback.print_exc()
+                rv = {'status': 'failed', 'message': 'invalid indicator {}'.format(e)}
             except Exception as e:
-                self.logger.error(e)
+                logger.error(e)
                 traceback.print_exc()
                 rv = {"status": "failed"}
 
             self.router.send_multipart([id, client_id, null, mtype, json.dumps(rv).encode('utf-8')])
         else:
-            self.logger.error('message type {0} unknown'.format(mtype))
+            logger.error('message type {0} unknown'.format(mtype))
             self.router.send_multipart([id, null, '0'.encode('utf-8')])
 
     def handle_ping(self, token, data='[]'):
-        self.logger.debug('handling ping message')
+        logger.debug('handling ping message')
         return self.store.ping(token)
 
     def handle_ping_write(self, token, data='[]'):
-        self.logger.debug('handling ping write')
+        logger.debug('handling ping write')
         return self.store.token_write(token)
 
     def handle_indicators_search(self, token, data):
         if self.store.token_read(token):
-            self.logger.debug('searching')
+            logger.debug('searching')
             try:
                 x = self.store.indicators_search(data)
             except Exception as e:
-                self.logger.error(e)
+                logger.error(e)
                 raise InvalidSearch('invalid search')
             else:
                 return x
@@ -146,14 +156,14 @@ class Store(object):
 
     def handle_tokens_search(self, token, data):
         if self.store.token_admin(token):
-            self.logger.debug('tokens_search')
+            logger.debug('tokens_search')
             return self.store.tokens_search(data)
         else:
             raise AuthError('invalid token')
 
     def handle_tokens_create(self, token, data):
         if self.store.token_admin(token):
-            self.logger.debug('tokens_create')
+            logger.debug('tokens_create')
             return self.store.tokens_create(data)
         else:
             raise AuthError('invalid token')
@@ -174,9 +184,9 @@ class Store(object):
             raise AuthError('invalid token')
 
     def token_create_admin(self):
-        self.logger.info('testing for tokens...')
+        logger.info('testing for tokens...')
         if not self.store.tokens_admin_exists():
-            self.logger.info('admin token does not exist, generating..')
+            logger.info('admin token does not exist, generating..')
             rv = self.store.tokens_create({
                 'username': u'admin',
                 'groups': [u'everyone'],
@@ -184,29 +194,29 @@ class Store(object):
                 'write': u'1',
                 'admin': u'1'
             })
-            self.logger.info('admin token created: {}'.format(rv['token']))
+            logger.info('admin token created: {}'.format(rv['token']))
             return rv['token']
         else:
-            self.logger.info('admin token exists...')
+            logger.info('admin token exists...')
 
     def token_create_smrt(self):
-        self.logger.info('generating smrt token')
+        logger.info('generating smrt token')
         rv = self.store.tokens_create({
             'username': u'csirtg-smrt',
             'groups': [u'everyone'],
             'write': u'1',
         })
-        self.logger.info('smrt token created: {}'.format(rv['token']))
+        logger.info('smrt token created: {}'.format(rv['token']))
         return rv['token']
 
     def token_create_hunter(self):
-        self.logger.info('generating hunter token')
+        logger.info('generating hunter token')
         rv = self.store.tokens_create({
             'username': u'hunter',
             'groups': [u'everyone'],
             'write': u'1',
         })
-        self.logger.info('hunter token created: {}'.format(rv['token']))
+        logger.info('hunter token created: {}'.format(rv['token']))
         return rv['token']
 
 

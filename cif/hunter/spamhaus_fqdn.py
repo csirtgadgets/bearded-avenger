@@ -1,9 +1,8 @@
-import dns.resolver
+
 import logging
-from dns.name import EmptyLabel
 from csirtg_indicator import Indicator
 from pprint import pprint
-from cifsdk.constants import PYVERSION
+from cif.utils import resolve_ns
 
 CONFIDENCE = 9
 PROVIDER = 'spamhaus.org'
@@ -62,16 +61,16 @@ class SpamhausFqdn(object):
 
     def _resolve(self, data):
         data = '{}.dbl.spamhaus.org'.format(data)
-        answers = dns.resolver.query(data, 'A')
-        return str(answers[0])
+        data = resolve_ns(data)
+        if data and data[0]:
+            return data[0]
 
     def process(self, i, router):
         if i.itype == 'fqdn' and i.provider != 'spamhaus.org':
             try:
                 r = self._resolve(i.indicator)
-                self.logger.debug(r)
                 try:
-                    r = CODES[r]
+                    r = CODES.get(str(r), None)
                 except Exception as e:
                     # https://www.spamhaus.org/faq/section/DNSBL%20Usage
                     self.logger.error(e)
@@ -91,12 +90,6 @@ class SpamhausFqdn(object):
                     self.logger.debug(x)
             except KeyError as e:
                 self.logger.error(e)
-            except dns.resolver.NoAnswer:
-                self.logger.debug('no answer...')
-            except dns.resolver.NXDOMAIN:
-                self.logger.debug('nxdomain...')
-            except EmptyLabel:
-                self.logger.error('empty label: {}'.format(i.indicator))
 
 
 Plugin = SpamhausFqdn

@@ -11,7 +11,7 @@ from pprint import pprint
 import zmq
 from zmq.eventloop import ioloop
 import os
-from cif.constants import ROUTER_ADDR, STORE_ADDR, HUNTER_ADDR, GATHERER_ADDR, GATHERER_SINK_ADDR
+from cif.constants import ROUTER_ADDR, STORE_ADDR, HUNTER_ADDR, GATHERER_ADDR, GATHERER_SINK_ADDR, HUNTER_SINK_ADDR
 from cifsdk.constants import CONFIG_PATH
 from cifsdk.utils import setup_logging, get_argument_parser, setup_signals, zhelper, setup_runtime_path, read_config
 from csirtg_indicator import Indicator
@@ -20,16 +20,19 @@ from cif.hunter import Hunter
 from cif.store import Store
 from cif.gatherer import Gatherer
 import time
+import multiprocessing as mp
 
 HUNTER_MIN_CONFIDENCE = 2
-HUNTER_THREADS = os.getenv('CIF_HUNTER_THREADS', 4)
+HUNTER_THREADS = os.getenv('CIF_HUNTER_THREADS', 2)
 GATHERER_THREADS = os.getenv('CIF_GATHERER_THREADS', 4)
 STORE_DEFAULT = 'sqlite'
 STORE_PLUGINS = ['cif.store.dummy', 'cif.store.sqlite', 'cif.store.elasticsearch', 'cif.store.rdflib']
 
-ZMQ_HWM = 10000
+ZMQ_HWM = 1000000
 ZMQ_SNDTIMEO = 5000
 ZMQ_RCVTIMEO = 5000
+FRONTEND_TIMEOUT = 2500
+BACKEND_TIMEOUT = 10
 
 HUNTER_TOKEN = os.environ.get('CIF_HUNTER_TOKEN', None)
 
@@ -56,7 +59,7 @@ class Router(object):
 
         self.logger = logging.getLogger(__name__)
 
-        self.context = zmq.Context.instance()
+        self.context = zmq.Context()
 
         self.store_s = self.context.socket(zmq.DEALER)
         self.store_s.bind(store_address)
@@ -70,9 +73,14 @@ class Router(object):
         self.gatherer_sink_s.bind(GATHERER_SINK_ADDR)
         self._init_gatherers(gatherer_threads)
 
+        self.hunter_sink_s = self.context.socket(zmq.ROUTER)
+        self.hunter_sink_s.bind(HUNTER_SINK_ADDR)
+
         if int(hunter_threads):
             self.hunters_s = self.context.socket(zmq.PUSH)
+            self.logger.debug('binding hunter: {}'.format(hunter))
             self.hunters_s.bind(hunter)
+
             self.hunters = []
             self._init_hunters(hunter_threads, hunter_token)
         else:
@@ -91,6 +99,9 @@ class Router(object):
         self.count = 0
         self.count_start = time.time()
 
+        self.poller = zmq.Poller()
+        self.poller_backend = zmq.Poller()
+
     def _init_p2p(self):
         self.logger.info('enabling p2p..')
         from cif.p2p import Client as p2pcli
@@ -101,39 +112,60 @@ class Router(object):
     def _init_hunters(self, threads, token):
         self.logger.info('launching hunters...')
         for n in range(int(threads)):
-            self.logger.warn(token)
-            t = threading.Thread(target=Hunter(self.context, token=token).start)
-            t.daemon = True
-            t.start()
+            p = mp.Process(target=Hunter(token=token).start)
+            p.start()
 
     def _init_gatherers(self, threads):
         self.logger.info('launching gatherers...')
         for n in range(int(threads)):
-            t = threading.Thread(target=Gatherer(self.context).start)
-            t.daemon = True
-            t.start()
+            p = mp.Process(target=Gatherer().start)
+            p.start()
 
     def _init_store(self, context, store_address, store_type, nodes=False):
         self.logger.info('launching store...')
-        t = threading.Thread(
-            target=Store(context=context, store_address=store_address, store_type=store_type, nodes=nodes).start)
-        t.daemon = True
-        t.start()
+        p = mp.Process(target=Store(store_address=store_address, store_type=store_type, nodes=nodes).start)
+        p.start()
 
     def start(self, loop=ioloop.IOLoop.instance()):
         self.logger.debug('starting loop')
-        loop.add_handler(self.frontend_s, self.handle_message, zmq.POLLIN)
-        loop.add_handler(self.store_s, self.handle_message_store, zmq.POLLIN)
-        loop.add_handler(self.gatherer_sink_s, self.handle_message_gatherer, zmq.POLLIN)
-        loop.start()
 
-    def handle_message(self, s, e):
+        self.poller_backend.register(self.hunter_sink_s, zmq.POLLIN)
+        self.poller_backend.register(self.gatherer_sink_s, zmq.POLLIN)
+        self.poller.register(self.store_s, zmq.POLLIN)
+        self.poller.register(self.frontend_s, zmq.POLLIN)
+
+        # we use this instead of a loop so we can make sure to get front end queries as they come in
+        # that way hunters don't over burden the store, think of it like QoS
+        # it's weighted so front end has a higher chance of getting a faster response
+        terminated = False
+        while not terminated:
+            items = dict(self.poller.poll(FRONTEND_TIMEOUT))
+
+            if self.frontend_s in items and items[self.frontend_s] == zmq.POLLIN:
+                self.handle_message(self.frontend_s)
+
+            if self.store_s in items and items[self.store_s] == zmq.POLLIN:
+                self.handle_message_store(self.store_s)
+
+            items = dict(self.poller_backend.poll(BACKEND_TIMEOUT))
+
+            if self.gatherer_sink_s in items and items[self.gatherer_sink_s] == zmq.POLLIN:
+                self.handle_message_gatherer(self.gatherer_sink_s)
+
+            if self.hunter_sink_s in items and items[self.hunter_sink_s] == zmq.POLLIN:
+                self.handle_message(self.hunter_sink_s)
+
+    def handle_message(self, s):
         self.logger.debug('message received')
         m = s.recv_multipart()
 
         self.logger.debug(m)
 
-        id, null, token, mtype, data = m
+        try:
+            id, null, token, mtype, data = m
+        except ValueError:
+            id, token, mtype, data = m
+
         mtype = mtype.decode('utf-8')
 
         self.logger.debug("mtype: {0}".format(mtype))
@@ -164,7 +196,7 @@ class Router(object):
         self.logger.debug('sending message to store...')
         self.store_s.send_multipart([id, ''.encode('utf-8'), mtype.encode('utf-8'), token, data])
 
-    def handle_message_store(self, s, e):
+    def handle_message_store(self, s):
         self.logger.debug('msg from store received')
         m = s.recv_multipart()
         self.logger.debug(m)
@@ -173,7 +205,7 @@ class Router(object):
 
         self.frontend_s.send_multipart([id, null, mtype, rv])
 
-    def handle_message_gatherer(self, s, e):
+    def handle_message_gatherer(self, s):
         self.logger.debug('received message from gatherer')
         m = s.recv_multipart()
 
@@ -185,7 +217,9 @@ class Router(object):
         if isinstance(data, dict):
             data = [data]
 
+        self.logger.debug('sending to hunters...')
         for d in data:
+            self.logger.debug(d)
             i = Indicator(**d)
 
             d = json.dumps(d)
@@ -196,11 +230,10 @@ class Router(object):
                     self.p2p.send(data.encode('utf-8'))
 
                 if self.hunters_s:
-                    self.logger.debug('sending to hunters...')
                     self.hunters_s.send_string(d)
 
-        data = json.dumps(data)
         self.logger.debug('sending to store')
+        data = json.dumps(data)
         self.store_s.send_multipart([id, b'', b'indicators_create', token, data.encode('utf-8')])
         self.logger.debug('done')
 
