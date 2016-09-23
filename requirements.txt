@@ -1,7 +1,7 @@
 git+https://github.com/zeromq/pyre.git@ecc3ea7579a43016e1cbfea3773cb9ea96fb0498
 https://github.com/csirtgadgets/csirtg-indicator-py/archive/0.0.0a9.tar.gz
 https://github.com/csirtgadgets/bearded-avenger-sdk-py/archive/3.0.0a5.tar.gz
-https://github.com/csirtgadgets/csirtg-smrt-py/archive/0.0.0a3.tar.gz
+https://github.com/csirtgadgets/csirtg-smrt-py/archive/0.0.0a4.tar.gz
 Flask-Limiter==0.9.3
 limits==1.1.1
 maxminddb==1.2.0

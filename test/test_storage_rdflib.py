@@ -15,6 +15,7 @@ from csirtg_indicator import Indicator
 @py.test.yield_fixture
 def store():
     with Store(store_type='rdflib') as s:
+        s._load_plugin()
         yield s
 
 

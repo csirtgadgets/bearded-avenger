@@ -20,9 +20,11 @@ logger = logging.getLogger(__name__)
 def store():
     dbfile = tempfile.mktemp()
     with Store(store_type='sqlite', dbfile=dbfile) as s:
+        s._load_plugin(dbfile=dbfile)
         yield s
 
-    os.unlink(dbfile)
+    if os.path.isfile(dbfile):
+        os.unlink(dbfile)
 
 
 @pytest.fixture

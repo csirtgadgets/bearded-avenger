@@ -57,10 +57,10 @@ class Store(object):
             if modname == 'cif.store.{}'.format(self.store) or modname == 'cif.store.z{}'.format(self.store):
                 logger.debug('Loading plugin: {0}'.format(modname))
                 self.store = loader.find_module(modname).load_module(modname)
-                self.store = self.store.Plugin(**self.kwargs)
+                self.store = self.store.Plugin(**kwargs)
 
     def start(self):
-        self._load_plugin()
+        self._load_plugin(self.kwargs)
         self.context = zmq.Context()
         self.router = self.context.socket(zmq.ROUTER)
 

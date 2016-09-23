@@ -105,8 +105,9 @@ class Fqdn(object):
                 try:
                     resolve_itype(fqdn.indicator)
                 except InvalidIndicator as e:
-                    self.logger.error(fqdn)
-                    self.logger.error(e)
+                    if not str(e).startswith('unknown itype for "localhost"'):
+                        self.logger.error(fqdn)
+                        self.logger.error(e)
                 else:
                     fqdn.itype = 'fqdn'
                     fqdn.rdata = i.indicator

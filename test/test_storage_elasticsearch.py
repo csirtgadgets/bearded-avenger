@@ -13,6 +13,7 @@ if os.environ.get('CIF_ELASTICSEARCH_TEST'):
 def store():
 
     with Store(store_type='elasticsearch', nodes='192.168.99.100:9200') as s:
+        s._load_plugin(nodes='192.168.99.100:9200')
         try:
             connections.get_connection().indices.delete(index='indicators-*')
             connections.get_connection().indices.delete(index='tokens')

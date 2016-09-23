@@ -7,6 +7,7 @@ from pprint import pprint
 from cifsdk.exceptions import AuthError, InvalidSearch
 from csirtg_indicator import resolve_itype
 from csirtg_indicator.exceptions import InvalidIndicator
+from cifsdk.constants import PYVERSION
 from datetime import datetime
 import ipaddress
 import arrow
@@ -241,6 +242,9 @@ class IndicatorMixin(object):
                 itype = resolve_itype(q_filters['indicator'])
 
                 if itype == 'ipv4':
+                    if PYVERSION == 2:
+                        q_filters['indicator'] = unicode(q_filters['indicator'])
+
                     ip = ipaddress.IPv4Network(q_filters['indicator'])
                     mask = ip.prefixlen
                     if mask < 8:
@@ -250,6 +254,9 @@ class IndicatorMixin(object):
 
                     s = s.filter('range', indicator_ipv4={'gte': start, 'lte': end})
                 elif itype is 'ipv6':
+                    if PYVERSION == 2:
+                        q_filters['indicator'] = unicode(q_filters['indicator'])
+
                     ip = ipaddress.IPv6Network(q_filters['indicator'])
                     mask = ip.prefixlen
                     if mask < 32:

@@ -31,8 +31,8 @@ STORE_PLUGINS = ['cif.store.dummy', 'cif.store.sqlite', 'cif.store.elasticsearch
 ZMQ_HWM = 1000000
 ZMQ_SNDTIMEO = 5000
 ZMQ_RCVTIMEO = 5000
-FRONTEND_TIMEOUT = 2500
-BACKEND_TIMEOUT = 10
+FRONTEND_TIMEOUT = 1
+BACKEND_TIMEOUT = 1
 
 HUNTER_TOKEN = os.environ.get('CIF_HUNTER_TOKEN', None)
 
@@ -50,8 +50,7 @@ class Router(object):
         return self
 
     def __exit__(self, type, value, traceback):
-        if self.p2p:
-            self.p2p.send("$$STOP".encode('utf_8'))
+        return self
 
     def __init__(self, listen=ROUTER_ADDR, hunter=HUNTER_ADDR, store_type=STORE_DEFAULT, store_address=STORE_ADDR,
                  store_nodes=None, p2p=False, hunter_token=HUNTER_TOKEN, hunter_threads=HUNTER_THREADS,
@@ -61,11 +60,13 @@ class Router(object):
 
         self.context = zmq.Context()
 
+        if test:
+            return
+
         self.store_s = self.context.socket(zmq.DEALER)
         self.store_s.bind(store_address)
 
-        if not test:
-            self._init_store(self.context, store_address, store_type, nodes=store_nodes)
+        self._init_store(self.context, store_address, store_type, nodes=store_nodes)
 
         self.gatherer_s = self.context.socket(zmq.PUSH)
         self.gatherer_sink_s = self.context.socket(zmq.PULL)
@@ -102,6 +103,8 @@ class Router(object):
         self.poller = zmq.Poller()
         self.poller_backend = zmq.Poller()
 
+        self.terminate = False
+
     def _init_p2p(self):
         self.logger.info('enabling p2p..')
         from cif.p2p import Client as p2pcli
@@ -126,7 +129,12 @@ class Router(object):
         p = mp.Process(target=Store(store_address=store_address, store_type=store_type, nodes=nodes).start)
         p.start()
 
-    def start(self, loop=ioloop.IOLoop.instance()):
+    def stop(self):
+        self.terminate = True
+        if self.p2p:
+            self.p2p.send("$$STOP".encode('utf_8'))
+
+    def start(self):
         self.logger.debug('starting loop')
 
         self.poller_backend.register(self.hunter_sink_s, zmq.POLLIN)
@@ -137,7 +145,7 @@ class Router(object):
         # we use this instead of a loop so we can make sure to get front end queries as they come in
         # that way hunters don't over burden the store, think of it like QoS
         # it's weighted so front end has a higher chance of getting a faster response
-        terminated = False
+        terminated = self.terminate
         while not terminated:
             items = dict(self.poller.poll(FRONTEND_TIMEOUT))
 
@@ -157,6 +165,7 @@ class Router(object):
 
     def handle_message(self, s):
         self.logger.debug('message received')
+
         m = s.recv_multipart()
 
         self.logger.debug(m)
@@ -169,8 +178,6 @@ class Router(object):
         mtype = mtype.decode('utf-8')
 
         self.logger.debug("mtype: {0}".format(mtype))
-
-        rv = json.dumps({'status': 'failed'})
 
         if mtype in ['indicators_create', 'indicators_search']:
             handler = getattr(self, "handle_" + mtype)
@@ -186,9 +193,9 @@ class Router(object):
         self.logger.debug('handler: {}'.format(handler))
         self.count += 1
         if (self.count % 100) == 0:
-            n = (time.time() - self.count_start)
-            n = self.count / n
-            self.logger.info('processing %i msgs per sec' % n)
+            t = (time.time() - self.count_start)
+            n = self.count / t
+            self.logger.info('processing {} msgs per {} sec'.format(round(n, 2), round(t, 2)))
             self.count = 0
             self.count_start = time.time()
 
@@ -257,9 +264,6 @@ class Router(object):
         if isinstance(data, dict):
             data = [data]
 
-        #for d in data:
-        #    d = json.dumps(d).encode('utf-8')
-        #    self.gatherer_s.send_multipart([id, ''.encode('utf-8'), mtype.encode('utf-8'), token, d])
         data = json.dumps(data).encode('utf-8')
         self.gatherer_s.send_multipart([id, ''.encode('utf-8'), mtype.encode('utf-8'), token, data])
 
@@ -308,10 +312,18 @@ def main():
 
     p.add_argument('--p2p', action='store_true', help='enable experimental p2p support')
 
+    p.add_argument('--logging-ignore', help='set logging to WARNING for specific modules')
+
     args = p.parse_args()
     setup_logging(args)
     logger = logging.getLogger(__name__)
     logger.info('loglevel is: {}'.format(logging.getLevelName(logger.getEffectiveLevel())))
+
+    if args.logging_ignore:
+        to_ignore = args.logging_ignore.split(',')
+
+    for i in to_ignore:
+        logging.getLogger(i).setLevel(logging.WARNING)
 
     o = read_config(args)
     options = vars(args)
