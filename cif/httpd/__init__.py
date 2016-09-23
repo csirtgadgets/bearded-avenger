@@ -317,12 +317,12 @@ def indicators():
         fireball = False
         if request.headers.get('Content-Length'):
             logger.debug('content-length: %s' % request.headers['Content-Length'])
-            if int(request.headers['Content-Length']) > 1000000:
+            if int(request.headers['Content-Length']) > 5000:
                 logger.info('fireball mode')
                 fireball = True
         try:
             data = request.data.decode('utf-8')
-            r = Client(remote, pull_token()).indicators_create(data, fireball=fireball)
+            r = Client(remote, pull_token(), fireball=fireball).indicators_create(data)
         except RuntimeError as e:
             logger.error(e)
             response = jsonify({

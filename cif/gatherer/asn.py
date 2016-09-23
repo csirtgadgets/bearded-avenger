@@ -2,6 +2,7 @@
 from cif.utils import resolve_ns
 import logging
 import re
+from dns.rdtypes.ANY.TXT import TXT
 
 
 class Asn(object):
@@ -37,9 +38,21 @@ class Asn(object):
                 indicator.prefix = bits[1]
                 indicator.cc = bits[2]
                 indicator.rir = bits[3]
+                answers = resolve_ns('as{}.{}'.format(asns[0], 'asn.cymru.com'), t='TXT', timeout=15)
 
-                answers = resolve_ns('as{}.{}'.format(asns[0], 'asn.cymru.com'), t='TXT')
-                bits = str(answers[0]).replace('"', '').strip().split(' | ')
+
+                ## TODO - not fixed yet
+                try:
+                    tmp = str(answers[0])
+                except UnicodeDecodeError:
+                    # requires fix latin-1 fix _escapeify to dnspython > 1.14
+                    return indicator
+                except IndexError:
+                    from pprint import pprint
+                    pprint(answers)
+                    return indicator
+
+                bits = tmp.replace('"', '').strip().split(' | ')
                 if len(bits) > 4:
                     indicator.asn_desc = bits[4]
 

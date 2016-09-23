@@ -9,55 +9,77 @@ import cif.gatherer
 from cif.constants import GATHERER_ADDR, GATHERER_SINK_ADDR
 from csirtg_indicator import Indicator
 
+logger = logging.getLogger(__name__)
+
+SNDTIMEO = 15000
+LINGER = 0
+
 
 class Gatherer(object):
+    def __enter__(self):
+        return self
 
-    def __init__(self, context, pull=GATHERER_ADDR, push=GATHERER_SINK_ADDR):
+    def __exit__(self, type, value, traceback):
+        return self
 
-        self.logger = logging.getLogger(__name__)
-        self.context = context
+    def __init__(self, pull=GATHERER_ADDR, push=GATHERER_SINK_ADDR):
 
         self.pull = pull
         self.push = push
 
-        self.pull_s = self.context.socket(zmq.PULL)
-        self.push_s = self.context.socket(zmq.PUSH)
-
-        self._init_plugins()
-
     def _init_plugins(self):
         import pkgutil
         self.gatherers = []
-        self.logger.debug('loading plugins...')
+        logger.debug('loading plugins...')
         for loader, modname, is_pkg in pkgutil.iter_modules(cif.gatherer.__path__, 'cif.gatherer.'):
             p = loader.find_module(modname).load_module(modname)
             self.gatherers.append(p.Plugin())
-            self.logger.debug('plugin loaded: {}'.format(modname))
+            logger.debug('plugin loaded: {}'.format(modname))
 
     def start(self):
-        self.logger.debug('connecting to sockets...')
-        self.pull_s.connect(self.pull)
-        self.push_s.connect(self.push)
-        self.logger.debug('starting Gatherer')
+        self._init_plugins()
 
-        while True:
-            m = self.pull_s.recv_multipart()
-            self.logger.debug(m)
+        context = zmq.Context()
+        pull_s = context.socket(zmq.PULL)
+        push_s = context.socket(zmq.PUSH)
 
-            id, null, mtype, token, data = m
+        push_s.SNDTIMEO = SNDTIMEO
 
-            data = json.loads(data)
-            i = Indicator(**data)
+        logger.debug('connecting to sockets...')
+        pull_s.connect(self.pull)
+        push_s.connect(self.push)
+        logger.debug('starting Gatherer')
 
-            for g in self.gatherers:
-                try:
-                    g.process(i)
-                except Exception as e:
-                    self.logger.error('gatherer failed: %s' % g)
-                    self.logger.error(e)
-                    traceback.print_exc()
+        try:
+            while True:
+                m = pull_s.recv_multipart()
 
-            data = str(i)
+                logger.debug(m)
 
-            self.logger.debug('sending back to router...')
-            self.push_s.send_multipart([id, null, mtype, token, data.encode('utf-8')])
+                id, null, mtype, token, data = m
+
+                data = json.loads(data)
+                if isinstance(data, dict):
+                    data = [data]
+
+                rv = []
+                for d in data:
+                    i = Indicator(**d)
+
+                    for g in self.gatherers:
+                        try:
+                            g.process(i)
+                        except Exception as e:
+                            logger.error('gatherer failed: %s' % g)
+                            logger.error(e)
+                            traceback.print_exc()
+
+                    rv.append(i.__dict__())
+
+                data = json.dumps(rv)
+                logger.debug('sending back to router...')
+                push_s.send_multipart([id, null, mtype, token, data.encode('utf-8')])
+
+        except KeyboardInterrupt:
+            logger.info('shutting down gatherer..')
+            return

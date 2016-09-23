@@ -27,8 +27,15 @@ CTRL_ADDR = os.environ.get('CIF_CTRL_ADDR', CTRL_ADDR)
 HUNTER_ADDR = 'ipc://{}'.format(os.path.join(RUNTIME_PATH, 'hunter.ipc'))
 HUNTER_ADDR = os.environ.get('CIF_HUNTER_ADDR', HUNTER_ADDR)
 
+HUNTER_SINK_ADDR = 'ipc://{}'.format(os.path.join(RUNTIME_PATH, 'hunter_sink.ipc'))
+HUNTER_SINK_ADDR = os.environ.get('CIF_HUNTER_SINK_ADDR', HUNTER_SINK_ADDR)
+
 GATHERER_ADDR = 'ipc://{}'.format(os.path.join(RUNTIME_PATH, 'gatherer.ipc'))
 GATHERER_ADDR = os.environ.get('CIF_GATHERER_ADDR', GATHERER_ADDR)
 
 GATHERER_SINK_ADDR = 'ipc://{}'.format(os.path.join(RUNTIME_PATH, 'gatherer_sink.ipc'))
 GATHERER_SINK_ADDR = os.environ.get('CIF_GATHERER_SINK_ADDR', GATHERER_SINK_ADDR)
+
+TOKEN_CACHE_DELAY = 5
+
+HUNTER_RESOLVER_TIMEOUT = os.environ.get('CIF_HUNTER_RESOLVER_TIMEOUT', 5)

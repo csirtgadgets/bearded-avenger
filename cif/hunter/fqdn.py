@@ -4,6 +4,8 @@ from csirtg_indicator import Indicator
 from dns.resolver import Timeout
 from pprint import pprint
 from cifsdk.constants import PYVERSION
+from csirtg_indicator import resolve_itype
+from csirtg_indicator.exceptions import InvalidIndicator
 import re
 
 def is_subdomain(i):
@@ -28,15 +30,27 @@ class Fqdn(object):
             for rr in r:
                 fqdn = Indicator(**i.__dict__())
                 fqdn.indicator = str(rr).rstrip('.')
-                fqdn.itype = 'fqdn'
-                fqdn.confidence = (int(fqdn.confidence) / 2)
-                x = router.indicators_create(fqdn)
+                try:
+                    resolve_itype(fqdn.indicator)
+                except InvalidIndicator as e:
+                    self.logger.error(fqdn)
+                    self.logger.error(e)
+                else:
+                    fqdn.itype = 'fqdn'
+                    fqdn.confidence = (int(fqdn.confidence) / 2)
+                    router.indicators_create(fqdn)
 
             if i.is_subdomain():
                 fqdn = Indicator(**i.__dict__())
                 fqdn.indicator = i.is_subdomain()
-                fqdn.confidence = (int(fqdn.confidence) / 3)
-                x = router.indicators_create(fqdn)
+                try:
+                    resolve_itype(fqdn.indicator)
+                except InvalidIndicator as e:
+                    self.logger.error(fqdn)
+                    self.logger.error(e)
+                else:
+                    fqdn.confidence = (int(fqdn.confidence) / 3)
+                    router.indicators_create(fqdn)
 
             try:
                 r = resolve_ns(i.indicator)
@@ -47,11 +61,16 @@ class Fqdn(object):
             for rr in r:
                 ip = Indicator(**i.__dict__())
                 ip.indicator = str(rr)
-                ip.itype = 'ipv4'
-                ip.rdata = i.indicator
-                ip.confidence = (int(ip.confidence) / 4)
-                x = router.indicators_create(ip)
-                self.logger.debug(x)
+                try:
+                    resolve_itype(ip.indicator)
+                except InvalidIndicator as e:
+                    self.logger.error(ip)
+                    self.logger.error(e)
+                else:
+                    ip.itype = 'ipv4'
+                    ip.rdata = i.indicator
+                    ip.confidence = (int(ip.confidence) / 4)
+                    router.indicators_create(ip)
 
             try:
                 r = resolve_ns(i.indicator, t='NS')
@@ -60,13 +79,18 @@ class Fqdn(object):
                 r = []
 
             for rr in r:
-                ip = Indicator(**i.__dict__())
-                ip.indicator = str(rr).rstrip('.')
-                ip.itype = 'fqdn'
-                ip.rdata = i.indicator
-                ip.confidence = (int(ip.confidence) / 5)
-                x = router.indicators_create(ip)
-                self.logger.debug(x)
+                fqdn = Indicator(**i.__dict__())
+                fqdn.indicator = str(rr).rstrip('.')
+                try:
+                    resolve_itype(fqdn.indicator)
+                except InvalidIndicator as e:
+                    self.logger.error(fqdn)
+                    self.logger.error(e)
+                else:
+                    fqdn.itype = 'fqdn'
+                    fqdn.rdata = i.indicator
+                    fqdn.confidence = (int(fqdn.confidence) / 5)
+                    router.indicators_create(fqdn)
 
             try:
                 r = resolve_ns(i.indicator, t='MX')
@@ -75,15 +99,20 @@ class Fqdn(object):
                 r = []
 
             for rr in r:
-                ip = Indicator(**i.__dict__())
-
-                rr = re.sub(r'^\d{1,2} ', '', str(rr))
-                ip.indicator = rr.rstrip('.')
-                ip.itype = 'fqdn'
-                ip.rdata = i.indicator
-                ip.confidence = (int(ip.confidence) / 6)
-                x = router.indicators_create(ip)
-                self.logger.debug(x)
+                rr = re.sub(r'^\d+ ', '', str(rr))
+                fqdn = Indicator(**i.__dict__())
+                fqdn.indicator = rr.rstrip('.')
+                try:
+                    resolve_itype(fqdn.indicator)
+                except InvalidIndicator as e:
+                    if not str(e).startswith('unknown itype for "localhost"'):
+                        self.logger.error(fqdn)
+                        self.logger.error(e)
+                else:
+                    fqdn.itype = 'fqdn'
+                    fqdn.rdata = i.indicator
+                    fqdn.confidence = (int(fqdn.confidence) / 6)
+                    router.indicators_create(fqdn)
 
 
 Plugin = Fqdn

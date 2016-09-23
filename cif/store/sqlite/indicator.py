@@ -294,6 +294,7 @@ class IndicatorMixin(object):
         tmp_added = {}
 
         for d in data:
+            self.logger.debug(d)
             tags = d.get("tags", [])
             if len(tags) > 0:
                 if isinstance(tags, basestring):
