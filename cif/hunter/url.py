@@ -19,15 +19,15 @@ class Url(object):
     def process(self, i, router):
         if i.itype == 'url':
             u = urlparse(i.indicator)
-            if u.netloc:
+            if u.hostname:
                 try:
-                    resolve_itype(u.netloc)
+                    resolve_itype(u.hostname)
                 except InvalidIndicator as e:
-                    self.logger.error(u.netloc)
+                    self.logger.error(u.hostname)
                     self.logger.error(e)
                 else:
                     fqdn = Indicator(**i.__dict__())
-                    fqdn.indicator = u.netloc
+                    fqdn.indicator = u.hostname
                     fqdn.itype = 'fqdn'
                     fqdn.confidence = (int(fqdn.confidence) / 2)
                     fqdn.rdata = i.indicator
