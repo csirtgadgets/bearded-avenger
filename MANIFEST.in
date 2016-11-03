@@ -2,7 +2,8 @@ prune packaging
 include README.md COPYING requirements.txt LICENSE
 include Makefile
 include VERSION
-include MANIFEST.ininclude versioneer.py
+include MANIFEST.in
+include versioneer.py
 include 'cif'
 include cif/_version.py
 include Vagrantfile

@@ -76,12 +76,12 @@ sdist: clean
 PYINSTALLER = pyinstaller
 PYINSTALLER_OPTS = --distpath=$(PYINSTALLER_DIST_PATH) --workpath=$(PYINSTALLER_WORK_PATH) -y --onefile
 PYINSTALLER_SPEC_DIR = packaging/pyinstaller
-PYINSTALLER_SPECS = cif.spec cif-router.spec cif-smrt.spec cif-httpd.spec
+PYINSTALLER_SPECS = cif-router.spec cif-httpd.spec
 PYINSTALLER_BUILD = pyinstaller-build
 PYINSTALLER_DIST_PATH = dist
 PYINSTALLER_WORK_PATH = temp
 
-pyinstaller:
+binaries:
 	mkdir -p $(PYINSTALLER_BUILD) ;
 	cp -a cif $(PYINSTALLER_BUILD) ;
 	cp -a $(PYINSTALLER_SPEC_DIR)/*.spec $(PYINSTALLER_BUILD)/ ;

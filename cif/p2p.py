@@ -1,5 +1,9 @@
-from pyre import Pyre
-from pyre import zhelper
+try:
+    from pyre import Pyre
+    from pyre import zhelper
+except ImportError as e:
+    raise ImportError('Requires Pyre to run in p2p mode..')
+
 import zmq
 import uuid
 import logging

@@ -1,10 +1,10 @@
 # -*- mode: python -*-
 
-name = 'cif-smrt'
+name = 'csirtg-smrt'
 
 block_cipher = None
 
-a = Analysis(['cif/smrt/__init__.py'],
+a = Analysis(['csirtg_smrt/__init__.py'],
              binaries=None,
              datas=None,
              hiddenimports=[],
