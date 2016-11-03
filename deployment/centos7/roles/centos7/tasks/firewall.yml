@@ -8,5 +8,11 @@
 - name: Copy firewall init script into place.
   template: src=firewall.j2 dest=/etc/init.d/firewall owner=root group=root mode=0755
 
+- name: reload systemd
+  command: systemctl daemon-reload
+
 - name: Ensure the firewall is enabled and will start on boot.
   service: name=firewall state=started enabled=yes
+
+- name: restart firewall
+  command: service firewall restart
