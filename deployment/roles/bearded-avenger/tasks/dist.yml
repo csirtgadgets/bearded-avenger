@@ -22,7 +22,7 @@
   become: yes
 
 - name: run tests
-  command: py.test test chdir="{{ p.files[0].path }}"
+  command: python setup.py test chdir="{{ p.files[0].path }}"
   become: yes
 
 - name: install cif

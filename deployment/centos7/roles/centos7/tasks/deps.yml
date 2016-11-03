@@ -16,3 +16,7 @@
     - python-virtualenvwrapper
     - bind-utils
     - GeoIP-update
+    - libxml2-python
+    - libxml2-devel
+    - libxslt
+    - libxslt-devel
