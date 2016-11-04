@@ -264,13 +264,15 @@ def main():
 
     if args.token_create_smrt:
         with Store(store_type=args.store, nodes=args.nodes) as s:
+            s._load_plugin(store_type=args.store, nodes=args.nodes)
             t = s.token_create_smrt()
             if t:
                 data = {
-                    'token': t.decode('utf-8'),
+                    'token': t,
                 }
                 if args.remote:
                     data['remote'] = args.remote
+
                 with open(args.token_create_smrt, 'w') as f:
                     f.write(yaml.dump(data, default_flow_style=False))
 
@@ -280,10 +282,11 @@ def main():
 
     if args.token_create_hunter:
         with Store(store_type=args.store, nodes=args.nodes) as s:
+            s._load_plugin(store_type=args.store, nodes=args.nodes)
             t = s.token_create_hunter()
             if t:
                 data = {
-                    'hunter_token': t.decode('utf-8'),
+                    'hunter_token': t,
                 }
                 with open(args.token_create_hunter, 'w') as f:
                     f.write(yaml.dump(data, default_flow_style=False))
@@ -294,10 +297,11 @@ def main():
 
     if args.token_create_admin:
         with Store(store_type=args.store, nodes=args.nodes) as s:
+            s._load_plugin(store_type=args.store, nodes=args.nodes)
             t = s.token_create_admin()
             if t:
                 data = {
-                    'token': t.decode('utf-8'),
+                    'token': t,
                 }
                 with open(args.token_create_admin, 'w') as f:
                     f.write(yaml.dump(data, default_flow_style=False))

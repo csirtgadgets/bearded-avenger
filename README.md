@@ -1,12 +1,12 @@
 # Getting Started
-Current master build status: [![Circle CI](https://circleci.com/gh/csirtgadgets/bearded-avenger.svg?style=svg&circle-token=e08a0a7ec010e17feb6724dbbc93ce584b9868cd)](https://circleci.com/gh/csirtgadgets/bearded-avenger)
+Current master build status: [![Travis](https://travis-ci.org/csirtgadgets/bearded-avenger.svg?branch=master)](https://travis-ci.org/csirtgadgets/bearded-avenger)
 
 ## QuickStart
 This assumes you have a proper Python dev already environment properly configured. If you need help getting started with this, checkout one of our [installation guides](https://github.com/csirtgadgets/bearded-avenger/wiki/Ubuntu14LTS).
 
 ```
-$ tar -zxvf cif-3.x.x.tar.gz
-$ cd cif-3.x.x
+$ git clone https://github.com/csirtgadgets/bearded-avenger.git
+$ cd bearded-avenger
 $ pip install -r requirements.txt
 $ python setup.py develop
 $ mkdir -p log && cp hacking/develop.conf hacking/local.conf
