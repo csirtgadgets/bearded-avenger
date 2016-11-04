@@ -322,8 +322,8 @@ def main():
     if args.logging_ignore:
         to_ignore = args.logging_ignore.split(',')
 
-    for i in to_ignore:
-        logging.getLogger(i).setLevel(logging.WARNING)
+        for i in to_ignore:
+            logging.getLogger(i).setLevel(logging.WARNING)
 
     o = read_config(args)
     options = vars(args)
