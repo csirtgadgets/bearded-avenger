@@ -5,9 +5,11 @@
 #  environment:
 #    http_proxy: http://proxy.example.com:8080
   become: True
+
   roles:
     - { role: centos7, tags: role-centos7 }
     - { role: bearded-avenger, tags: role-bearded-avenger }
+
   post_tasks:
     - name: start cif-services
       command: systemctl start {{ item }}

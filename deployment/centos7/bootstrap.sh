@@ -10,7 +10,7 @@ echo 'updating apt-get tree and installing python-pip'
 sudo yum install -y gcc python-pip python-devel git libffi-devel openssl-devel
 
 echo 'installing ansible...'
-sudo pip install 'setuptools>=11.3' 'ansible>=2.1' versioneer markupsafe
+sudo pip install 'setuptools>=18.3' 'ansible>=2.1' versioneer markupsafe
 
 echo 'running ansible...'
 ansible-playbook -i "localhost," -c local localhost.yml -vv
