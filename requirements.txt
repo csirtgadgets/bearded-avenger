@@ -1,3 +1,4 @@
+html5lib==1.0b8 # bug in csirtg-smrt upstream
 https://github.com/csirtgadgets/bearded-avenger-sdk-py/archive/3.0.0a7.tar.gz
 Flask-Limiter>=0.9.3,<1.0
 limits>=1.1.1,<1.2
