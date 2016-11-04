@@ -60,7 +60,7 @@ class Store(object):
                 self.store = self.store.Plugin(**kwargs)
 
     def start(self):
-        self._load_plugin(self.kwargs)
+        self._load_plugin(**self.kwargs)
         self.context = zmq.Context()
         self.router = self.context.socket(zmq.ROUTER)
 
