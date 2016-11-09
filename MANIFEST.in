@@ -1,5 +1,6 @@
 prune packaging
-include README.md COPYING requirements.txt LICENSE
+include README.md COPYING LICENSE
+include requirements.txt dev_requirements.txt
 include Makefile
 include VERSION
 include MANIFEST.in
