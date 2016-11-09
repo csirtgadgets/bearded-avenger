@@ -12,7 +12,7 @@
   command: systemctl enable named
 
 - name: update NetworkManager.conf
-  lineinfile: dest=/etc/NetworkManager/NetworkManager.conf line="dns=none"
+  copy: src=NetworkManager.conf dest=/etc/NetworkManager/NetworkManager.conf
 
 - name: restart NetworkManager
   command: systemctl restart NetworkManager
