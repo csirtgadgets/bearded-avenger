@@ -1,0 +1,5 @@
+coverage>=4.2
+pytest-cov>=2.2.1
+pytest>=2.8.0,<3.0
+https://github.com/pyinstaller/pyinstaller/archive/b78bfe530cdc2904f65ce098bdf2de08c9037abb.tar.gz
+-r requirements.txt
