@@ -312,12 +312,17 @@ class IndicatorMixin(object):
 
             if i.count() > 0:
                 r = i.first()
-                if d['lasttime'] and arrow.get(d['lasttime']).datetime > arrow.get(r.lasttime).datetime:
+                if d.get('lasttime') and arrow.get(d['lasttime']).datetime > arrow.get(r.lasttime).datetime:
                     self.logger.debug('{} {}'.format(arrow.get(r.lasttime).datetime, arrow.get(d['lasttime']).datetime))
                     self.logger.debug('upserting: %s' % d['indicator'])
+                    
                     r.count += 1
-                    r.lasttime = arrow.get(d['lasttime']).datetime
-                    r.reporttime = arrow.get(d['reporttime']).datetime
+                    r.lasttime = arrow.get(d['lasttime']).datetime.replace(tzinfo=None)
+                    if not d.get('reporttime'):
+                        d['reporttime'] = arrow.utcnow().datetime.replace(tzinfo=None)
+
+                    r.reporttime = arrow.get(d['reporttime']).datetime.replace(tzinfo=None)
+
                     if d.get('message'):
                         try:
                             d['message'] = b64decode(d['message'])
