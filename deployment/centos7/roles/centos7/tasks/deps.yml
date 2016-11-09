@@ -21,3 +21,4 @@
     - libxslt
     - libxslt-devel
     - libcurl-devel
+    - net-tools

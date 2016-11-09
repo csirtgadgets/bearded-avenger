@@ -18,7 +18,7 @@
   register: p
 
 - name: install requirements
-  command: pip install -r requirements.txt chdir="{{ p.files[0].path }}"
+  command: pip install -r dev_requirements.txt chdir="{{ p.files[0].path }}"
   become: yes
 
 - name: run tests

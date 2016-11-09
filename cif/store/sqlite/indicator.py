@@ -315,7 +315,7 @@ class IndicatorMixin(object):
                 if d.get('lasttime') and arrow.get(d['lasttime']).datetime > arrow.get(r.lasttime).datetime:
                     self.logger.debug('{} {}'.format(arrow.get(r.lasttime).datetime, arrow.get(d['lasttime']).datetime))
                     self.logger.debug('upserting: %s' % d['indicator'])
-                    
+
                     r.count += 1
                     r.lasttime = arrow.get(d['lasttime']).datetime.replace(tzinfo=None)
                     if not d.get('reporttime'):
