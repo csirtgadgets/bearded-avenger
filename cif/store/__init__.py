@@ -268,7 +268,7 @@ def main():
             t = s.token_create_smrt()
             if t:
                 data = {
-                    'token': t,
+                    'token': t.encode('utf-8'),
                 }
                 if args.remote:
                     data['remote'] = args.remote
@@ -286,7 +286,7 @@ def main():
             t = s.token_create_hunter()
             if t:
                 data = {
-                    'hunter_token': t,
+                    'hunter_token': t.encode('utf-8'),
                 }
                 with open(args.token_create_hunter, 'w') as f:
                     f.write(yaml.dump(data, default_flow_style=False))
@@ -301,7 +301,7 @@ def main():
             t = s.token_create_admin()
             if t:
                 data = {
-                    'token': t,
+                    'token': t.encode('utf-8'),
                 }
                 with open(args.token_create_admin, 'w') as f:
                     f.write(yaml.dump(data, default_flow_style=False))

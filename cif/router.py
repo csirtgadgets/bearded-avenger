@@ -24,7 +24,7 @@ import multiprocessing as mp
 
 HUNTER_MIN_CONFIDENCE = 2
 HUNTER_THREADS = os.getenv('CIF_HUNTER_THREADS', 2)
-GATHERER_THREADS = os.getenv('CIF_GATHERER_THREADS', 4)
+GATHERER_THREADS = os.getenv('CIF_GATHERER_THREADS', 2)
 STORE_DEFAULT = 'sqlite'
 STORE_PLUGINS = ['cif.store.dummy', 'cif.store.sqlite', 'cif.store.elasticsearch', 'cif.store.rdflib']
 

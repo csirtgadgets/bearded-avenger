@@ -6,6 +6,7 @@ VAGRANTFILE_API_VERSION = "2"
 VAGRANTFILE_LOCAL = 'Vagrantfile.local'
 
 $script = <<SCRIPT
+yum -y update
 sudo rpm -iUvh http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 yum -y update
 sudo yum install -y gcc python-pip python-devel git libffi-devel openssl-devel python-virtualenv python-virtualenvwrapper

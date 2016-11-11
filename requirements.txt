@@ -15,5 +15,5 @@ setuptools>=18.5
 rdflib==4.2.1
 ujson>=1.35
 pyzmq>=16.0
-csirtg_indicator>=0.0.0a10,<1.0
-csirtg_smrt>=0.0.0a9,<1.0
+csirtg_indicator>=0.0.0a19,<1.0
+csirtg_smrt>=0.0.0a11,<1.0
