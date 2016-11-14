@@ -12,6 +12,7 @@ import traceback
 import yaml
 from pprint import pprint
 import arrow
+import multiprocessing
 
 import zmq
 
@@ -36,7 +37,7 @@ if PYVERSION > 2:
 logger = logging.getLogger(__name__)
 
 
-class Store(object):
+class Store(multiprocessing.Process):
     def __enter__(self):
         return self
 
@@ -44,10 +45,11 @@ class Store(object):
         return self
 
     def __init__(self, store_type=STORE_DEFAULT, store_address=STORE_ADDR, **kwargs):
-
+        multiprocessing.Process.__init__(self)
         self.store_addr = store_address
         self.store = store_type
         self.kwargs = kwargs
+        self.exit = multiprocessing.Event()
 
     def _load_plugin(self, **kwargs):
         # TODO replace with cif.utils.load_plugin
@@ -72,13 +74,23 @@ class Store(object):
         logger.info('connected')
 
         logger.debug('staring loop')
+
+        poller = zmq.Poller()
+        poller.register(self.router, zmq.POLLIN)
+
         try:
-            while True:
-                m = self.router.recv_multipart()
-                self.handle_message(m)
+            while not self.exit.is_set():
+                #m = self.router.recv_multipart()
+                m = dict(poller.poll(1000))
+                if self.router in m:
+                    m = m[self.router]
+                    self.handle_message(m)
         except KeyboardInterrupt:
             logger.info('shutting down store...')
             return
+
+    def terminate(self):
+        self.exit.set()
 
     def handle_message(self, m):
         logger.debug('message received')

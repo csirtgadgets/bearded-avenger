@@ -4,6 +4,7 @@ import ujson as json
 import logging
 import traceback
 import zmq
+import multiprocessing
 
 import cif.gatherer
 from cif.constants import GATHERER_ADDR, GATHERER_SINK_ADDR
@@ -15,7 +16,7 @@ SNDTIMEO = 15000
 LINGER = 0
 
 
-class Gatherer(object):
+class Gatherer(multiprocessing.Process):
     def __enter__(self):
         return self
 
@@ -23,9 +24,10 @@ class Gatherer(object):
         return self
 
     def __init__(self, pull=GATHERER_ADDR, push=GATHERER_SINK_ADDR):
-
+        multiprocessing.Process.__init__(self)
         self.pull = pull
         self.push = push
+        self.exit = multiprocessing.Event()
 
     def _init_plugins(self):
         import pkgutil
@@ -35,6 +37,9 @@ class Gatherer(object):
             p = loader.find_module(modname).load_module(modname)
             self.gatherers.append(p.Plugin())
             logger.debug('plugin loaded: {}'.format(modname))
+
+    def terminate(self):
+        self.exit.set()
 
     def start(self):
         self._init_plugins()
@@ -50,36 +55,45 @@ class Gatherer(object):
         push_s.connect(self.push)
         logger.debug('starting Gatherer')
 
-        try:
-            while True:
-                m = pull_s.recv_multipart()
+        poller = zmq.Poller()
+        poller.register(pull_s)
 
-                logger.debug(m)
+        while not self.exit.is_set():
 
-                id, null, mtype, token, data = m
+            try:
+                #m = pull_s.recv_multipart()
+                data = dict(poller.poll(1000))
+                if pull_s in data:
+                    m = data[pull_s]
+                else:
+                    continue
+            except KeyboardInterrupt:
+                break
 
-                data = json.loads(data)
-                if isinstance(data, dict):
-                    data = [data]
+            logger.debug(m)
 
-                rv = []
-                for d in data:
-                    i = Indicator(**d)
+            id, null, mtype, token, data = m
 
-                    for g in self.gatherers:
-                        try:
-                            g.process(i)
-                        except Exception as e:
-                            logger.error('gatherer failed: %s' % g)
-                            logger.error(e)
-                            traceback.print_exc()
+            data = json.loads(data)
+            if isinstance(data, dict):
+                data = [data]
 
-                    rv.append(i.__dict__())
+            rv = []
+            for d in data:
+                i = Indicator(**d)
 
-                data = json.dumps(rv)
-                logger.debug('sending back to router...')
-                push_s.send_multipart([id, null, mtype, token, data.encode('utf-8')])
+                for g in self.gatherers:
+                    try:
+                        g.process(i)
+                    except Exception as e:
+                        logger.error('gatherer failed: %s' % g)
+                        logger.error(e)
+                        traceback.print_exc()
 
-        except KeyboardInterrupt:
-            logger.info('shutting down gatherer..')
-            return
+                rv.append(i.__dict__())
+
+            data = json.dumps(rv)
+            logger.debug('sending back to router...')
+            push_s.send_multipart([id, null, mtype, token, data.encode('utf-8')])
+
+        logger.info('shutting down gatherer..')
