@@ -78,16 +78,15 @@ class Store(multiprocessing.Process):
         poller = zmq.Poller()
         poller.register(self.router, zmq.POLLIN)
 
-        try:
-            while not self.exit.is_set():
-                #m = self.router.recv_multipart()
+        while not self.exit.is_set():
+            try:
                 m = dict(poller.poll(1000))
-                if self.router in m:
-                    m = m[self.router]
-                    self.handle_message(m)
-        except KeyboardInterrupt:
-            logger.info('shutting down store...')
-            return
+            except SystemExit or KeyboardInterrupt:
+                break
+
+            if self.router in m:
+                m = self.router.recv_multipart()
+                self.handle_message(m)
 
     def terminate(self):
         self.exit.set()

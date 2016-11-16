@@ -22,3 +22,5 @@ venv_user: vagrant
 venv_source_path: '/vagrant'
 venv_home: "/home/{{ venv_user }}"
 venv_path: "{{ venv_home }}/.virtualenvs/{{ venv }}"
+
+pyversion: 2

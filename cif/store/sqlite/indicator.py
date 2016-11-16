@@ -318,8 +318,9 @@ class IndicatorMixin(object):
 
                     r.count += 1
                     r.lasttime = arrow.get(d['lasttime']).datetime.replace(tzinfo=None)
+
                     if not d.get('reporttime'):
-                        d['reporttime'] = arrow.utcnow().datetime.replace(tzinfo=None)
+                        d['reporttime'] = arrow.utcnow().datetime
 
                     r.reporttime = arrow.get(d['reporttime']).datetime.replace(tzinfo=None)
 
@@ -343,7 +344,14 @@ class IndicatorMixin(object):
                     tmp_added[d['indicator']] = set()
 
                 if not d.get('lasttime'):
-                    d['lasttime'] = arrow.utcnow().datetime
+                    d['lasttime'] = arrow.utcnow().datetime.replace(tzinfo=None)
+
+                if not d.get('reporttime'):
+                    d['reporttime'] = arrow.utcnow().datetime.replace(tzinfo=None)
+
+                if PYVERSION == 2:
+                    d['lasttime'] = arrow.get(d['lasttime']).datetime.replace(tzinfo=None)
+                    d['reporttime'] = arrow.get(d['reporttime']).datetime.replace(tzinfo=None)
 
                 if not d.get('firsttime'):
                     d['firsttime'] = d['lasttime']

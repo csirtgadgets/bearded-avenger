@@ -64,30 +64,26 @@ class Hunter(multiprocessing.Process):
         poller.register(socket, zmq.POLLIN)
 
         while not self.exit.is_set():
-            logger.debug('waiting...')
             try:
-                data = dict(poller.poll(1000))
-                if socket in data:
-                    data = data[socket]
-                else:
-                    continue
-            except KeyboardInterrupt:
+                s = dict(poller.poll(1000))
+            except SystemExit or KeyboardInterrupt:
                 break
 
-            logger.debug(data)
+            if socket in s:
+                data = socket.recv_multipart()
 
-            data = json.loads(data)
-            if isinstance(data, dict):
-                data = [data]
+                logger.debug(data)
+                data = json.loads(data[0])
+                if isinstance(data, dict):
+                    data = [data]
 
-            for d in data:
-                d = Indicator(**d)
+                for d in data:
+                    d = Indicator(**d)
 
-                for p in plugins:
-                    try:
-                        p.process(d, router)
-                    except Exception as e:
-                        logger.error(e)
-                        traceback.print_exc()
-                        logger.error('giving up on: {}'.format(d))
-
+                    for p in plugins:
+                        try:
+                            p.process(d, router)
+                        except Exception as e:
+                            logger.error(e)
+                            traceback.print_exc()
+                            logger.error('giving up on: {}'.format(d))

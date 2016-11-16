@@ -20,3 +20,6 @@
 
 - include: services.yml
   tags: services
+
+- include: nginx.yml
+  tags: nginx

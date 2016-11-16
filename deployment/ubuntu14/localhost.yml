@@ -10,9 +10,11 @@
     - { role: bearded-avenger, tags: role-bearded-avenger }
 
   post_tasks:
+
     - name: enable services at boot
       service: name={{ item }} enabled=yes state=started
       with_items:
         - cif-router
         - cif-httpd
+        - nginx
         - csirtg-smrt

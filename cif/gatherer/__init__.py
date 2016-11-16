@@ -59,41 +59,38 @@ class Gatherer(multiprocessing.Process):
         poller.register(pull_s)
 
         while not self.exit.is_set():
-
             try:
-                #m = pull_s.recv_multipart()
-                data = dict(poller.poll(1000))
-                if pull_s in data:
-                    m = data[pull_s]
-                else:
-                    continue
-            except KeyboardInterrupt:
+                s = dict(poller.poll(1000))
+            except Exception as e:
+                self.logger.error(e)
                 break
+            if pull_s in s:
+                m = pull_s.recv_multipart()
 
-            logger.debug(m)
+                logger.debug(m)
 
-            id, null, mtype, token, data = m
+                id, null, mtype, token, data = m
 
-            data = json.loads(data)
-            if isinstance(data, dict):
-                data = [data]
+                data = json.loads(data)
+                if isinstance(data, dict):
+                    data = [data]
 
-            rv = []
-            for d in data:
-                i = Indicator(**d)
+                rv = []
+                for d in data:
+                    i = Indicator(**d)
 
-                for g in self.gatherers:
-                    try:
-                        g.process(i)
-                    except Exception as e:
-                        logger.error('gatherer failed: %s' % g)
-                        logger.error(e)
-                        traceback.print_exc()
+                    for g in self.gatherers:
+                        try:
+                            g.process(i)
+                        except Exception as e:
+                            logger.error('gatherer failed: %s' % g)
+                            logger.error(e)
+                            traceback.print_exc()
 
-                rv.append(i.__dict__())
+                    rv.append(i.__dict__())
 
-            data = json.dumps(rv)
-            logger.debug('sending back to router...')
-            push_s.send_multipart([id, null, mtype, token, data.encode('utf-8')])
+                data = json.dumps(rv)
+                logger.debug('sending back to router...')
+                push_s.send_multipart([id, null, mtype, token, data.encode('utf-8')])
 
         logger.info('shutting down gatherer..')
