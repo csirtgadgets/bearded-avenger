@@ -14,7 +14,7 @@ class _ElasticSearch(IndicatorMixin, TokenMixin, Store):
 
     name = 'elasticsearch'
 
-    def __init__(self, nodes=ES_NODES):
+    def __init__(self, nodes=ES_NODES, **kwargs):
         self.logger = logging.getLogger(__name__)
 
         if type(nodes) == str:
@@ -27,8 +27,7 @@ class _ElasticSearch(IndicatorMixin, TokenMixin, Store):
         # http://elasticsearch-py.readthedocs.org/en/master/api.html#elasticsearch.client.IndicesClient.stats
         x = connections.get_connection().cluster.health()
 
-        if ('green', 'yellow') in x['status']:
+        if x['status'] in ['green', 'yellow']:
             return True
 
 Plugin = _ElasticSearch
-

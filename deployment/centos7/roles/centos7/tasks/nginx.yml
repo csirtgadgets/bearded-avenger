@@ -1,6 +1,6 @@
 ---
 - name: install nginx
-  apt: state=latest pkg=nginx
+  yum: state=latest pkg=nginx
 
 - name: create directories for ssl certificiates
   file: path=/etc/nginx/ssl state=directory
@@ -16,9 +16,6 @@
 
 - name: copy nginx config file
   template: src=templates/nginx.conf.j2 dest={{ nginx_conf_file }}
-
-- name: enable configuration
-  file: dest=/etc/nginx/sites-enabled/default src={{ nginx_conf_file }} state=link
 
 - name: restart nginx
   service: name=nginx state=restarted

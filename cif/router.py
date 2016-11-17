@@ -351,6 +351,7 @@ def main():
             options[v] = o.get(v)
 
     setup_runtime_path(args.runtime_path)
+    setup_signals(__name__)
 
     with Router(listen=args.listen, hunter=args.hunter, store_type=args.store, store_address=args.store_address,
                 store_nodes=args.store_nodes, p2p=args.p2p, hunter_token=args.hunter_token, hunter_threads=args.hunter_threads,

@@ -16,5 +16,4 @@
       with_items:
         - cif-router
         - cif-httpd
-        - nginx
         - csirtg-smrt

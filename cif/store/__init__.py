@@ -61,6 +61,8 @@ class Store(multiprocessing.Process):
                 self.store = loader.find_module(modname).load_module(modname)
                 self.store = self.store.Plugin(**kwargs)
 
+
+
     def start(self):
         self._load_plugin(**self.kwargs)
         self.context = zmq.Context()
@@ -253,7 +255,6 @@ def main():
     p.add_argument("--store", help="specify a store type {} [default: %(default)s]".format(', '.join(STORE_PLUGINS)),
                    default=STORE_DEFAULT)
 
-    p.add_argument('--store-type')
     p.add_argument('--nodes')
 
     p.add_argument('--config', help='specify config path [default %(default)s]', default=CONFIG_PATH)
