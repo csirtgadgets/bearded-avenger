@@ -2,7 +2,7 @@ FROM ubuntu:14.04
 MAINTAINER Wes Young <wes@csirtgadgets.org>
 
 ENV CIF_MAJOR 3.0
-ENV CIF_VERSION fix/packaging
+ENV CIF_VERSION 3.0.0a7
 
 RUN apt-get update
 RUN apt-get install -qq software-properties-common python-software-properties
