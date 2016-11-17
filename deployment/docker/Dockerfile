@@ -2,7 +2,7 @@ FROM ubuntu:14.04
 MAINTAINER Wes Young <wes@csirtgadgets.org>
 
 ENV CIF_MAJOR 3.0
-ENV CIF_VERSION 3.0.0a7
+ENV CIF_VERSION fix/packaging
 
 RUN apt-get update
 RUN apt-get install -qq software-properties-common python-software-properties
@@ -37,7 +37,7 @@ RUN tar -zxvf $CIF_VERSION.tar.gz
 WORKDIR /bearded-avenger-$CIF_VERSION
 
 RUN cp -r rules /etc/cif/
-RUN pip install -r requirements.txt
+RUN pip install -r dev_requirements.txt
 RUN py.test
 RUN python setup.py install
 
