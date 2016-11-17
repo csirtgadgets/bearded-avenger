@@ -4,7 +4,7 @@
 - name: Ensure path has correct permissions
   file: path={{ app_user_home }} owner={{ app_user }} group={{ app_user }} mode=0750
 
-- user: name="{{ ansible_env.SUDO_USER }}" groups={{ app_user }} append=yes
+- user: name="{{ app_user }}" groups={{ app_user }} append=yes
 
 - name: Ensure app user has a .profile
   file: path="{{ app_user_home }}/.profile" state=touch owner={{ app_user }} group={{ app_user }} mode=0660

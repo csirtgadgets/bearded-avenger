@@ -1,10 +1,30 @@
 import os
 from setuptools import setup, find_packages
 import versioneer
+import sys
 
 # vagrant doesn't appreciate hard-linking
 if os.environ.get('USER') == 'vagrant' or os.path.isdir('/vagrant'):
     del os.link
+
+# https://www.pydanny.com/python-dot-py-tricks.html
+if sys.argv[-1] == 'test':
+    test_requirements = [
+        'pytest',
+        'coverage',
+        'pytest_cov',
+    ]
+    try:
+        modules = map(__import__, test_requirements)
+    except ImportError as e:
+        err_msg = e.message.replace("No module named ", "")
+        msg = "%s is not installed. Install your test requirements." % err_msg
+        raise ImportError(msg)
+    r = os.system('py.test test -v --cov=cif --cov-fail-under=35')
+    if r == 0:
+        sys.exit()
+    else:
+        raise RuntimeError('tests failed')
 
 setup(
     name="cif",
@@ -25,7 +45,25 @@ setup(
     author="Wes Young",
     author_email="wes@csirtgadgets.org",
     packages=find_packages(),
-    install_requires=[],
+    install_requires=[
+        'html5lib',
+        'Flask-Limiter',
+        'limits',
+        'maxminddb',
+        'geoip2',
+        'dnspython',
+        'Flask',
+        'PyYAML',
+        'SQLAlchemy',
+        'elasticsearch',
+        'elasticsearch_dsl',
+        'rdflib',
+        'ujson',
+        'pyzmq>=16.0',
+        'csirtg_indicator',
+        'cifsdk',
+        'csirtg_smrt',
+    ],
     scripts=[],
     entry_points={
         'console_scripts': [

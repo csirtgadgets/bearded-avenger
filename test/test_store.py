@@ -52,13 +52,25 @@ def test_store_sqlite(store):
     t = store.store.tokens_admin_exists()
     assert t
 
+    import arrow
+
     x = store.handle_indicators_create(t, {
         'indicator': 'example.com',
         'tags': 'malware',
         'provider': 'csirtgadgets.org',
+        'lasttime': arrow.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
     })
 
     assert x > 0
+
+    x = store.handle_indicators_create(t, {
+        'indicator': 'example.com',
+        'tags': 'malware',
+        'provider': 'csirtgadgets.org',
+        'lasttime': arrow.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+    })
+
+    assert x == 1
 
     x = store.handle_indicators_search(t, {
         'indicator': 'example.com',

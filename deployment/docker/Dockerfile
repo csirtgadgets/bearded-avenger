@@ -37,7 +37,7 @@ RUN tar -zxvf $CIF_VERSION.tar.gz
 WORKDIR /bearded-avenger-$CIF_VERSION
 
 RUN cp -r rules /etc/cif/
-RUN pip install -r requirements.txt
+RUN pip install -r dev_requirements.txt
 RUN py.test
 RUN python setup.py install
 

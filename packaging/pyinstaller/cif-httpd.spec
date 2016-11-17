@@ -4,7 +4,7 @@ name = 'cif-httpd'
 
 block_cipher = None
 
-a = Analysis(['cif/httpd.py'],
+a = Analysis(['cif/httpd/__init__.py'],
              binaries=None,
              datas=None,
              hiddenimports=[],

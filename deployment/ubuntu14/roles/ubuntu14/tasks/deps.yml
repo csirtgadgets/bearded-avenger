@@ -36,7 +36,7 @@
     - geoip-bin
 
 - name: update pip
-  command: easy_install -U pip
+  command: pip install pip --upgrade
   become: yes
 
 - name: update vex and requests

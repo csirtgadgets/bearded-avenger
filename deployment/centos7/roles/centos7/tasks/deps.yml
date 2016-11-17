@@ -15,4 +15,9 @@
     - bzip2-devel
     - python-virtualenvwrapper
     - bind-utils
-    - GeoIP-update
+    - libxml2-python
+    - libxml2-devel
+    - libxslt
+    - libxslt-devel
+    - libcurl-devel
+    - net-tools

@@ -4,7 +4,7 @@ name = 'cif'
 
 block_cipher = None
 
-a = Analysis(['cif/client/__init__.py'],
+a = Analysis(['cifsdk/client/__init__.py'],
              binaries=None,
              datas=None,
              hiddenimports=[],

@@ -8,6 +8,7 @@ VAGRANTFILE_LOCAL = 'Vagrantfile.local'
 $script = <<SCRIPT
 echo 'yes' | sudo add-apt-repository 'ppa:fkrull/deadsnakes-python2.7'
 sudo apt-get update && sudo apt-get install -y python2.7 python-pip python-dev git libffi-dev libssl-dev sqlite3
+sudo pip install pip --upgrade
 sudo pip install 'setuptools>=11.3' 'ansible>=2.1' versioneer markupsafe
 cd /vagrant/deployment/ubuntu14
 sudo ansible-playbook -i "localhost," -c local vagrant.yml -vv

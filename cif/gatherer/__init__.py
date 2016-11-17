@@ -4,6 +4,7 @@ import ujson as json
 import logging
 import traceback
 import zmq
+import multiprocessing
 
 import cif.gatherer
 from cif.constants import GATHERER_ADDR, GATHERER_SINK_ADDR
@@ -15,7 +16,7 @@ SNDTIMEO = 15000
 LINGER = 0
 
 
-class Gatherer(object):
+class Gatherer(multiprocessing.Process):
     def __enter__(self):
         return self
 
@@ -23,9 +24,10 @@ class Gatherer(object):
         return self
 
     def __init__(self, pull=GATHERER_ADDR, push=GATHERER_SINK_ADDR):
-
+        multiprocessing.Process.__init__(self)
         self.pull = pull
         self.push = push
+        self.exit = multiprocessing.Event()
 
     def _init_plugins(self):
         import pkgutil
@@ -35,6 +37,9 @@ class Gatherer(object):
             p = loader.find_module(modname).load_module(modname)
             self.gatherers.append(p.Plugin())
             logger.debug('plugin loaded: {}'.format(modname))
+
+    def terminate(self):
+        self.exit.set()
 
     def start(self):
         self._init_plugins()
@@ -50,8 +55,16 @@ class Gatherer(object):
         push_s.connect(self.push)
         logger.debug('starting Gatherer')
 
-        try:
-            while True:
+        poller = zmq.Poller()
+        poller.register(pull_s)
+
+        while not self.exit.is_set():
+            try:
+                s = dict(poller.poll(1000))
+            except Exception as e:
+                self.logger.error(e)
+                break
+            if pull_s in s:
                 m = pull_s.recv_multipart()
 
                 logger.debug(m)
@@ -80,6 +93,4 @@ class Gatherer(object):
                 logger.debug('sending back to router...')
                 push_s.send_multipart([id, null, mtype, token, data.encode('utf-8')])
 
-        except KeyboardInterrupt:
-            logger.info('shutting down gatherer..')
-            return
+        logger.info('shutting down gatherer..')

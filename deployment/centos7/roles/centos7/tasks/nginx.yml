@@ -1,0 +1,24 @@
+---
+- name: install nginx
+  yum: state=latest pkg=nginx
+
+- name: create directories for ssl certificiates
+  file: path=/etc/nginx/ssl state=directory
+
+- name: generate TLS key
+  command: openssl req -subj "/C=US/ST=NY/L=Buffalo/O=NA/CN=localhost" -x509 -nodes -days 3650 -newkey rsa:4096 -keyout {{ nginx_key_file }} -out {{ nginx_cert_file }}
+
+- name: fix key perms
+  file: path={{ nginx_cert_file }} mode=600
+
+- name: fix key perms
+  file: path={{ nginx_key_file }} mode=600
+
+- name: copy nginx config file
+  template: src=templates/nginx.conf.j2 dest={{ nginx_conf_file }}
+
+- name: restart nginx
+  service: name=nginx state=restarted
+
+- name: enable services at boot
+  service: name=nginx enabled=yes state=started

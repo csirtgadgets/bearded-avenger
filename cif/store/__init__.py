@@ -12,6 +12,7 @@ import traceback
 import yaml
 from pprint import pprint
 import arrow
+import multiprocessing
 
 import zmq
 
@@ -36,7 +37,7 @@ if PYVERSION > 2:
 logger = logging.getLogger(__name__)
 
 
-class Store(object):
+class Store(multiprocessing.Process):
     def __enter__(self):
         return self
 
@@ -44,10 +45,11 @@ class Store(object):
         return self
 
     def __init__(self, store_type=STORE_DEFAULT, store_address=STORE_ADDR, **kwargs):
-
+        multiprocessing.Process.__init__(self)
         self.store_addr = store_address
         self.store = store_type
         self.kwargs = kwargs
+        self.exit = multiprocessing.Event()
 
     def _load_plugin(self, **kwargs):
         # TODO replace with cif.utils.load_plugin
@@ -59,8 +61,10 @@ class Store(object):
                 self.store = loader.find_module(modname).load_module(modname)
                 self.store = self.store.Plugin(**kwargs)
 
+
+
     def start(self):
-        self._load_plugin(self.kwargs)
+        self._load_plugin(**self.kwargs)
         self.context = zmq.Context()
         self.router = self.context.socket(zmq.ROUTER)
 
@@ -72,13 +76,22 @@ class Store(object):
         logger.info('connected')
 
         logger.debug('staring loop')
-        try:
-            while True:
+
+        poller = zmq.Poller()
+        poller.register(self.router, zmq.POLLIN)
+
+        while not self.exit.is_set():
+            try:
+                m = dict(poller.poll(1000))
+            except SystemExit or KeyboardInterrupt:
+                break
+
+            if self.router in m:
                 m = self.router.recv_multipart()
                 self.handle_message(m)
-        except KeyboardInterrupt:
-            logger.info('shutting down store...')
-            return
+
+    def terminate(self):
+        self.exit.set()
 
     def handle_message(self, m):
         logger.debug('message received')
@@ -242,7 +255,6 @@ def main():
     p.add_argument("--store", help="specify a store type {} [default: %(default)s]".format(', '.join(STORE_PLUGINS)),
                    default=STORE_DEFAULT)
 
-    p.add_argument('--store-type')
     p.add_argument('--nodes')
 
     p.add_argument('--config', help='specify config path [default %(default)s]', default=CONFIG_PATH)
@@ -264,13 +276,15 @@ def main():
 
     if args.token_create_smrt:
         with Store(store_type=args.store, nodes=args.nodes) as s:
+            s._load_plugin(store_type=args.store, nodes=args.nodes)
             t = s.token_create_smrt()
             if t:
                 data = {
-                    'token': t.decode('utf-8'),
+                    'token': t.encode('utf-8'),
                 }
                 if args.remote:
                     data['remote'] = args.remote
+
                 with open(args.token_create_smrt, 'w') as f:
                     f.write(yaml.dump(data, default_flow_style=False))
 
@@ -280,10 +294,11 @@ def main():
 
     if args.token_create_hunter:
         with Store(store_type=args.store, nodes=args.nodes) as s:
+            s._load_plugin(store_type=args.store, nodes=args.nodes)
             t = s.token_create_hunter()
             if t:
                 data = {
-                    'hunter_token': t.decode('utf-8'),
+                    'hunter_token': t.encode('utf-8'),
                 }
                 with open(args.token_create_hunter, 'w') as f:
                     f.write(yaml.dump(data, default_flow_style=False))
@@ -294,10 +309,11 @@ def main():
 
     if args.token_create_admin:
         with Store(store_type=args.store, nodes=args.nodes) as s:
+            s._load_plugin(store_type=args.store, nodes=args.nodes)
             t = s.token_create_admin()
             if t:
                 data = {
-                    'token': t.decode('utf-8'),
+                    'token': t.encode('utf-8'),
                 }
                 with open(args.token_create_admin, 'w') as f:
                     f.write(yaml.dump(data, default_flow_style=False))

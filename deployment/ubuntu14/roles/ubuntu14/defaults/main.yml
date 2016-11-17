@@ -17,3 +17,8 @@ csirtg_smrt_rules_path: '/etc/cif/rules'
 geoip_userid: 999999
 geoip_key: "000000000000"
 geoip_products: GeoLite2-City GeoLite2-Country GeoLite-Legacy-IPv6-City GeoLite-Legacy-IPv6-Country 506 517 533
+
+nginx_key_file: /etc/nginx/ssl/nginx.key
+nginx_cert_file: /etc/nginx/ssl/nginx.crt
+nginx_conf_file: /etc/nginx/sites-available/default
+nginx_server_name: localhost

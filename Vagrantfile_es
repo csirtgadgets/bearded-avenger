@@ -8,9 +8,9 @@ VAGRANTFILE_LOCAL = 'Vagrantfile.local'
 $script = <<SCRIPT
 echo 'yes' | sudo add-apt-repository 'ppa:fkrull/deadsnakes-python2.7'
 sudo apt-get update && sudo apt-get install -y python2.7 python-pip python-dev git libffi-dev libssl-dev sqlite3
-sudo pip install 'setuptools>=11.3' 'ansible>=2.1' versioneer markupsafe
+sudo pip install 'setuptools>=11.3' 'ansible>=2.1,<3.0' versioneer markupsafe
 cd /vagrant/deployment/ubuntu14
-sudo ansible-playbook -i "localhost," -c local elasticsearch.yml -vv
+cd /vagrant/deployment/ubuntu14/ && sudo bash bootstrap_elasticsearch.sh
 SCRIPT
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
@@ -21,7 +21,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.network :forwarded_port, guest: 9200, host:9200
   config.vm.network :forwarded_port, guest: 443, host: 8443
   config.vm.provider :virtualbox do |vb|
-    vb.customize ["modifyvm", :id, "--cpus", "2", "--ioapic", "on", "--memory", "1024" ]
+    vb.customize ["modifyvm", :id, "--cpus", "2", "--ioapic", "on", "--memory", "4096" ]
   end
 
   if File.file?(VAGRANTFILE_LOCAL)

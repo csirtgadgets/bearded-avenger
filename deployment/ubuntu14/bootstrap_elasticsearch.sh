@@ -16,6 +16,9 @@ ansible-playbook -i "localhost," -c local elasticsearch.yml -vv
 echo 'testing connectivity'
 sudo -u cif cif --config /home/cif/.cif.yml -p
 
+echo 'testing connectivity'
+sudo -u cif cif --config /home/cif/.cif.yml -p
+
 echo 'testing query'
 sudo -u cif cif --config /home/cif/.cif.yml --search example.com
 

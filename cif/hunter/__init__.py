@@ -8,8 +8,10 @@ from pprint import pprint
 
 import cif.hunter
 from cifsdk.client.zeromq import ZMQ as Client
+from cifsdk.utils import setup_signals
 from cif.constants import HUNTER_ADDR, ROUTER_ADDR, HUNTER_SINK_ADDR
 from csirtg_indicator import Indicator
+import multiprocessing
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +19,7 @@ SNDTIMEO = 15000
 ZMQ_HWM = 1000000
 
 
-class Hunter(object):
+class Hunter(multiprocessing.Process):
     def __enter__(self):
         return self
 
@@ -25,9 +27,11 @@ class Hunter(object):
         return self
 
     def __init__(self, remote=HUNTER_ADDR, router=ROUTER_ADDR, token=None):
+        multiprocessing.Process.__init__(self)
         self.hunters = remote
         self.router = HUNTER_SINK_ADDR
         self.token = token
+        self.exit = multiprocessing.Event()
 
     def _load_plugins(self):
         import pkgutil
@@ -39,6 +43,9 @@ class Hunter(object):
             logger.debug('plugin loaded: {}'.format(modname))
 
         return plugins
+
+    def terminate(self):
+        self.exit.set()
 
     def start(self):
         # TODO - convert this to an async socket
@@ -53,13 +60,20 @@ class Hunter(object):
         socket.connect(self.hunters)
         logger.debug('starting hunter')
 
-        try:
-            while True:
-                logger.debug('waiting...')
-                data = socket.recv()
-                logger.debug(data)
+        poller = zmq.Poller()
+        poller.register(socket, zmq.POLLIN)
 
-                data = json.loads(data)
+        while not self.exit.is_set():
+            try:
+                s = dict(poller.poll(1000))
+            except SystemExit or KeyboardInterrupt:
+                break
+
+            if socket in s:
+                data = socket.recv_multipart()
+
+                logger.debug(data)
+                data = json.loads(data[0])
                 if isinstance(data, dict):
                     data = [data]
 
@@ -73,6 +87,3 @@ class Hunter(object):
                             logger.error(e)
                             traceback.print_exc()
                             logger.error('giving up on: {}'.format(d))
-        except KeyboardInterrupt:
-            logger.info('shutting down hunter...')
-            return

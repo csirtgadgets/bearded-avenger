@@ -7,6 +7,7 @@ import traceback
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 from pprint import pprint
+from time import sleep
 
 import zmq
 from zmq.eventloop import ioloop
@@ -24,7 +25,7 @@ import multiprocessing as mp
 
 HUNTER_MIN_CONFIDENCE = 2
 HUNTER_THREADS = os.getenv('CIF_HUNTER_THREADS', 2)
-GATHERER_THREADS = os.getenv('CIF_GATHERER_THREADS', 4)
+GATHERER_THREADS = os.getenv('CIF_GATHERER_THREADS', 2)
 STORE_DEFAULT = 'sqlite'
 STORE_PLUGINS = ['cif.store.dummy', 'cif.store.sqlite', 'cif.store.elasticsearch', 'cif.store.rdflib']
 
@@ -66,12 +67,14 @@ class Router(object):
         self.store_s = self.context.socket(zmq.DEALER)
         self.store_s.bind(store_address)
 
+        self.store_p = None
         self._init_store(self.context, store_address, store_type, nodes=store_nodes)
 
         self.gatherer_s = self.context.socket(zmq.PUSH)
         self.gatherer_sink_s = self.context.socket(zmq.PULL)
         self.gatherer_s.bind(GATHERER_ADDR)
         self.gatherer_sink_s.bind(GATHERER_SINK_ADDR)
+        self.gatherers = []
         self._init_gatherers(gatherer_threads)
 
         self.hunter_sink_s = self.context.socket(zmq.ROUTER)
@@ -117,22 +120,38 @@ class Router(object):
         for n in range(int(threads)):
             p = mp.Process(target=Hunter(token=token).start)
             p.start()
+            self.hunters.append(p)
 
     def _init_gatherers(self, threads):
         self.logger.info('launching gatherers...')
         for n in range(int(threads)):
             p = mp.Process(target=Gatherer().start)
             p.start()
+            self.gatherers.append(p)
 
     def _init_store(self, context, store_address, store_type, nodes=False):
         self.logger.info('launching store...')
         p = mp.Process(target=Store(store_address=store_address, store_type=store_type, nodes=nodes).start)
         p.start()
+        self.store_p = p
 
     def stop(self):
         self.terminate = True
+        self.logger.info('stopping hunters..')
+        for h in self.hunters:
+            h.terminate()
+
+        self.logger.info('stopping gatherers')
+        for g in self.gatherers:
+            g.terminate()
+
+        self.logger.info('stopping store..')
+        self.store_p.terminate()
+
         if self.p2p:
             self.p2p.send("$$STOP".encode('utf_8'))
+
+        sleep(0.01)
 
     def start(self):
         self.logger.debug('starting loop')
@@ -322,8 +341,8 @@ def main():
     if args.logging_ignore:
         to_ignore = args.logging_ignore.split(',')
 
-    for i in to_ignore:
-        logging.getLogger(i).setLevel(logging.WARNING)
+        for i in to_ignore:
+            logging.getLogger(i).setLevel(logging.WARNING)
 
     o = read_config(args)
     options = vars(args)
@@ -331,9 +350,8 @@ def main():
         if options[v] is None:
             options[v] = o.get(v)
 
-    setup_signals(__name__)
-
     setup_runtime_path(args.runtime_path)
+    setup_signals(__name__)
 
     with Router(listen=args.listen, hunter=args.hunter, store_type=args.store, store_address=args.store_address,
                 store_nodes=args.store_nodes, p2p=args.p2p, hunter_token=args.hunter_token, hunter_threads=args.hunter_threads,
@@ -343,7 +361,11 @@ def main():
             r.start()
         except KeyboardInterrupt:
             # todo - signal to threads to shut down and wait for them to finish
-            logger.info('shutting down...')
+            logger.info('shutting down via SIGINT...')
+        except SystemExit:
+            logger.info('shutting down via SystemExit...')
+
+        r.stop()
 
     logger.info('Shutting down')
 

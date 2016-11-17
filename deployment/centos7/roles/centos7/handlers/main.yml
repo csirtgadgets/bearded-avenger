@@ -1,7 +1,7 @@
 ---
 # handlers file for centos71-check
-- name: save firewall
-  command: service iptables save && service firewall restart
+- name: restart firewall
+  command: service firewall restart
 
 - name: reload systemd
   command: systemctl daemon-reload

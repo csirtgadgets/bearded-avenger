@@ -23,3 +23,7 @@
 - include: services.yml
   tags: services
   when: not development
+
+- include: nginx.yml
+  tags: nginx
+  when: not development
