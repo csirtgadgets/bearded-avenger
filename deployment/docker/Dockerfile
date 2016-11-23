@@ -2,18 +2,20 @@ FROM ubuntu:14.04
 MAINTAINER Wes Young <wes@csirtgadgets.org>
 
 ENV CIF_MAJOR 3.0
-ENV CIF_VERSION 3.0.0a7
+ENV CIF_VERSION 3.0.0a10
 
 RUN apt-get update
 RUN apt-get install -qq software-properties-common python-software-properties
 
-RUN echo "yes" | add-apt-repository "ppa:maxmind/ppa"
+RUN echo "yes" | add-apt-repository ppa:maxmind/ppa
 
 RUN apt-get update
 RUN apt-get install -y python2.7 python-pip python-dev git libffi-dev libssl-dev sqlite3 wget build-essential git \
-    python2.7 python-pip python python-dev geoip-bin geoipupdate python-pytest
+    python2.7 python-pip python python-dev geoip-bin geoipupdate python-pytest uuid-dev libxml2-dev python-lxml \
+    libxslt1-dev zlib1g-dev
 
 RUN pip install 'setuptools>=11.3' 'ansible>=2.1' versioneer markupsafe 'supervisor==3.2.1'
+
 
 VOLUME /usr/local/share/GeoIP
 COPY configs/GeoIP.conf /etc/
@@ -24,9 +26,9 @@ RUN adduser --disabled-password --gecos '' cif
 WORKDIR /
 RUN set -ex \
     && for path in \
-        ./var/log/cif \
-        ./var/lib/cif \
-        ./etc/cif \
+        /var/log/cif \
+        /var/lib/cif \
+        /etc/cif \
     ; do \
         mkdir -p "$path"; \
         chown -R cif:cif "$path"; \

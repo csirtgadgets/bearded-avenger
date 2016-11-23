@@ -1,3 +1,6 @@
+cython>=0.2
+https://github.com/zeromq/pyzmq/archive/f37052960e1dc510ea2c1d2e69a32d727afa9d69.tar.gz#egg=pyzmq>16.0.1
+#pyzmq>=16.0 # bug in the way pyzmq wheel is built
 html5lib==1.0b8 # bug in csirtg-smrt upstream
 https://github.com/csirtgadgets/bearded-avenger-sdk-py/archive/3.0.0a9.tar.gz
 Flask-Limiter>=0.9.3,<1.0
@@ -14,6 +17,5 @@ elasticsearch_dsl<3.0.0,>=2.0.0
 setuptools>=18.5
 rdflib==4.2.1
 ujson>=1.35
-pyzmq>=16.0
 csirtg_indicator>=0.0.0a19,<1.0
 csirtg_smrt>=0.0.0a11,<1.0
