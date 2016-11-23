@@ -13,3 +13,10 @@
     - csirtg-smrt.service
   notify:
     - reload systemd
+
+- name: enable services at boot
+  service: name={{ item }} enabled=yes
+  with_items:
+    - cif-router.service
+    - cif-httpd.service
+    - csirtg-smrt.service
