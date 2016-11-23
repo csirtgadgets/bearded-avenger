@@ -7,6 +7,9 @@
     - cif-httpd
     - cif-services
 
+- name: enable services at boot
+  service: name=cif-services enabled=yes
+
 - name: copy supervisord configs
   copy: src="{{ item }}" dest=/etc/cif/ mode=0660 owner="{{ app_user }}" group="{{ app_user }}"
   with_items:
