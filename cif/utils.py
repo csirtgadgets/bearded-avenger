@@ -11,6 +11,7 @@ def resolve_ns(data, t='A', timeout=HUNTER_RESOLVER_TIMEOUT):
     resolver = dns.resolver.Resolver()
     resolver.timeout = timeout
     resolver.lifetime = timeout
+    resolver.search = []
     try:
         answers = resolver.query(data, t)
         resp = []
