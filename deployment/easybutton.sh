@@ -46,8 +46,11 @@ case $OS in
     	if [ $VER == "14.04" ]; then
     	    cd deployment/ubuntu14
     	    bash bootstrap.sh
+    	elif [ $VER == "16.04" ]; then
+    	    cd ubuntu16
+    	    bash bootstrap.sh
     	else
-    	    echo "Currently only 14.04 LTS is supported"
+    	    echo "Currently only 14.04 or 16.04 LTS is supported"
     		echo "We accept Pull Requests! =)"
        	fi
        	;;

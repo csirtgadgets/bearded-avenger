@@ -1,0 +1,22 @@
+---
+- name: Install bearded-avenger
+  hosts: localhost
+  # http://docs.ansible.com/ansible/playbooks_environment.html
+#  environment:
+#    http_proxy: http://proxy.example.com:8080
+  environment:
+    LANG: C
+    LC_ALL: C
+    LC_MESSAGES: C
+  become: True
+  roles:
+    - { role: ubuntu16, tags: role-ubuntu16 }
+    - { role: bearded-avenger, tags: role-bearded-avenger }
+
+  post_tasks:
+    - name: enable services at boot
+      service: name={{ item }} enabled=yes state=started
+      with_items:
+        - cif-router
+        - cif-httpd
+        - csirtg-smrt

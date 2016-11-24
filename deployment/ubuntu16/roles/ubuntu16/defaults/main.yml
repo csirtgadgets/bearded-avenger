@@ -1,0 +1,19 @@
+---
+development: False
+
+app_user: cif
+app_group: "{{ app_user }}"
+app_user_home: "/home/{{ app_user }}"
+
+cif_runtime_path: '/var/lib/cif'
+cif_router_config_path: '/etc/cif/cif-router.yml'
+cif_store_store: 'sqlite'
+
+csirtg_smrt_runtime_path: "{{ cif_runtime_path }}"
+csirtg_smrt_cache_path: "{{ cif_runtime_path }}/smrt"
+csirtg_smrt_config_path: '/etc/cif/csirtg-smrt.yml'
+csirtg_smrt_rules_path: '/etc/cif/rules'
+
+geoip_userid: 999999
+geoip_key: "000000000000"
+geoip_products: GeoLite2-City GeoLite2-Country GeoLite-Legacy-IPv6-City GeoLite-Legacy-IPv6-Country 506 517 533
