@@ -4,7 +4,7 @@ from .ipv6 import Ipv6
 from .url import Url
 from .email import Email
 
-plugins = {
+FEED_PLUGINS = {
     'ipv4': Ipv4,
     'ipv6': Ipv6,
     'fqdn': Fqdn,
@@ -15,8 +15,8 @@ plugins = {
 
 # http://stackoverflow.com/a/456747
 def factory(name):
-    if name in plugins:
-        return plugins[name]
+    if name in FEED_PLUGINS:
+        return FEED_PLUGINS[name]
     else:
         return None
 

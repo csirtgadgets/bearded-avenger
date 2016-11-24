@@ -20,6 +20,8 @@ from cifsdk.exceptions import AuthError, TimeoutError, InvalidSearch
 from .common import VALID_FILTERS, pull_token, request_v2, compress, response_compress, aggregate
 import arrow
 import copy
+from .feed import factory as feed_factory
+from .feed import FEED_PLUGINS
 
 from pprint import pprint
 
@@ -208,6 +210,24 @@ def feed():
         if request.args.get(f):
             filters[f] = request.args.get(f)
 
+    if len(filters) == 0:
+        response = jsonify({
+            "message": "invalid search, missing an itype filter (ipv4, fqdn, url, sha1...)",
+            "data": []
+        })
+        response.status_code = 400
+        return response
+
+    # test to make sure feed type exists
+    feed_type = feed_factory(filters['itype'])
+    if feed_type is None:
+        response = jsonify({
+            "message": "invalid feed itype: {}, valid types are [{}]".format(filters['itype'], '|'.join(FEED_PLUGINS)),
+            "data": []
+        })
+        response.status_code = 400
+        return response
+
     DAYS = request.args.get('days', 30)
     LIMIT = request.args.get('limit', 50000)
 
@@ -254,8 +274,6 @@ def feed():
             wl = Client(remote, pull_token()).indicators_search(wl_filters)
 
         wl = aggregate(wl)
-
-        from .feed import factory as feed_factory
 
         f = feed_factory(filters['itype'])
 
