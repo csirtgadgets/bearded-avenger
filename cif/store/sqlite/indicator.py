@@ -55,6 +55,7 @@ class Indicator(Base):
         'Tag',
         primaryjoin='and_(Indicator.id==Tag.indicator_id)',
         backref=backref('tags', uselist=True),
+        lazy='subquery',
         cascade="all,delete"
     )
 
@@ -62,6 +63,7 @@ class Indicator(Base):
         'Message',
         primaryjoin='and_(Indicator.id==Message.indicator_id)',
         backref=backref('messages', uselist=True),
+        lazy='subquery',
         cascade="all,delete"
     )
 
