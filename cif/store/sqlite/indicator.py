@@ -37,7 +37,7 @@ class Indicator(Base):
     asn = Column(Float)
     cc = Column(String)
     protocol = Column(Integer)
-    reporttime = Column(DateTime)
+    reporttime = Column(DateTime, index=True)
     firsttime = Column(DateTime)
     lasttime = Column(DateTime)
     confidence = Column(Float)
