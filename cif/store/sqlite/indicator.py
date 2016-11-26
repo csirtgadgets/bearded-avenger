@@ -300,10 +300,7 @@ class IndicatorMixin(object):
             tags = d.get("tags", [])
             if len(tags) > 0:
                 if isinstance(tags, basestring):
-                    if '.' in tags:
-                        tags = tags.split(',')
-                    else:
-                        tags = [str(tags)]
+                    tags = tags.split(',')
 
                 del d['tags']
 
