@@ -305,9 +305,9 @@ def indicators():
                 filters[f] = request.args.get(f)
         try:
             if app.config.get('dummy'):
-                r = DummyClient(remote, pull_token()).filter(filters=filters, limit=request.args.get('limit'))
+                r = DummyClient(remote, pull_token()).indicators_search(filters)
             else:
-                r = Client(remote, pull_token()).filter(filters=filters, limit=request.args.get('limit'))
+                r = Client(remote, pull_token()).indicators_search(filters)
         except RuntimeError as e:
             logger.error(e)
             response = jsonify({
