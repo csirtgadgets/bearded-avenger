@@ -13,7 +13,7 @@ import yaml
 from pprint import pprint
 import arrow
 import multiprocessing
-
+from csirtg_indicator import Indicator
 import zmq
 
 import cif.store
@@ -152,8 +152,26 @@ class Store(multiprocessing.Process):
             logger.debug('searching')
             try:
                 x = self.store.indicators_search(data)
+
+                if data.get('indicator'):
+                    t = self.store.tokens_search({'token': token})
+                    ts = arrow.utcnow().format('YYYY-MM-DDTHH:mm:ss.SSZ')
+                    s = Indicator(
+                        indicator=data['indicator'],
+                        tlp='amber',
+                        confidence=10,
+                        tags=['search'],
+                        provider=t[0]['username'],
+                        firsttime=ts,
+                        lasttime=ts,
+                        reporttime=ts
+                    )
+                    self.store.indicators_create(s.__dict__())
             except Exception as e:
                 logger.error(e)
+                if logger.getEffectiveLevel() == logging.DEBUG:
+                    import traceback
+                    logger.error(traceback.print_exc())
                 raise InvalidSearch('invalid search')
             else:
                 return x

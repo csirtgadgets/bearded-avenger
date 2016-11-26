@@ -309,6 +309,9 @@ class IndicatorMixin(object):
                 provider=d['provider'],
             ).order_by(Indicator.lasttime.desc())
 
+            if len(tags):
+                i = i.join(Tag).filter(Tag.tag == tags[0])
+
             if i.count() > 0:
                 r = i.first()
                 if d.get('lasttime') and arrow.get(d['lasttime']).datetime > arrow.get(r.lasttime).datetime:
