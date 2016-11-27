@@ -198,7 +198,7 @@ class Router(object):
 
         self.logger.debug("mtype: {0}".format(mtype))
 
-        if mtype in ['indicators_create', 'indicators_search']:
+        if mtype in ['indicators_create']:
             handler = getattr(self, "handle_" + mtype)
         else:
             handler = self.handle_message_default
@@ -262,20 +262,6 @@ class Router(object):
         data = json.dumps(data)
         self.store_s.send_multipart([id, b'', b'indicators_create', token, data.encode('utf-8')])
         self.logger.debug('done')
-
-    def handle_indicators_search(self, id, mtype, token, data):
-        self.store_s.send_multipart([id, b'', mtype.encode('utf-8'), token, data])
-        data = json.loads(data)
-
-        if data.get('indicator'):
-            data = Indicator(
-                indicator=data['indicator'],
-                tlp='green',
-                confidence=10,
-                tags=['search'],
-            )
-            data = str(data).encode('utf-8')
-            self.gatherer_s.send_multipart([id, b'', b'indicators_create', token, data])
 
     def handle_indicators_create(self, id, mtype, token, data):
         self.logger.debug('sending to gatherers..')

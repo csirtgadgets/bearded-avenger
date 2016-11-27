@@ -300,10 +300,7 @@ class IndicatorMixin(object):
             tags = d.get("tags", [])
             if len(tags) > 0:
                 if isinstance(tags, basestring):
-                    if '.' in tags:
-                        tags = tags.split(',')
-                    else:
-                        tags = [str(tags)]
+                    tags = tags.split(',')
 
                 del d['tags']
 
@@ -311,6 +308,9 @@ class IndicatorMixin(object):
                 indicator=d['indicator'],
                 provider=d['provider'],
             ).order_by(Indicator.lasttime.desc())
+
+            if len(tags):
+                i = i.join(Tag).filter(Tag.tag == tags[0])
 
             if i.count() > 0:
                 r = i.first()
