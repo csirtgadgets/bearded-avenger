@@ -37,7 +37,7 @@ class Indicator(Base):
     asn = Column(Float)
     cc = Column(String)
     protocol = Column(Integer)
-    reporttime = Column(DateTime)
+    reporttime = Column(DateTime, index=True)
     firsttime = Column(DateTime)
     lasttime = Column(DateTime)
     confidence = Column(Float)
@@ -55,6 +55,7 @@ class Indicator(Base):
         'Tag',
         primaryjoin='and_(Indicator.id==Tag.indicator_id)',
         backref=backref('tags', uselist=True),
+        lazy='subquery',
         cascade="all,delete"
     )
 
@@ -62,6 +63,7 @@ class Indicator(Base):
         'Message',
         primaryjoin='and_(Indicator.id==Message.indicator_id)',
         backref=backref('messages', uselist=True),
+        lazy='subquery',
         cascade="all,delete"
     )
 
@@ -118,7 +120,7 @@ class Ipv4(Base):
     __tablename__ = 'indicators_ipv4'
 
     id = Column(Integer, primary_key=True)
-    ipv4 = Column(Ip)
+    ipv4 = Column(Ip, index=True)
     mask = Column(Integer, default=32)
 
     indicator_id = Column(Integer, ForeignKey('indicators.id', ondelete='CASCADE'))
@@ -131,7 +133,7 @@ class Ipv6(Base):
     __tablename__ = 'indicators_ipv6'
 
     id = Column(Integer, primary_key=True)
-    ip = Column(Ip(version=6))
+    ip = Column(Ip(version=6), index=True)
     mask = Column(Integer, default=64)
 
     indicator_id = Column(Integer, ForeignKey('indicators.id', ondelete='CASCADE'))
@@ -298,10 +300,7 @@ class IndicatorMixin(object):
             tags = d.get("tags", [])
             if len(tags) > 0:
                 if isinstance(tags, basestring):
-                    if '.' in tags:
-                        tags = tags.split(',')
-                    else:
-                        tags = [str(tags)]
+                    tags = tags.split(',')
 
                 del d['tags']
 
@@ -309,6 +308,9 @@ class IndicatorMixin(object):
                 indicator=d['indicator'],
                 provider=d['provider'],
             ).order_by(Indicator.lasttime.desc())
+
+            if len(tags):
+                i = i.join(Tag).filter(Tag.tag == tags[0])
 
             if i.count() > 0:
                 r = i.first()

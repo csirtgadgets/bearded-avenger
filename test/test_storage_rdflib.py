@@ -1,12 +1,9 @@
 import py.test
 import os
 
-DISABLE_TESTS = False
-
-try:
-    import rdflib
-except ImportError as e:
-    DISABLE_TESTS = True
+DISABLE_TESTS = True
+if os.environ.get('CIF_RDFLIB_TEST') == '1':
+    DISABLE_TESTS = False
 
 from cif.store import Store
 from csirtg_indicator import Indicator
@@ -19,7 +16,7 @@ def store():
         yield s
 
 
-@py.test.mark.skipif(DISABLE_TESTS, reason='missing rdflib')
+@py.test.mark.skipif(DISABLE_TESTS, reason='rdflib tests disabled')
 def test_store_rdflib(store):
     store.token_create_admin()
     t = store.store.tokens_admin_exists()

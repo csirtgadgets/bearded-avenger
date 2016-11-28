@@ -1,6 +1,7 @@
 sudo: required
 dist: trusty
 language: python
+cache: pip
 python:
     - 2.7
     - 3.4
@@ -20,12 +21,12 @@ notifications:
     on_success: never
     on_failure: never
 
-deploy:
-  provider: pypi
-  user: wesyoung
-  password:
-    secure: diKbtf7RnRJAo7MdNW3weZDVAfP8j5XYVbcUa6iYBRpQ02zDBhQuZCtmFRms14Ls9nlj2SvBdchdk7WX5R/YbY8j3mI9VtrXdS58foetDPBMQuGJs2dAagpL/AmhssLRqTjKqTX2GXoEgvrKy/HpMiLqGmFKwvd5SlbEWEuC2BNiEL1r+wj/ZlQ36GHGKvNDRnItfwtTZxcDJ62ssdlWItYoRuZyyHEz5PlcYrnhcQHKKpmzzmeRYHHdG2HB42ynr/Plf4/bIjbK1FIMZz3UxZRujblXMkjIzxx/rngPtrUG5M5V28xva0muWrJNnqOvIoOY/A1oOVbysLsCCYR2uh6NcWfLzEFf2PJhjh3y7YZsTVX2rHrvhRKez1Qs+z6cvhvt4AVWRwilMi7TRkwgERhe0YqrRHT1EM5s1OGGN5rSE3Llqa63yvTi4EuMX0GPKZXdfkbihcY0ENexKfu36K3yBMJ39xmtGMKPiUW+aKLo3RZ+XRa+s28GFA5Tju5IYLeBTEz0QkiiovcK0Tl914jDDDE4BVcipL4DuQtF51qGO+9sgo/ppsFWKDFttIBOFYVk2X7UjY73JaXItpQofUKR1v/PRGZ7YSNfUX91bJUKtZ/nQVEysMkflWoqOv6A1296oje9KGE7cqV+8DCzPiFHQrlyLxJqtKfidMXqZC0=
-  on:
-    branch: master
-    tags: true
-    condition: $TRAVIS_PYTHON_VERSION = "3.5"
+#deploy:
+#  provider: pypi
+#  user: wesyoung
+#  password:
+#    secure: diKbtf7RnRJAo7MdNW3weZDVAfP8j5XYVbcUa6iYBRpQ02zDBhQuZCtmFRms14Ls9nlj2SvBdchdk7WX5R/YbY8j3mI9VtrXdS58foetDPBMQuGJs2dAagpL/AmhssLRqTjKqTX2GXoEgvrKy/HpMiLqGmFKwvd5SlbEWEuC2BNiEL1r+wj/ZlQ36GHGKvNDRnItfwtTZxcDJ62ssdlWItYoRuZyyHEz5PlcYrnhcQHKKpmzzmeRYHHdG2HB42ynr/Plf4/bIjbK1FIMZz3UxZRujblXMkjIzxx/rngPtrUG5M5V28xva0muWrJNnqOvIoOY/A1oOVbysLsCCYR2uh6NcWfLzEFf2PJhjh3y7YZsTVX2rHrvhRKez1Qs+z6cvhvt4AVWRwilMi7TRkwgERhe0YqrRHT1EM5s1OGGN5rSE3Llqa63yvTi4EuMX0GPKZXdfkbihcY0ENexKfu36K3yBMJ39xmtGMKPiUW+aKLo3RZ+XRa+s28GFA5Tju5IYLeBTEz0QkiiovcK0Tl914jDDDE4BVcipL4DuQtF51qGO+9sgo/ppsFWKDFttIBOFYVk2X7UjY73JaXItpQofUKR1v/PRGZ7YSNfUX91bJUKtZ/nQVEysMkflWoqOv6A1296oje9KGE7cqV+8DCzPiFHQrlyLxJqtKfidMXqZC0=
+#  on:
+#    branch: master
+#    tags: true
+#    condition: $TRAVIS_PYTHON_VERSION = "3.5"
