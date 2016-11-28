@@ -1,12 +1,5 @@
+# https://semaphoreci.com/community/tutorials/testing-ansible-roles-on-multiple-operating-systems-with-docker-and-semaphore
 ---
-- name: copy init scripts
-  copy: src="{{ item }}" dest="/etc/init.d/{{ item }}" mode=0755 backup=yes
-  with_items:
-    - cif-router
-    - csirtg-smrt
-    - cif-httpd
-    - cif-services
-
 - name: copy supervisord configs
   copy: src="{{ item }}" dest=/etc/cif/ mode=0660 owner="{{ app_user }}" group="{{ app_user }}"
   with_items:
@@ -14,11 +7,23 @@
     - cif-httpd.conf
     - csirtg-smrt.conf
 
-- name: copy /etc/defaults/cif
-  template: src=defaults.j2 dest=/etc/default/cif mode=0660 owner="{{ app_user }}" group="{{ app_user }}"
+- name: systemd env file
+  template: src=cif.env.j2 dest=/etc/cif.env mode=0660 owner="{{ app_user }}" group="{{ app_user }}" 
+  tags: configuration
 
-- name: configure /etc/security/limits.conf
-  lineinfile: dest=/etc/security/limits.conf line="cif             soft    nofile            20000"
+- name: systemd services
+  copy: src={{ item }} dest=/etc/systemd/system owner=root group=root mode=0755
+  tags: configuration
+  with_items:
+    - cif-router.service
+    - cif-httpd.service
+    - csirtg-smrt.service
+  notify:
+    - reload systemd
 
-- name: configure /etc/security/limits.conf
-  lineinfile: dest=/etc/security/limits.conf line="cif             hard    nofile            30000"
+- name: enable services at boot
+  service: name={{ item }} enabled=yes
+  with_items:
+    - cif-router.service
+    - cif-httpd.service
+    - csirtg-smrt.service
