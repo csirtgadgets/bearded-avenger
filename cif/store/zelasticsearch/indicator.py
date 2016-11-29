@@ -151,7 +151,7 @@ class IndicatorMixin(object):
             }
 
             if d.get('tags'):
-                filters['tags'] = d['tags'].split(',')
+                filters['tags'] = d['tags']
 
             # TODO -- make sure the initial list is sorted first (by lasttime)
             rv = self.indicators_search(filters, sort='lasttime', raw=True)
