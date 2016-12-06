@@ -100,15 +100,14 @@ class Store(multiprocessing.Process):
 
             if len(self.create_queue) > 0 and (time.time() - last_flushed) > self.create_queue_flush:
                 self._flush_create_queue()
-                keys = dict.fromkeys(self.create_queue.keys())
-                for t in keys:
+                for t in list(self.create_queue):
                     self.create_queue[t]['messages'] = []
 
                     # if we've not seen activity in 300s reset the counter
                     if self.create_queue[t]['count'] > 0:
                         if (time.time() - self.create_queue[t]['last_activity']) > self.create_queue_wait:
                             logger.debug('pruning {} from create_queue'.format(t))
-                            self.create_queue.pop(t)
+                            del self.create_queue[t]
 
                 last_flushed = time.time()
 
