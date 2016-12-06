@@ -112,7 +112,7 @@ class Indicator(Base):
         if self.peers:
             self.peers = json.dumps(self.peers)
 
-        if self.additional_data:
+        if self.additional_data is not None:
             self.additional_data = json.dumps(self.additional_data)
 
 

@@ -194,6 +194,9 @@ class Store(multiprocessing.Process):
 
     def handle_indicators_create(self, token, data, id=None, client_id=None):
         if len(data) == 1:
+            if not self.store.token_write(token):
+                raise AuthError('invalid token')
+
             if not self.create_queue.get(token):
                 self.create_queue[token] = {'count': 0, "messages": []}
 
