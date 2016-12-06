@@ -36,14 +36,6 @@ CODES = {
         'tags': 'hijacked',
         'description': 'Spamhaus DROP/EDROP Data',
     },
-    '127.0.0.10': {
-        'tags': 'spam',
-        'description': 'End-user Non-MTA IP addresses set by ISP outbound mail policy',
-    },
-    '127.0.0.11': {
-        'tags': 'spam',
-        'description': 'End-user Non-MTA IP addresses set by ISP outbound mail policy',
-    },
 }
 
 
