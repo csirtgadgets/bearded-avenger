@@ -45,7 +45,7 @@ class Indicator(Base):
     city = Column(String)
     longitude = Column(String)
     latitude = Column(String)
-    peers = Column(String)
+    peers = Column(UnicodeText)
     description = Column(UnicodeText)
     additional_data = Column(UnicodeText)
     rdata = Column(UnicodeText)
@@ -109,7 +109,7 @@ class Indicator(Base):
         if self.firsttime and isinstance(self.firsttime, basestring):
             self.firsttime = arrow.get(self.firsttime).datetime
 
-        if self.peers:
+        if self.peers is not None:
             self.peers = json.dumps(self.peers)
 
         if self.additional_data is not None:
