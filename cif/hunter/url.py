@@ -16,7 +16,7 @@ class Url(object):
 
         self.logger = logging.getLogger(__name__)
 
-    def process(self, i):
+    def process(self, i, router):
         if i.itype == 'url':
             u = urlparse(i.indicator)
             if u.hostname:
@@ -33,8 +33,8 @@ class Url(object):
                     fqdn.rdata = i.indicator
 
                     self.logger.debug('sending to router: {}'.format(fqdn))
-                    #router.indicators_create(fqdn)
-                    return fqdn
+                    router.indicators_create(fqdn)
+                    #return fqdn
 
 
 Plugin = Url

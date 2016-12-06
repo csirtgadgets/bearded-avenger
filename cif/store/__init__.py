@@ -15,6 +15,7 @@ import arrow
 import multiprocessing
 from csirtg_indicator import Indicator
 import zmq
+import time
 
 import cif.store
 from cif.constants import STORE_ADDR, PYVERSION
@@ -31,6 +32,10 @@ SNDTIMEO = 2000
 LINGER = 3
 STORE_DEFAULT = 'sqlite'
 STORE_PLUGINS = ['cif.store.dummy', 'cif.store.sqlite', 'cif.store.elasticsearch', 'cif.store.rdflib']
+CREATE_QUEUE_FLUSH = os.environ.get('CIF_STORE_QUEUE_FLUSH', 5)   # seconds to flush the queue [interval]
+CREATE_QUEUE_LIMIT = os.environ.get('CIF_STORE_QUEUE_LIMIT', 5)  # num of records before we start throttling a token
+CREATE_QUEUE_TIMEOUT = os.environ.get('CIF_STORE_TIMEOUT', 10)  # seconds of in-activity before we remove from the penalty box
+
 if PYVERSION > 2:
     basestring = (str, bytes)
     
@@ -51,6 +56,9 @@ class Store(multiprocessing.Process):
         self.kwargs = kwargs
         self.exit = multiprocessing.Event()
         self.create_queue = {}
+        self.create_queue_flush = CREATE_QUEUE_FLUSH
+        self.create_queue_limit = CREATE_QUEUE_LIMIT
+        self.create_queue_wait = CREATE_QUEUE_TIMEOUT
 
     def _load_plugin(self, **kwargs):
         # TODO replace with cif.utils.load_plugin
@@ -79,8 +87,6 @@ class Store(multiprocessing.Process):
         poller = zmq.Poller()
         poller.register(self.router, zmq.POLLIN)
 
-        queue_flush = 5
-        import time
         last_flushed = time.time()
         while not self.exit.is_set():
             try:
@@ -92,9 +98,18 @@ class Store(multiprocessing.Process):
                 m = self.router.recv_multipart()
                 self.handle_message(m)
 
-            if len(self.create_queue) > 0 and (time.time() - last_flushed) > queue_flush:
+            if len(self.create_queue) > 0 and (time.time() - last_flushed) > self.create_queue_flush:
                 self._flush_create_queue()
-                self.create_queue = {}
+                keys = dict.fromkeys(self.create_queue.keys())
+                for t in keys:
+                    self.create_queue[t]['messages'] = []
+
+                    # if we've not seen activity in 300s reset the counter
+                    if self.create_queue[t]['count'] > 0:
+                        if (time.time() - self.create_queue[t]['last_activity']) > self.create_queue_wait:
+                            logger.debug('pruning {} from create_queue'.format(t))
+                            self.create_queue.pop(t)
+
                 last_flushed = time.time()
 
     def terminate(self):
@@ -155,9 +170,12 @@ class Store(multiprocessing.Process):
             self.router.send_multipart([id, null, '0'.encode('utf-8')])
 
     def _flush_create_queue(self):
-        logger.debug('flushing queue...')
         for t in self.create_queue:
-            data = [msg[0] for _, _, msg in self.create_queue[t]]
+            if len(self.create_queue[t]['messages']) == 0:
+                return
+
+            logger.debug('flushing queue...')
+            data = [msg[0] for _, _, msg in self.create_queue[t]['messages']]
             try:
                 rv = self.store.indicators_upsert(data)
                 rv = {"status": "success", "data": rv}
@@ -168,8 +186,8 @@ class Store(multiprocessing.Process):
             except AuthError as e:
                 rv = {'status': 'failed', 'message': 'unauthorized'}
 
-            for id, client_id, _ in self.create_queue[t]:
-                self.router.send_multipart([id, client_id, ''.encode('utf-8'), 'indicators_crate'.encode('utf-8'),
+            for id, client_id, _ in self.create_queue[t]['messages']:
+                self.router.send_multipart([id, client_id, ''.encode('utf-8'), 'indicators_create'.encode('utf-8'),
                                             json.dumps(rv).encode('utf-8')])
 
         logger.debug('done..')
@@ -177,11 +195,15 @@ class Store(multiprocessing.Process):
     def handle_indicators_create(self, token, data, id=None, client_id=None):
         if len(data) == 1:
             if not self.create_queue.get(token):
-                self.create_queue[token] = []
+                self.create_queue[token] = {'count': 0, "messages": []}
 
-            self.create_queue[token].append((id, client_id, data))
+            self.create_queue[token]['count'] += 1
+            self.create_queue[token]['last_activity'] = time.time()
 
-            return 2
+            if self.create_queue[token]['count'] > self.create_queue_limit:
+                self.create_queue[token]['messages'].append((id, client_id, data))
+
+                return 2
 
         if self.store.token_write(token):
             return self.store.indicators_upsert(data)
