@@ -38,6 +38,8 @@ class Hunter(multiprocessing.Process):
         logger.debug('loading plugins...')
         plugins = []
         for loader, modname, is_pkg in pkgutil.iter_modules(cif.hunter.__path__, 'cif.hunter.'):
+            if modname != 'cif.hunter.url':
+                continue
             p = loader.find_module(modname).load_module(modname)
             plugins.append(p.Plugin())
             logger.debug('plugin loaded: {}'.format(modname))
@@ -63,6 +65,12 @@ class Hunter(multiprocessing.Process):
         poller = zmq.Poller()
         poller.register(socket, zmq.POLLIN)
 
+        queue = []
+        queue_batch = 500
+        queue_flush = 2
+        import time
+
+        last_flushed = time.time()
         while not self.exit.is_set():
             try:
                 s = dict(poller.poll(1000))
@@ -82,8 +90,20 @@ class Hunter(multiprocessing.Process):
 
                     for p in plugins:
                         try:
-                            p.process(d, router)
+                            i = p.process(d)
+                            if i:
+                                queue.append(i.__dict__())
                         except Exception as e:
                             logger.error(e)
                             traceback.print_exc()
                             logger.error('giving up on: {}'.format(d))
+
+            if len(queue) > 0 and (((time.time() - last_flushed) >= queue_flush) or len(queue) >= queue_batch):
+                logger.info('flushing queue: {}'.format(len(queue)))
+                router.indicators_create(json.dumps(queue))
+                queue = []
+                last_flushed = time.time()
+
+        if len(queue) > 0:
+            logger.debug('final queue flush..')
+            router.indicators_create(json.dumps(queue))
