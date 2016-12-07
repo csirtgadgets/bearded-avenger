@@ -10,7 +10,7 @@ class Tag(Base):
     __tablename__ = "tags"
 
     id = Column(Integer, primary_key=True)
-    tag = Column(String)
+    tag = Column(String, index=True)
 
     indicator_id = Column(Integer, ForeignKey('indicators.id', ondelete='CASCADE'))
     indicator = relationship(

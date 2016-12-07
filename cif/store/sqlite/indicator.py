@@ -304,7 +304,7 @@ class IndicatorMixin(object):
 
                 del d['tags']
 
-            i = s.query(Indicator).filter_by(
+            i = s.query(Indicator).options(lazyload('*')).filter_by(
                 indicator=d['indicator'],
                 provider=d['provider'],
             ).order_by(Indicator.lasttime.desc())
@@ -312,8 +312,8 @@ class IndicatorMixin(object):
             if len(tags):
                 i = i.join(Tag).filter(Tag.tag == tags[0])
 
-            if i.count() > 0:
-                r = i.first()
+            r = i.first()
+            if r:
                 if d.get('lasttime') and arrow.get(d['lasttime']).datetime > arrow.get(r.lasttime).datetime:
                     self.logger.debug('{} {}'.format(arrow.get(r.lasttime).datetime, arrow.get(d['lasttime']).datetime))
                     self.logger.debug('upserting: %s' % d['indicator'])
