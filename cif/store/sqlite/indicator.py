@@ -304,15 +304,18 @@ class IndicatorMixin(object):
 
                 del d['tags']
 
-            i = s.query(Indicator).options(lazyload('*')).filter_by(
+            i = s.query(Indicator).options(lazyload('messages')).filter_by(
                 indicator=d['indicator'],
                 provider=d['provider'],
             ).order_by(Indicator.lasttime.desc())
 
             if len(tags):
-                i = i.join(Tag).filter(Tag.tag == tags[0])
+                records = r.all()
+                records = [r for r in records if tags[0] in [t.tag for t in r.tags]]
+                r = records[0] if records else None
+            else:
+                r = r.first()
 
-            r = i.first()
             if r:
                 if d.get('lasttime') and arrow.get(d['lasttime']).datetime > arrow.get(r.lasttime).datetime:
                     self.logger.debug('{} {}'.format(arrow.get(r.lasttime).datetime, arrow.get(d['lasttime']).datetime))
