@@ -125,10 +125,12 @@ class Store(multiprocessing.Process):
                 data = json.loads(data.decode('utf-8'))
             except ValueError as e:
                 logger.error(e)
-                self.router.send_multipart([id, client_id, null, mtype, json.dumps({"status": "failed"}).encode('utf-8')])
+                data = json.dumps({"status": "failed"}).encode('utf-8')
+                self.router.send_multipart([id, client_id, null, mtype, data])
                 return
 
         handler = getattr(self, "handle_" + mtype.decode('utf-8'))
+        err = None
         if handler:
             logger.debug("mtype: {0}".format(mtype))
             logger.debug('running handler: {}'.format(mtype))
@@ -139,28 +141,30 @@ class Store(multiprocessing.Process):
                     logger.debug('waiting for more data..')
                 else:
                     rv = {"status": "success", "data": rv}
-                    logger.debug('updating last_active')
                     ts = arrow.utcnow().format('YYYY-MM-DDTHH:mm:ss.SSSSS')
                     ts = '{}Z'.format(ts)
                     self.store.token_last_activity_at(token, timestamp=ts)
 
             except AuthError as e:
                 logger.error(e)
-                rv = {'status': 'failed', 'message': 'unauthorized'}
+                err = 'unauthorized'
 
             except InvalidSearch as e:
-                rv = {'status': 'failed', 'message': 'invalid search'}
+                err = 'invalid search'
 
             except InvalidIndicator as e:
                 logger.error(data)
                 logger.error(e)
                 traceback.print_exc()
-                rv = {'status': 'failed', 'message': 'invalid indicator {}'.format(e)}
+                err = 'invalid indicator {}'.format(e)
 
             except Exception as e:
                 logger.error(e)
                 traceback.print_exc()
-                rv = {"status": "failed"}
+                err = 'unknown failure'
+
+            if err:
+                rv = {'status': 'failed', 'message': err}
 
             if rv != 2:
                 self.router.send_multipart([id, client_id, null, mtype, json.dumps(rv).encode('utf-8')])
