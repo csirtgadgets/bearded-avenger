@@ -15,6 +15,7 @@ import arrow
 import multiprocessing
 from csirtg_indicator import Indicator
 import zmq
+import time
 
 import cif.store
 from cif.constants import STORE_ADDR, PYVERSION
@@ -31,6 +32,10 @@ SNDTIMEO = 2000
 LINGER = 3
 STORE_DEFAULT = 'sqlite'
 STORE_PLUGINS = ['cif.store.dummy', 'cif.store.sqlite', 'cif.store.elasticsearch', 'cif.store.rdflib']
+CREATE_QUEUE_FLUSH = os.environ.get('CIF_STORE_QUEUE_FLUSH', 5)   # seconds to flush the queue [interval]
+CREATE_QUEUE_LIMIT = os.environ.get('CIF_STORE_QUEUE_LIMIT', 5)  # num of records before we start throttling a token
+CREATE_QUEUE_TIMEOUT = os.environ.get('CIF_STORE_TIMEOUT', 10)  # seconds of in-activity before we remove from the penalty box
+
 if PYVERSION > 2:
     basestring = (str, bytes)
     
@@ -50,6 +55,10 @@ class Store(multiprocessing.Process):
         self.store = store_type
         self.kwargs = kwargs
         self.exit = multiprocessing.Event()
+        self.create_queue = {}
+        self.create_queue_flush = CREATE_QUEUE_FLUSH
+        self.create_queue_limit = CREATE_QUEUE_LIMIT
+        self.create_queue_wait = CREATE_QUEUE_TIMEOUT
 
     def _load_plugin(self, **kwargs):
         # TODO replace with cif.utils.load_plugin
@@ -60,8 +69,6 @@ class Store(multiprocessing.Process):
                 logger.debug('Loading plugin: {0}'.format(modname))
                 self.store = loader.find_module(modname).load_module(modname)
                 self.store = self.store.Plugin(**kwargs)
-
-
 
     def start(self):
         self._load_plugin(**self.kwargs)
@@ -80,6 +87,7 @@ class Store(multiprocessing.Process):
         poller = zmq.Poller()
         poller.register(self.router, zmq.POLLIN)
 
+        last_flushed = time.time()
         while not self.exit.is_set():
             try:
                 m = dict(poller.poll(1000))
@@ -89,6 +97,19 @@ class Store(multiprocessing.Process):
             if self.router in m:
                 m = self.router.recv_multipart()
                 self.handle_message(m)
+
+            if len(self.create_queue) > 0 and (time.time() - last_flushed) > self.create_queue_flush:
+                self._flush_create_queue()
+                for t in list(self.create_queue):
+                    self.create_queue[t]['messages'] = []
+
+                    # if we've not seen activity in 300s reset the counter
+                    if self.create_queue[t]['count'] > 0:
+                        if (time.time() - self.create_queue[t]['last_activity']) > self.create_queue_wait:
+                            logger.debug('pruning {} from create_queue'.format(t))
+                            del self.create_queue[t]
+
+                last_flushed = time.time()
 
     def terminate(self):
         self.exit.set()
@@ -104,48 +125,96 @@ class Store(multiprocessing.Process):
                 data = json.loads(data.decode('utf-8'))
             except ValueError as e:
                 logger.error(e)
-                self.router.send_multipart([id, client_id, null, mtype, json.dumps({"status": "failed"}).encode('utf-8')])
+                data = json.dumps({"status": "failed"}).encode('utf-8')
+                self.router.send_multipart([id, client_id, null, mtype, data])
                 return
 
         handler = getattr(self, "handle_" + mtype.decode('utf-8'))
+        err = None
         if handler:
             logger.debug("mtype: {0}".format(mtype))
             logger.debug('running handler: {}'.format(mtype))
 
             try:
-                rv = handler(token.decode('utf-8'), data)
-                rv = {"status": "success", "data": rv}
-                logger.debug('updating last_active')
-                ts = arrow.utcnow().format('YYYY-MM-DDTHH:mm:ss.SSSSS')
-                ts = '{}Z'.format(ts)
-                self.store.token_last_activity_at(token, timestamp=ts)
+                rv = handler(token.decode('utf-8'), data, id=id, client_id=client_id)
+                if rv == 2:
+                    logger.debug('waiting for more data..')
+                else:
+                    rv = {"status": "success", "data": rv}
+                    ts = arrow.utcnow().format('YYYY-MM-DDTHH:mm:ss.SSSSS')
+                    ts = '{}Z'.format(ts)
+                    self.store.token_last_activity_at(token, timestamp=ts)
+
             except AuthError as e:
                 logger.error(e)
-                rv = {'status': 'failed', 'message': 'unauthorized'}
+                err = 'unauthorized'
+
             except InvalidSearch as e:
-                rv = {'status': 'failed', 'message': 'invalid search'}
+                err = 'invalid search'
+
             except InvalidIndicator as e:
                 logger.error(data)
                 logger.error(e)
                 traceback.print_exc()
-                rv = {'status': 'failed', 'message': 'invalid indicator {}'.format(e)}
+                err = 'invalid indicator {}'.format(e)
+
             except Exception as e:
                 logger.error(e)
                 traceback.print_exc()
-                rv = {"status": "failed"}
+                err = 'unknown failure'
 
-            self.router.send_multipart([id, client_id, null, mtype, json.dumps(rv).encode('utf-8')])
+            if err:
+                rv = {'status': 'failed', 'message': err}
+
+            if rv != 2:
+                self.router.send_multipart([id, client_id, null, mtype, json.dumps(rv).encode('utf-8')])
         else:
             logger.error('message type {0} unknown'.format(mtype))
             self.router.send_multipart([id, null, '0'.encode('utf-8')])
 
-    def handle_ping(self, token, data='[]'):
-        logger.debug('handling ping message')
-        return self.store.ping(token)
+    def _flush_create_queue(self):
+        for t in self.create_queue:
+            if len(self.create_queue[t]['messages']) == 0:
+                return
 
-    def handle_ping_write(self, token, data='[]'):
-        logger.debug('handling ping write')
-        return self.store.token_write(token)
+            logger.debug('flushing queue...')
+            data = [msg[0] for _, _, msg in self.create_queue[t]['messages']]
+            try:
+                rv = self.store.indicators_upsert(data)
+                rv = {"status": "success", "data": rv}
+                logger.debug('updating last_active')
+                ts = arrow.utcnow().format('YYYY-MM-DDTHH:mm:ss.SSSSS')
+                ts = '{}Z'.format(ts)
+                self.store.token_last_activity_at(t.encode('utf-8'), timestamp=ts)
+            except AuthError as e:
+                rv = {'status': 'failed', 'message': 'unauthorized'}
+
+            for id, client_id, _ in self.create_queue[t]['messages']:
+                self.router.send_multipart([id, client_id, ''.encode('utf-8'), 'indicators_create'.encode('utf-8'),
+                                            json.dumps(rv).encode('utf-8')])
+
+        logger.debug('done..')
+
+    def handle_indicators_create(self, token, data, id=None, client_id=None):
+        if len(data) == 1:
+            if not self.store.token_write(token):
+                raise AuthError('invalid token')
+
+            if not self.create_queue.get(token):
+                self.create_queue[token] = {'count': 0, "messages": []}
+
+            self.create_queue[token]['count'] += 1
+            self.create_queue[token]['last_activity'] = time.time()
+
+            if self.create_queue[token]['count'] > self.create_queue_limit:
+                self.create_queue[token]['messages'].append((id, client_id, data))
+
+                return 2
+
+        if self.store.token_write(token):
+            return self.store.indicators_upsert(data)
+        else:
+            raise AuthError('invalid token')
 
     def handle_indicators_search(self, token, data):
         if self.store.token_read(token):
@@ -178,37 +247,38 @@ class Store(multiprocessing.Process):
         else:
             raise AuthError('invalid token')
 
-    # TODO group check
-    def handle_indicators_create(self, token, data):
-        if self.store.token_write(token):
-            return self.store.indicators_upsert(data)
-        else:
-            raise AuthError('invalid token')
+    def handle_ping(self, token, data='[]', **kwargs):
+        logger.debug('handling ping message')
+        return self.store.ping(token)
 
-    def handle_tokens_search(self, token, data):
+    def handle_ping_write(self, token, data='[]', **kwargs):
+        logger.debug('handling ping write')
+        return self.store.token_write(token)
+
+    def handle_tokens_search(self, token, data, **kwargs):
         if self.store.token_admin(token):
             logger.debug('tokens_search')
             return self.store.tokens_search(data)
         else:
             raise AuthError('invalid token')
 
-    def handle_tokens_create(self, token, data):
+    def handle_tokens_create(self, token, data, **kwargs):
         if self.store.token_admin(token):
             logger.debug('tokens_create')
             return self.store.tokens_create(data)
         else:
             raise AuthError('invalid token')
 
-    def handle_tokens_delete(self, token, data):
+    def handle_tokens_delete(self, token, data, **kwargs):
         if self.store.token_admin(token):
             return self.store.tokens_delete(data)
         else:
             raise AuthError('invalid token')
 
-    def handle_token_write(self, token, data=None):
+    def handle_token_write(self, token, data=None, **kwargs):
         return self.store.token_write(token)
 
-    def handle_tokens_edit(self, token, data):
+    def handle_tokens_edit(self, token, data, **kwargs):
         if self.store.token_admin(token):
             return self.store.token_edit(data)
         else:
