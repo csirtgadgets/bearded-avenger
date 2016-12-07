@@ -2,7 +2,7 @@ import os
 
 import arrow
 from sqlalchemy import Column, Integer, String, Float, DateTime, UnicodeText, desc, ForeignKey
-from sqlalchemy.orm import relationship, backref, class_mapper
+from sqlalchemy.orm import relationship, backref, class_mapper, lazyload
 
 from cifsdk.constants import RUNTIME_PATH, PYVERSION
 import json
