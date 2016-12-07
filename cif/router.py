@@ -266,6 +266,7 @@ class Router(object):
     def handle_indicators_create(self, id, mtype, token, data):
         self.logger.debug('sending to gatherers..')
         data = json.loads(data)
+
         if isinstance(data, dict):
             data = [data]
 
@@ -350,6 +351,9 @@ def main():
             logger.info('shutting down via SIGINT...')
         except SystemExit:
             logger.info('shutting down via SystemExit...')
+        except Exception as e:
+            logger.critical(e)
+            traceback.print_exc()
 
         r.stop()
 

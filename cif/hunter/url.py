@@ -32,8 +32,9 @@ class Url(object):
                     fqdn.confidence = (int(fqdn.confidence) / 2)
                     fqdn.rdata = i.indicator
 
-                    self.logger.debug('sending to router..')
+                    self.logger.debug('sending to router: {}'.format(fqdn))
                     router.indicators_create(fqdn)
+                    #return fqdn
 
 
 Plugin = Url
