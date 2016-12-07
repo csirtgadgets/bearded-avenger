@@ -310,11 +310,11 @@ class IndicatorMixin(object):
             ).order_by(Indicator.lasttime.desc())
 
             if len(tags):
-                records = r.all()
+                records = i.all()
                 records = [r for r in records if tags[0] in [t.tag for t in r.tags]]
                 r = records[0] if records else None
             else:
-                r = r.first()
+                r = i.first()
 
             if r:
                 if d.get('lasttime') and arrow.get(d['lasttime']).datetime > arrow.get(r.lasttime).datetime:
