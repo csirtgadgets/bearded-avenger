@@ -304,7 +304,7 @@ class IndicatorMixin(object):
 
                 del d['tags']
 
-            i = s.query(Indicator).options(lazyload('messages')).filter_by(
+            i = s.query(Indicator).options(lazyload('*')).filter_by(
                 indicator=d['indicator'],
                 provider=d['provider'],
             ).order_by(Indicator.lasttime.desc())
