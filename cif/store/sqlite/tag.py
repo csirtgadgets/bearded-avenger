@@ -12,7 +12,7 @@ class Tag(Base):
     id = Column(Integer, primary_key=True)
     tag = Column(String)
 
-    indicator_id = Column(Integer, ForeignKey('indicators.id', ondelete='CASCADE'))
+    indicator_id = Column(Integer, ForeignKey('indicators.id', ondelete='CASCADE'), index=True)
     indicator = relationship(
         Indicator,
     )
