@@ -218,7 +218,7 @@ class Store(multiprocessing.Process):
         else:
             raise AuthError('invalid token')
 
-    def handle_indicators_search(self, token, data):
+    def handle_indicators_search(self, token, data, **kwargs):
         if self.store.token_read(token):
             logger.debug('searching')
             try:
