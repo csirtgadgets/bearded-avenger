@@ -36,6 +36,8 @@ CREATE_QUEUE_FLUSH = os.environ.get('CIF_STORE_QUEUE_FLUSH', 5)   # seconds to f
 CREATE_QUEUE_LIMIT = os.environ.get('CIF_STORE_QUEUE_LIMIT', 5)  # num of records before we start throttling a token
 CREATE_QUEUE_TIMEOUT = os.environ.get('CIF_STORE_TIMEOUT', 10)  # seconds of in-activity before we remove from the penalty box
 
+MORE_DATA_NEEDED = -2
+
 if PYVERSION > 2:
     basestring = (str, bytes)
     
@@ -137,7 +139,7 @@ class Store(multiprocessing.Process):
 
             try:
                 rv = handler(token.decode('utf-8'), data, id=id, client_id=client_id)
-                if rv == 2:
+                if rv == MORE_DATA_NEEDED:
                     logger.debug('waiting for more data..')
                 else:
                     rv = {"status": "success", "data": rv}
@@ -166,7 +168,7 @@ class Store(multiprocessing.Process):
             if err:
                 rv = {'status': 'failed', 'message': err}
 
-            if rv != 2:
+            if rv != MORE_DATA_NEEDED:
                 self.router.send_multipart([id, client_id, null, mtype, json.dumps(rv).encode('utf-8')])
         else:
             logger.error('message type {0} unknown'.format(mtype))
@@ -209,7 +211,7 @@ class Store(multiprocessing.Process):
             if self.create_queue[token]['count'] > self.create_queue_limit:
                 self.create_queue[token]['messages'].append((id, client_id, data))
 
-                return 2
+                return MORE_DATA_NEEDED
 
         if self.store.token_write(token):
             return self.store.indicators_upsert(data)
