@@ -34,10 +34,9 @@ class Hunter(multiprocessing.Process):
         self.router = HUNTER_SINK_ADDR
         self.token = token
         self.exit = multiprocessing.Event()
-        self.exclude = None
+        self.exclude = {}
 
         if EXCLUDE:
-            self.exclude = {}
             for e in EXCLUDE.split(','):
                 provider, tag = e.split(':')
 
