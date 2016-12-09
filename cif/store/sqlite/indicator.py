@@ -351,7 +351,7 @@ class IndicatorMixin(object):
                     self.logger.debug('skipping: %s' % d['indicator'])
             else:
                 if tmp_added.get(d['indicator']):
-                    if d['lasttime'] in tmp_added[d['indicator']]:
+                    if d.get('lasttime') in tmp_added[d['indicator']]:
                         self.logger.debug('skipping: %s' % d['indicator'])
                         continue
                 else:
