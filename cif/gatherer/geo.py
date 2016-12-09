@@ -17,6 +17,12 @@ DB_PATH = os.environ.get('CIF_GEO_PATH')
 
 
 class Geo(object):
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        if self.db:
+            self.db.close()
 
     def __init__(self, path=DB_SEARCH_PATHS, db=DB_FILE):
         self.logger = logging.getLogger(__name__)
@@ -50,30 +56,34 @@ class Geo(object):
                 indicator.timezone = g.location.time_zone
 
     def process(self, indicator):
-        if (indicator.itype == 'ipv4' or indicator.itype == 'ipv6') and not indicator.is_private():
-            # https://geoip2.readthedocs.org/en/latest/
-            i = str(indicator.indicator)
-            self.logger.debug(i)
-            match = re.search('^(\S+)\/\d+$', i)
-            tmp = indicator.indicator
-            if match:
-                i = match.group(1)
-                indicator.indicator = i
+        if indicator.itype != 'ipv4' and indicator.itype != 'ipv6':
+            return indicator
 
-            self.logger.debug('looking up: %s' % i)
+        if indicator.is_private():
+            return indicator
 
-            try:
-                self._resolve(indicator)
-                indicator.indicator = tmp
-            except AddressNotFoundError as e:
-                self.logger.warn(e)
+        # https://geoip2.readthedocs.org/en/latest/
+        i = str(indicator.indicator)
+        match = re.search('^(\S+)\/\d+$', i)
+        tmp = indicator.indicator
+        if match:
+            i = match.group(1)
+            indicator.indicator = i
 
-    def __enter__(self):
-        return self
+        i = indicator.indicator
 
-    def __exit__(self, type, value, traceback):
-        if self.db:
-            self.db.close()
+        # cache it to the /24
+        i = list(reversed(i.split('.')))
+        i = '{}.{}.{}.0'.format(i[0], i[1], i[2])
+
+        indicator.indicator = i
+
+        try:
+            self._resolve(indicator)
+            indicator.indicator = tmp
+            return indicator
+        except AddressNotFoundError as e:
+            self.logger.warn(e)
 
 
 Plugin = Geo

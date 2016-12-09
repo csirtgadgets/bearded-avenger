@@ -1,4 +1,4 @@
-
+1
 from cif.utils import resolve_ns
 import logging
 import re
@@ -20,7 +20,13 @@ class Asn(object):
             if match:
                 i = match.group(1)
 
-            i = '.'.join(reversed(i.split('.')))
+            # cache it to the /24
+            # 115.87.213.115
+            # 0.213.87.115
+            i = list(reversed(i.split('.')))
+            i = '0.{}.{}.{}'.format(i[1], i[2], i[3])
+
+            self.logger.debug('looking up: {}'.format(i))
 
             answers = self._resolve(i)
 
