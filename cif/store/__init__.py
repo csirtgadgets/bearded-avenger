@@ -34,7 +34,10 @@ STORE_DEFAULT = 'sqlite'
 STORE_PLUGINS = ['cif.store.dummy', 'cif.store.sqlite', 'cif.store.elasticsearch', 'cif.store.rdflib']
 CREATE_QUEUE_FLUSH = os.environ.get('CIF_STORE_QUEUE_FLUSH', 5)   # seconds to flush the queue [interval]
 CREATE_QUEUE_LIMIT = os.environ.get('CIF_STORE_QUEUE_LIMIT', 5)  # num of records before we start throttling a token
-CREATE_QUEUE_TIMEOUT = os.environ.get('CIF_STORE_TIMEOUT', 10)  # seconds of in-activity before we remove from the penalty box
+# seconds of in-activity before we remove from the penalty box
+CREATE_QUEUE_TIMEOUT = os.environ.get('CIF_STORE_TIMEOUT', 10)
+
+CREATE_QUEUE_MAX = os.environ.get('CIF_STORE_QUEUE_MAX', 1000)
 
 MORE_DATA_NEEDED = -2
 
@@ -61,6 +64,8 @@ class Store(multiprocessing.Process):
         self.create_queue_flush = CREATE_QUEUE_FLUSH
         self.create_queue_limit = CREATE_QUEUE_LIMIT
         self.create_queue_wait = CREATE_QUEUE_TIMEOUT
+        self.create_queue_max = CREATE_QUEUE_MAX
+        self.create_queue_count = 0
 
     def _load_plugin(self, **kwargs):
         # TODO replace with cif.utils.load_plugin
@@ -100,7 +105,7 @@ class Store(multiprocessing.Process):
                 m = self.router.recv_multipart()
                 self.handle_message(m)
 
-            if len(self.create_queue) > 0 and (time.time() - last_flushed) > self.create_queue_flush:
+            if len(self.create_queue) > 0 and ((time.time() - last_flushed) > self.create_queue_flush) or (self.create_queue_count >= self.create_queue_max):
                 self._flush_create_queue()
                 for t in list(self.create_queue):
                     self.create_queue[t]['messages'] = []
@@ -111,6 +116,7 @@ class Store(multiprocessing.Process):
                             logger.debug('pruning {} from create_queue'.format(t))
                             del self.create_queue[t]
 
+                self.create_queue_count = 0
                 last_flushed = time.time()
 
     def terminate(self):
@@ -206,6 +212,7 @@ class Store(multiprocessing.Process):
                 self.create_queue[token] = {'count': 0, "messages": []}
 
             self.create_queue[token]['count'] += 1
+            self.create_queue_count += 1
             self.create_queue[token]['last_activity'] = time.time()
 
             if self.create_queue[token]['count'] > self.create_queue_limit:

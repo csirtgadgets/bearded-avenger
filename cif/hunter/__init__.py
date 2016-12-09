@@ -61,8 +61,6 @@ class Hunter(multiprocessing.Process):
     def terminate(self):
         self.exit.set()
 
-
-
     def start(self):
         # TODO - convert this to an async socket
         router = Client(remote=self.router, token=self.token, nowait=True)
