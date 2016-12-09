@@ -333,6 +333,7 @@ def indicators():
 
     else:
         fireball = False
+        nowait = request.args.get('nowait', False)
         if request.headers.get('Content-Length'):
             logger.debug('content-length: %s' % request.headers['Content-Length'])
             if int(request.headers['Content-Length']) > 5000:
@@ -340,7 +341,9 @@ def indicators():
                 fireball = True
         try:
             data = request.data.decode('utf-8')
-            r = Client(remote, pull_token(), fireball=fireball).indicators_create(data)
+            r = Client(remote, pull_token(), fireball=fireball).indicators_create(data, nowait=nowait)
+            if nowait:
+                r = 'pending'
         except RuntimeError as e:
             logger.error(e)
             response = jsonify({
