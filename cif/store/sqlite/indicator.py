@@ -18,6 +18,7 @@ import re
 
 DB_FILE = os.path.join(RUNTIME_PATH, 'cif.sqlite')
 VALID_FILTERS = ['indicator', 'confidence', 'provider', 'itype', 'group', 'tags']
+REQUIRED_FIELDS = ['provider', 'indicator', 'tags', 'group', 'itype']
 
 if PYVERSION > 2:
     basestring = (str, bytes)
@@ -283,6 +284,14 @@ class IndicatorMixin(object):
 
         return [self._as_dict(x) for x in rv]
 
+    def test_valid_indicator(self, i):
+        if isinstance(i, Indicator):
+            i = i.__dict__()
+
+        for f in REQUIRED_FIELDS:
+            if not i.get(f):
+                raise InvalidIndicator("Missing required field: {} for \n{}".format(f, i))
+
     def indicators_create(self, data):
         return self.indicators_upsert(data)
 
@@ -297,6 +306,9 @@ class IndicatorMixin(object):
 
         for d in data:
             self.logger.debug(d)
+
+            self.test_valid_indicator(d)
+
             tags = d.get("tags", [])
             if len(tags) > 0:
                 if isinstance(tags, basestring):
@@ -395,6 +407,10 @@ class IndicatorMixin(object):
 
                 n += 1
                 tmp_added[d['indicator']].add(d['lasttime'])
+
+            # if we're in testing mode, this needs re-attaching since we've manipulated the dict for Indicator()
+            # see test_store_sqlite
+            d['tags'] = ','.join(tags)
 
         self.logger.debug('committing')
         s.commit()

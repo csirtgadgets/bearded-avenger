@@ -235,7 +235,8 @@ class Store(multiprocessing.Process):
                         provider=t[0]['username'],
                         firsttime=ts,
                         lasttime=ts,
-                        reporttime=ts
+                        reporttime=ts,
+                        group='everyone'
                     )
                     self.store.indicators_create(s.__dict__())
             except Exception as e:
