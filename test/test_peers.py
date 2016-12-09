@@ -2,6 +2,9 @@ import py.test
 from cif.gatherer.peers import Peer
 from csirtg_indicator import Indicator
 from pprint import pprint
+import os
+
+os.environ['CIF_GATHERERS_PEERS_ENABLED'] = '1'
 
 data = [
     '701 1239 3549 3561 7132 | 216.90.108.0/24 | US | arin | 1998-09-25',
