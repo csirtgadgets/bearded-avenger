@@ -4,19 +4,20 @@ import logging
 import os
 import re
 
-ENABLE_PEERS = os.environ.get('CIF_GATHERERS_PEERS_ENABLED', False)
+ENABLE_PEERS = os.environ.get('CIF_GATHERERS_PEERS_ENABLED')
 
 
 class Peer(object):
 
-    def __init__(self, *args, **kv):
+    def __init__(self, *args, **kwargs):
         self.logger = logging.getLogger(__name__)
+        self.enabled = kwargs.get('enabled', os.environ.get('CIF_GATHERERS_PEERS_ENABLED'))
 
     def _resolve(self, data):
         return resolve_ns('{}.{}'.format(data, 'peer.asn.cymru.com', timeout=15), t='TXT')
 
     def process(self, indicator):
-        if not ENABLE_PEERS:
+        if not self.enabled:
             return indicator
 
         if not indicator.itype == 'ipv4':
