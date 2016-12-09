@@ -33,10 +33,11 @@ LINGER = 3
 STORE_DEFAULT = 'sqlite'
 STORE_PLUGINS = ['cif.store.dummy', 'cif.store.sqlite', 'cif.store.elasticsearch', 'cif.store.rdflib']
 CREATE_QUEUE_FLUSH = os.environ.get('CIF_STORE_QUEUE_FLUSH', 5)   # seconds to flush the queue [interval]
-CREATE_QUEUE_LIMIT = os.environ.get('CIF_STORE_QUEUE_LIMIT', 5)  # num of records before we start throttling a token
+CREATE_QUEUE_LIMIT = os.environ.get('CIF_STORE_QUEUE_LIMIT', 250)  # num of records before we start throttling a token
 # seconds of in-activity before we remove from the penalty box
 CREATE_QUEUE_TIMEOUT = os.environ.get('CIF_STORE_TIMEOUT', 10)
 
+# queue max to flush before we hit CIF_STORE_QUEUE_FLUSH mark
 CREATE_QUEUE_MAX = os.environ.get('CIF_STORE_QUEUE_MAX', 1000)
 
 MORE_DATA_NEEDED = -2
