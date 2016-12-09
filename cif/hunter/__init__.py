@@ -12,11 +12,13 @@ from cifsdk.utils import setup_signals
 from cif.constants import HUNTER_ADDR, ROUTER_ADDR, HUNTER_SINK_ADDR
 from csirtg_indicator import Indicator
 import multiprocessing
+import os
 
 logger = logging.getLogger(__name__)
 
 SNDTIMEO = 15000
 ZMQ_HWM = 1000000
+EXCLUDE = os.environ.get('CIF_HUNTER_EXCLUDE', None)
 
 
 class Hunter(multiprocessing.Process):
@@ -32,6 +34,18 @@ class Hunter(multiprocessing.Process):
         self.router = HUNTER_SINK_ADDR
         self.token = token
         self.exit = multiprocessing.Event()
+        self.exclude = None
+
+        if EXCLUDE:
+            self.exclude = {}
+            for e in EXCLUDE.split(','):
+                provider, tag = e.split(':')
+
+                if not self.exclude.get(provider):
+                    self.exclude[provider] = set()
+
+                logger.debug('setting hunter to skip: {}/{}'.format(provider, tag))
+                self.exclude[provider].add(tag)
 
     def _load_plugins(self):
         import pkgutil
@@ -46,6 +60,8 @@ class Hunter(multiprocessing.Process):
 
     def terminate(self):
         self.exit.set()
+
+
 
     def start(self):
         # TODO - convert this to an async socket
@@ -79,6 +95,11 @@ class Hunter(multiprocessing.Process):
 
                 for d in data:
                     d = Indicator(**d)
+
+                    if self.exclude.get(d.provider):
+                        for t in d.tags:
+                            if t in self.exclude[d.provider]:
+                                logger.debug('skipping: {}'.format(d.indicator))
 
                     for p in plugins:
                         try:
