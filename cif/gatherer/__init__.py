@@ -5,6 +5,7 @@ import logging
 import traceback
 import zmq
 import multiprocessing
+from cifsdk.msg import Msg
 
 import cif.gatherer
 from cif.constants import GATHERER_ADDR, GATHERER_SINK_ADDR
@@ -64,12 +65,9 @@ class Gatherer(multiprocessing.Process):
             except Exception as e:
                 self.logger.error(e)
                 break
+
             if pull_s in s:
-                m = pull_s.recv_multipart()
-
-                logger.debug(m)
-
-                id, null, mtype, token, data = m
+                id, token, mtype, data = Msg().recv(pull_s)
 
                 data = json.loads(data)
                 if isinstance(data, dict):
@@ -91,6 +89,6 @@ class Gatherer(multiprocessing.Process):
 
                 data = json.dumps(rv)
                 logger.debug('sending back to router...')
-                push_s.send_multipart([id, null, mtype, token, data.encode('utf-8')])
+                Msg(id=id, mtype=mtype, token=token, data=data).send(push_s)
 
         logger.info('shutting down gatherer..')
