@@ -17,6 +17,7 @@ from csirtg_indicator import Indicator
 import zmq
 import time
 
+from cifsdk.msg import Msg
 import cif.store
 from cif.constants import STORE_ADDR, PYVERSION
 from cifsdk.constants import REMOTE_ADDR, CONFIG_PATH
@@ -103,7 +104,7 @@ class Store(multiprocessing.Process):
                 break
 
             if self.router in m:
-                m = self.router.recv_multipart()
+                m = Msg().recv(self.router)
                 self.handle_message(m)
 
             if len(self.create_queue) > 0 and ((time.time() - last_flushed) > self.create_queue_flush) or (self.create_queue_count >= self.create_queue_max):
@@ -126,33 +127,33 @@ class Store(multiprocessing.Process):
     def handle_message(self, m):
         logger.debug('message received')
 
-        id, client_id, null, mtype, token, data = m
+        id, client_id, token, mtype, data = m
 
         if isinstance(data, basestring):
 
             try:
-                data = json.loads(data.decode('utf-8'))
+                data = json.loads(data)
             except ValueError as e:
                 logger.error(e)
-                data = json.dumps({"status": "failed"}).encode('utf-8')
-                self.router.send_multipart([id, client_id, null, mtype, data])
+                data = json.dumps({"status": "failed"})
+                Msg(id=id, client_id=client_id, mtype=mtype, data=data).send(self.router)
                 return
 
-        handler = getattr(self, "handle_" + mtype.decode('utf-8'))
+        handler = getattr(self, "handle_" + mtype)
         err = None
         if handler:
             logger.debug("mtype: {0}".format(mtype))
             logger.debug('running handler: {}'.format(mtype))
 
             try:
-                rv = handler(token.decode('utf-8'), data, id=id, client_id=client_id)
+                rv = handler(token, data, id=id, client_id=client_id)
                 if rv == MORE_DATA_NEEDED:
                     logger.debug('waiting for more data..')
                 else:
                     rv = {"status": "success", "data": rv}
                     ts = arrow.utcnow().format('YYYY-MM-DDTHH:mm:ss.SSSSS')
                     ts = '{}Z'.format(ts)
-                    self.store.token_last_activity_at(token, timestamp=ts)
+                    self.store.token_last_activity_at(token.encode('utf-8'), timestamp=ts)
 
             except AuthError as e:
                 logger.error(e)
@@ -176,10 +177,10 @@ class Store(multiprocessing.Process):
                 rv = {'status': 'failed', 'message': err}
 
             if rv != MORE_DATA_NEEDED:
-                self.router.send_multipart([id, client_id, null, mtype, json.dumps(rv).encode('utf-8')])
+                Msg(id=id, client_id=client_id, mtype=mtype, data=json.dumps(rv)).send(self.router)
         else:
             logger.error('message type {0} unknown'.format(mtype))
-            self.router.send_multipart([id, null, '0'.encode('utf-8')])
+            Msg(id=id, data='0')
 
     def _flush_create_queue(self):
         for t in self.create_queue:
@@ -199,8 +200,7 @@ class Store(multiprocessing.Process):
                 rv = {'status': 'failed', 'message': 'unauthorized'}
 
             for id, client_id, _ in self.create_queue[t]['messages']:
-                self.router.send_multipart([id, client_id, ''.encode('utf-8'), 'indicators_create'.encode('utf-8'),
-                                            json.dumps(rv).encode('utf-8')])
+                Msg(id=id, client_id=client_id, mtype=Msg.INDICATORS_CREATE, data=rv)
 
         logger.debug('done..')
 

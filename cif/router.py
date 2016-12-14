@@ -22,6 +22,7 @@ from cif.store import Store
 from cif.gatherer import Gatherer
 import time
 import multiprocessing as mp
+from cifsdk.msg import Msg
 
 HUNTER_MIN_CONFIDENCE = 2
 HUNTER_THREADS = os.getenv('CIF_HUNTER_THREADS', 2)
@@ -54,7 +55,7 @@ class Router(object):
         return self
 
     def __init__(self, listen=ROUTER_ADDR, hunter=HUNTER_ADDR, store_type=STORE_DEFAULT, store_address=STORE_ADDR,
-                 store_nodes=None, p2p=False, hunter_token=HUNTER_TOKEN, hunter_threads=HUNTER_THREADS,
+                 store_nodes=None, hunter_token=HUNTER_TOKEN, hunter_threads=HUNTER_THREADS,
                  gatherer_threads=GATHERER_THREADS, test=False):
 
         self.logger = logging.getLogger(__name__)
@@ -80,20 +81,15 @@ class Router(object):
         self.hunter_sink_s = self.context.socket(zmq.ROUTER)
         self.hunter_sink_s.bind(HUNTER_SINK_ADDR)
 
+        self.hunters = []
         if int(hunter_threads):
             self.hunters_s = self.context.socket(zmq.PUSH)
             self.logger.debug('binding hunter: {}'.format(hunter))
             self.hunters_s.bind(hunter)
 
-            self.hunters = []
             self._init_hunters(hunter_threads, hunter_token)
         else:
             self.hunters_s = None
-
-        self.p2p = p2p
-        if self.p2p:
-            self._init_p2p()
-            self.p2p
 
         self.logger.info('launching frontend...')
         self.frontend_s = self.context.socket(zmq.ROUTER)
@@ -107,13 +103,6 @@ class Router(object):
         self.poller_backend = zmq.Poller()
 
         self.terminate = False
-
-    def _init_p2p(self):
-        self.logger.info('enabling p2p..')
-        from cif.p2p import Client as p2pcli
-        self.p2p = p2pcli(channel='CIF')
-        p2p_pipe = zhelper.zthread_fork(self.context, self.p2p.start)
-        self.p2p = p2p_pipe
 
     def _init_hunters(self, threads, token):
         self.logger.info('launching hunters...')
@@ -148,9 +137,6 @@ class Router(object):
         self.logger.info('stopping store..')
         self.store_p.terminate()
 
-        if self.p2p:
-            self.p2p.send("$$STOP".encode('utf_8'))
-
         sleep(0.01)
 
     def start(self):
@@ -164,8 +150,7 @@ class Router(object):
         # we use this instead of a loop so we can make sure to get front end queries as they come in
         # that way hunters don't over burden the store, think of it like QoS
         # it's weighted so front end has a higher chance of getting a faster response
-        terminated = self.terminate
-        while not terminated:
+        while not self.terminate:
             items = dict(self.poller.poll(FRONTEND_TIMEOUT))
 
             if self.frontend_s in items and items[self.frontend_s] == zmq.POLLIN:
@@ -182,21 +167,17 @@ class Router(object):
             if self.hunter_sink_s in items and items[self.hunter_sink_s] == zmq.POLLIN:
                 self.handle_message(self.hunter_sink_s)
 
+    def _log_counter(self):
+        self.count += 1
+        if (self.count % 100) == 0:
+            t = (time.time() - self.count_start)
+            n = self.count / t
+            self.logger.info('processing {} msgs per {} sec'.format(round(n, 2), round(t, 2)))
+            self.count = 0
+            self.count_start = time.time()
+
     def handle_message(self, s):
-        self.logger.debug('message received')
-
-        m = s.recv_multipart()
-
-        self.logger.debug(m)
-
-        try:
-            id, null, token, mtype, data = m
-        except ValueError:
-            id, token, mtype, data = m
-
-        mtype = mtype.decode('utf-8')
-
-        self.logger.debug("mtype: {0}".format(mtype))
+        id, token, mtype, data = Msg().recv(s)
 
         if mtype in ['indicators_create']:
             handler = getattr(self, "handle_" + mtype)
@@ -209,69 +190,39 @@ class Router(object):
             self.logger.error(e)
             traceback.print_exc()
 
-        self.logger.debug('handler: {}'.format(handler))
-        self.count += 1
-        if (self.count % 100) == 0:
-            t = (time.time() - self.count_start)
-            n = self.count / t
-            self.logger.info('processing {} msgs per {} sec'.format(round(n, 2), round(t, 2)))
-            self.count = 0
-            self.count_start = time.time()
+        self._log_counter()
 
     def handle_message_default(self, id, mtype, token, data='[]'):
         self.logger.debug('sending message to store...')
-        self.store_s.send_multipart([id, ''.encode('utf-8'), mtype.encode('utf-8'), token, data])
+        Msg(id=id, mtype=mtype, token=token, data=data).send(self.store_s)
 
     def handle_message_store(self, s):
         self.logger.debug('msg from store received')
-        m = s.recv_multipart()
-        self.logger.debug(m)
 
-        id, null, mtype, rv = m
-
-        self.frontend_s.send_multipart([id, null, mtype, rv])
+        # re-routing from store to front end
+        id, mtype, token, data = Msg().recv(s)
+        Msg(id=id, mtype=mtype, token=token, data=data).send(self.frontend_s)
 
     def handle_message_gatherer(self, s):
         self.logger.debug('received message from gatherer')
-        m = s.recv_multipart()
-
-        self.logger.debug(m)
-
-        id, null, mtype, token, data = m
-
-        data = json.loads(data)
-        if isinstance(data, dict):
-            data = [data]
-
-        self.logger.debug('sending to hunters...')
-        for d in data:
-            self.logger.debug(d)
-            i = Indicator(**d)
-
-            d = json.dumps(d)
-
-            if i.confidence >= HUNTER_MIN_CONFIDENCE:
-                if self.p2p:
-                    self.logger.info('sending to peers...')
-                    self.p2p.send(data.encode('utf-8'))
-
-                if self.hunters_s:
-                    self.hunters_s.send_string(d)
+        id, token, mtype, data = Msg().recv(s)
 
         self.logger.debug('sending to store')
-        data = json.dumps(data)
-        self.store_s.send_multipart([id, b'', b'indicators_create', token, data.encode('utf-8')])
-        self.logger.debug('done')
+        Msg(id=id, mtype=mtype, token=token, data=data).send(self.store_s)
+
+        if len(self.hunters) > 0:
+            self.logger.debug('sending to hunters...')
+            data = json.loads(data)
+            if isinstance(data, dict):
+                data = [data]
+
+            for d in data:
+                if d.get('confidence', 0) >= HUNTER_MIN_CONFIDENCE:
+                    self.hunters_s.send_string(json.dumps(d))
 
     def handle_indicators_create(self, id, mtype, token, data):
         self.logger.debug('sending to gatherers..')
-        data = json.loads(data)
-
-        if isinstance(data, dict):
-            data = [data]
-
-        data = json.dumps(data).encode('utf-8')
-        self.gatherer_s.send_multipart([id, ''.encode('utf-8'), mtype.encode('utf-8'), token, data])
+        Msg(id=id, mtype=mtype, token=token, data=data).send(self.gatherer_s)
 
 
 def main():
@@ -316,8 +267,6 @@ def main():
 
     p.add_argument('--store-nodes', help='specify storage nodes address [default: %(default)s]', default=STORE_NODES)
 
-    p.add_argument('--p2p', action='store_true', help='enable experimental p2p support')
-
     p.add_argument('--logging-ignore', help='set logging to WARNING for specific modules')
 
     args = p.parse_args()
@@ -341,7 +290,7 @@ def main():
     setup_signals(__name__)
 
     with Router(listen=args.listen, hunter=args.hunter, store_type=args.store, store_address=args.store_address,
-                store_nodes=args.store_nodes, p2p=args.p2p, hunter_token=args.hunter_token, hunter_threads=args.hunter_threads,
+                store_nodes=args.store_nodes, hunter_token=args.hunter_token, hunter_threads=args.hunter_threads,
                 gatherer_threads=args.gatherer_threads) as r:
         try:
             logger.info('starting router..')

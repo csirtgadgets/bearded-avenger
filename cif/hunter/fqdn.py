@@ -8,6 +8,7 @@ from csirtg_indicator import resolve_itype
 from csirtg_indicator.exceptions import InvalidIndicator
 import re
 
+
 def is_subdomain(i):
     bits = i.split('.')
     if len(bits) > 2:

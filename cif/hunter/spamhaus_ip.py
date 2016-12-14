@@ -73,7 +73,6 @@ class SpamhausIp(object):
                     f.reference_tlp = 'white'
                     f.reference = 'http://www.spamhaus.org/query/bl?ip={}'.format(f.indicator)
                     x = router.indicators_create(f)
-                    self.logger.debug(x)
 
             except Exception as e:
                 self.logger.error(e)
