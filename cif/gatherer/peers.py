@@ -35,8 +35,6 @@ class Peer(object):
         i = list(reversed(i.split('.')))
         i = '0.{}.{}.{}'.format(i[1], i[2], i[3])
 
-        self.logger.debug('looking up: {}'.format(i))
-
         answers = self._resolve(i)
         if len(answers) > 0:
             if not indicator.peers:
