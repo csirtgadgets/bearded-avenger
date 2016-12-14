@@ -73,7 +73,7 @@ class Geo(object):
         i = indicator.indicator
 
         # cache it to the /24
-        i = list(reversed(i.split('.')))
+        i = list(i.split('.'))
         i = '{}.{}.{}.0'.format(i[0], i[1], i[2])
 
         indicator.indicator = i

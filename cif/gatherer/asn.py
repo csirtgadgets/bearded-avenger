@@ -26,8 +26,6 @@ class Asn(object):
             i = list(reversed(i.split('.')))
             i = '0.{}.{}.{}'.format(i[1], i[2], i[3])
 
-            self.logger.debug('looking up: {}'.format(i))
-
             answers = self._resolve(i)
 
             if len(answers) > 0:
@@ -46,12 +44,11 @@ class Asn(object):
                 indicator.rir = bits[3]
                 answers = resolve_ns('as{}.{}'.format(asns[0], 'asn.cymru.com'), t='TXT', timeout=15)
 
-
-                ## TODO - not fixed yet
                 try:
                     tmp = str(answers[0])
-                except UnicodeDecodeError:
+                except UnicodeDecodeError as e:
                     # requires fix latin-1 fix _escapeify to dnspython > 1.14
+                    self.logger.debug(e)
                     return indicator
                 except IndexError:
                     from pprint import pprint
