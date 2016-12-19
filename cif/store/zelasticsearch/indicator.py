@@ -167,7 +167,7 @@ class IndicatorMixin(object):
                     if r['_index'] == _current_index():
                         i['_source']['count'] += 1
                         i['_source']['lasttime'] = d['lasttime']
-                        i['_source']['reporttime'] = d['reporttime']
+                        i['_source']['reporttime'] = d['lasttime']
                         if d.get('message'):
                             if not i['_source'].get('message'):
                                 i['_source']['message'] = []
@@ -178,7 +178,7 @@ class IndicatorMixin(object):
                         # carry the information forward
                         d['count'] = i['_source']['count'] + 1
                         i['_source']['lasttime'] = d['lasttime']
-                        i['_source']['reporttime'] = d['reporttime']
+                        i['_source']['reporttime'] = d['lasttime']
                         if d.get('message'):
                             if not i['_source'].get('message'):
                                 i['_source']['message'] = []
@@ -280,7 +280,10 @@ class IndicatorMixin(object):
 
         for f in q_filters:
             kwargs = {f: q_filters[f]}
-            s = s.filter('term', **kwargs)
+            if isinstance(q_filters[f], list):
+                s = s.filter('terms', **kwargs)
+            else:
+                s = s.filter('term', **kwargs)
 
         try:
             rv = s.execute()
