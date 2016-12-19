@@ -1,5 +1,6 @@
 # Getting Started
-Current master build status: [![Travis](https://travis-ci.org/csirtgadgets/bearded-avenger.svg?branch=master)](https://travis-ci.org/csirtgadgets/bearded-avenger)
+### MAKE SURE YOU'RE USING ONE OF THE [RELEASES](/csirtgadgets/bearded-avenger/releases).
+Releases are usually a little more stable than the master branch, in that *some* basic deployment testing for Ubuntu and CentOS has been performed using an SQLite backend.
 
 ## QuickStart
 This assumes you have a proper Python dev already environment properly configured. If you need help getting started with this, checkout one of our [installation guides](https://github.com/csirtgadgets/bearded-avenger/wiki/Ubuntu14LTS).
