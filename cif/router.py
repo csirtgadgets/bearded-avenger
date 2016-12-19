@@ -99,7 +99,6 @@ class Router(object):
         self.count_start = time.time()
 
         self.poller = zmq.Poller()
-        self.poller_backend = zmq.Poller()
 
         self.terminate = False
 
