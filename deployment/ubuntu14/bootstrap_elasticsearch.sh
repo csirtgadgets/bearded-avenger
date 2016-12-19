@@ -5,7 +5,7 @@ set -e
 echo 'yes' | sudo add-apt-repository 'ppa:fkrull/deadsnakes-python2.7'
 
 echo 'updating apt-get tree and installing python-pip'
-sudo apt-get update && sudo apt-get install -y python2.7 python-pip python-dev git libffi-dev libssl-dev sqlite3 software-properties-common
+sudo apt-get update && sudo apt-get install -y python2.7 python-pip python-dev git libffi-dev libssl-dev sqlite3 software-properties-common libxml2-dev libxslt1-dev python-lxml
 
 echo 'installing ansible...'
 sudo pip install 'setuptools>=11.3' 'ansible==2.1' versioneer markupsafe
