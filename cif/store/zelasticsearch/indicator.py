@@ -112,7 +112,7 @@ class IndicatorMixin(object):
             else:
                 data['indicator_ipv6'] = binascii.b2a_hex(socket.inet_pton(socket.AF_INET6, data['indicator'])).decode('utf-8')
 
-        if type(data['group']) != list:
+        if data.get('group') and type(data['group']) != list:
             data['group'] = [data['group']]
 
         if data.get('message'):
