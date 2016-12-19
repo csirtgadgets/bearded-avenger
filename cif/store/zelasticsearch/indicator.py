@@ -161,7 +161,7 @@ class IndicatorMixin(object):
                 r = rv[0]
 
                 # if it's a newer result
-                if d['lasttime'] and (arrow.get(d['lasttime']).datetime > arrow.get(r['_source']['lasttime']).datetime):
+                if d.get('lasttime') and (arrow.get(d['lasttime']).datetime > arrow.get(r['_source']['lasttime']).datetime):
                     # carry the index'd data forward and remove the old index
                     i = es.get(index=r['_index'], doc_type='indicator', id=r['_id'])
                     if r['_index'] == _current_index():

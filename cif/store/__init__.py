@@ -378,8 +378,11 @@ def main():
             s._load_plugin(store_type=args.store, nodes=args.nodes)
             t = s.token_create_smrt()
             if t:
+                if PYVERSION == 2:
+                    t = t.encode('utf-8')
+
                 data = {
-                    'token': t.encode('utf-8'),
+                    'token': t,
                 }
                 if args.remote:
                     data['remote'] = args.remote
@@ -396,8 +399,11 @@ def main():
             s._load_plugin(store_type=args.store, nodes=args.nodes)
             t = s.token_create_hunter()
             if t:
+                if PYVERSION == 2:
+                    t = t.encode('utf-8')
+
                 data = {
-                    'hunter_token': t.encode('utf-8'),
+                    'hunter_token': t,
                 }
                 with open(args.token_create_hunter, 'w') as f:
                     f.write(yaml.dump(data, default_flow_style=False))
@@ -411,8 +417,11 @@ def main():
             s._load_plugin(store_type=args.store, nodes=args.nodes)
             t = s.token_create_admin()
             if t:
+                if PYVERSION == 2:
+                    t = t.encode('utf-8')
+
                 data = {
-                    'token': t.encode('utf-8'),
+                    'token': t,
                 }
                 with open(args.token_create_admin, 'w') as f:
                     f.write(yaml.dump(data, default_flow_style=False))
