@@ -280,7 +280,10 @@ class IndicatorMixin(object):
 
         for f in q_filters:
             kwargs = {f: q_filters[f]}
-            s = s.filter('term', **kwargs)
+            if isinstance(q_filters[f], list):
+                s = s.filter('terms', **kwargs)
+            else:
+                s = s.filter('term', **kwargs)
 
         try:
             rv = s.execute()
