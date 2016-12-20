@@ -92,11 +92,9 @@ class TokenMixin(object):
     def tokens_search(self, data):
         s = Token.search()
 
-        if data.get('token'):
-            s = s.filter('term', token=data['token'])
-
-        if data.get('username'):
-            s = s.filter('term', username=data['username'])
+        for k in ['token', 'username', 'admin', 'write', 'read']:
+            if data.get(k):
+                s = s.filter('term', **{k: data[k]})
 
         rv = s.execute()
 

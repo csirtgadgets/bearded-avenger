@@ -1,5 +1,6 @@
 import pytest
 
+from csirtg_indicator import Indicator
 from cif.store import Store
 from elasticsearch_dsl.connections import connections
 import os
@@ -21,8 +22,8 @@ def store():
             pass
         yield s
 
-    #assert connections.get_connection().indices.delete(index='indicators-*')
-    #assert connections.get_connection().indices.delete(index='tokens')
+    assert connections.get_connection().indices.delete(index='indicators-*')
+    assert connections.get_connection().indices.delete(index='tokens')
 
 @pytest.yield_fixture
 def token(store):
@@ -40,26 +41,26 @@ def token(store):
 
 @pytest.fixture
 def indicator():
-    return {
-        'indicator': 'example.com',
-        'tags': ['botnet'],
-        'provider': 'csirtgadgets.org',
-        'group': ['everyone']
-    }
+    return Indicator(
+        indicator='example.com',
+        tags='botnet',
+        provider='csirtg.io',
+        group='everyone'
+    )
 
 @pytest.fixture
 def indicator_ipv6():
-    return {
-        'indicator': '2001:4860:4860::8888',
-        'tags': ['botnet'],
-        'provider': 'csirtgadgets.org',
-        'group': ['everyone']
-    }
+    return Indicator(
+        indicator='2001:4860:4860::8888',
+        tags='botnet',
+        provider='csirtg.io',
+        group='everyone'
+    )
 
 
 @pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
 def test_store_elasticsearch(store, token, indicator):
-    x = store.handle_indicators_create(token, indicator)
+    x = store.handle_indicators_create(token, indicator.__dict__())
     assert x > 0
 
     x = store.handle_indicators_search(token, {
@@ -70,8 +71,31 @@ def test_store_elasticsearch(store, token, indicator):
 
 
 @pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
+def test_store_elasticsearch_tokens(store, token):
+    x = store.handle_tokens_search(token, {'token': token})
+    assert len(x) > 0
+
+    x = store.handle_tokens_search(token, {'admin': True})
+    assert len(x) > 0
+
+    x = store.handle_tokens_search(token, {'write': True})
+    assert len(x) > 0
+
+    t = store.store.tokens_create({
+        'username': u'test_admin2',
+        'groups': [u'everyone']
+    })
+
+    x = store.handle_tokens_search(token, {'admin': True})
+    assert len(x) == 1
+
+    x = store.handle_tokens_search(token, {})
+    assert len(x) == 2
+
+
+@pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
 def test_store_elasticsearch_ipv6(store, token, indicator_ipv6):
-    x = store.handle_indicators_create(token, indicator_ipv6)
+    x = store.handle_indicators_create(token, indicator_ipv6.__dict__())
     assert x > 0
 
     x = store.handle_indicators_search(token, {
