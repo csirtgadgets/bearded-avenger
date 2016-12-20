@@ -1,7 +1,7 @@
 cython>=0.2
 https://github.com/zeromq/pyzmq/archive/f37052960e1dc510ea2c1d2e69a32d727afa9d69.tar.gz#egg=pyzmq>16.0.1
 #pyzmq>=16.0 # bug in the way pyzmq wheel is built
-https://github.com/csirtgadgets/bearded-avenger-sdk-py/archive/3.0.0a14.tar.gz
+https://github.com/csirtgadgets/bearded-avenger-sdk-py/archive/3.0.0a15.tar.gz
 Flask-Limiter>=0.9.3,<1.0
 limits>=1.1.1,<1.2
 maxminddb>=1.2.0,<1.3
