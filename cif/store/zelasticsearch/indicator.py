@@ -112,7 +112,7 @@ class IndicatorMixin(object):
             else:
                 data['indicator_ipv6'] = binascii.b2a_hex(socket.inet_pton(socket.AF_INET6, data['indicator'])).decode('utf-8')
 
-        if type(data['group']) != list:
+        if data.get('group') and type(data['group']) != list:
             data['group'] = [data['group']]
 
         if data.get('message'):
@@ -161,7 +161,7 @@ class IndicatorMixin(object):
                 r = rv[0]
 
                 # if it's a newer result
-                if d['lasttime'] and (arrow.get(d['lasttime']).datetime > arrow.get(r['_source']['lasttime']).datetime):
+                if d.get('lasttime') and (arrow.get(d['lasttime']).datetime > arrow.get(r['_source']['lasttime']).datetime):
                     # carry the index'd data forward and remove the old index
                     i = es.get(index=r['_index'], doc_type='indicator', id=r['_id'])
                     if r['_index'] == _current_index():

@@ -1,7 +1,8 @@
-from elasticsearch_dsl import DocType, String, Date, Integer, Boolean, Float, Ip, GeoPoint
+from elasticsearch_dsl import DocType, String, Date, Integer, Boolean, Float, Ip, GeoPoint, Mapping, Index
 import elasticsearch.exceptions
 from elasticsearch_dsl.connections import connections
 import os
+from pprint import pprint
 
 ES_NODES = os.getenv('CIF_ES_NODES', '127.0.0.1:9200')
 VALID_FILTERS = ['indicator', 'confidence', 'provider', 'itype', 'group']
@@ -15,6 +16,8 @@ LIMIT_HARD = os.getenv('CIF_ES_LIMIT_HARD', LIMIT_HARD)
 TIMEOUT = '120'
 TIMEOUT = os.getenv('CIF_ES_TIMEOUT', TIMEOUT)
 TIMEOUT = '{}s'.format(TIMEOUT)
+
+INDEX_NAME = 'tokens'
 
 
 class Token(DocType):
@@ -30,14 +33,14 @@ class Token(DocType):
     last_activity_at = Date()
 
     class Meta:
-        index = 'tokens'
+        index = INDEX_NAME
 
 
 class TokenMixin(object):
 
     def tokens_admin_exists(self):
         s = Token.search()
-        s.filter('term', admin=True)
+        s = s.filter('term', admin=True)
 
         try:
             rv = s.execute()
@@ -47,25 +50,15 @@ class TokenMixin(object):
         if rv.hits.total > 0:
             return True
 
-        return False
-
     def tokens_create(self, data):
         self.logger.debug(data)
-        if data.get('admin'):
-            data['admin'] = True
-
-        if data.get('read'):
-            data['read'] = True
-
-        if data.get('write'):
-            data['write'] = True
+        for v in ['admin', 'read', 'write']:
+            if data.get(v):
+                data[v] = True
 
         if not data.get('token'):
             data['token'] = self._token_generate()
 
-        data['token'] = data['token']
-
-        self.logger.debug(data)
         t = Token(**data)
 
         if t.save():
@@ -99,11 +92,9 @@ class TokenMixin(object):
     def tokens_search(self, data):
         s = Token.search()
 
-        if data.get('token'):
-            s = s.filter('term', token=data['token'])
-
-        if data.get('username'):
-            s = s.filter('term', username=data['username'])
+        for k in ['token', 'username', 'admin', 'write', 'read']:
+            if data.get(k):
+                s = s.filter('term', **{k: data[k]})
 
         rv = s.execute()
 
