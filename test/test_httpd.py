@@ -43,7 +43,6 @@ def test_httpd_ping(client):
 
 
 def test_httpd_search(client):
-
     rv = client.get('/search?q=example.com', headers={'Authorization': 'Token token=1234'})
     assert rv.status_code == 200
 

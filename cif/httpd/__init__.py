@@ -6,12 +6,11 @@ import textwrap
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, current_app
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
 from cifsdk.client.zeromq import ZMQ as Client
-from cifsdk.client import Client as base_client
 from cifsdk.client.dummy import Dummy as DummyClient
 from cif.constants import ROUTER_ADDR
 from cifsdk.constants import TOKEN
@@ -162,12 +161,12 @@ def search():
         filters['indicator'] = request.args.get('q')
 
     try:
-        if app.config.get('dummy'):
-            r = DummyClient(remote, pull_token()).indicators_search(filters)
-        else:
-            r = Client(remote, pull_token()).indicators_search(filters)
-
         if request_v2():
+            if app.config.get('dummy'):
+                r = DummyClient(remote, pull_token()).indicators_search(filters)
+            else:
+                r = Client(remote, pull_token()).indicators_search(filters)
+
             for rr in r:
                 rr['observable'] = rr['indicator']
                 del rr['indicator']
@@ -176,15 +175,26 @@ def search():
                     rr['otype'] = rr['itype']
                     del rr['itype']
 
-        response = jsonify({
-            "message": "success",
-            "data": r
-        })
+            response = jsonify({
+                'message': 'success',
+                'data': r
+            })
+
+        else:
+            if app.config.get('dummy'):
+                r = DummyClient(remote, pull_token()).indicators_search(filters, decode=False)
+
+            else:
+                r = Client(remote, pull_token()).indicators_search(filters, decode=False)
+
+            response = current_app.response_class(r, mimetype='application/json')
 
         if response_compress():
+            logger.debug('compressing')
             response.data = compress(response.data)
 
         response.status_code = 200
+
     except AuthError as e:
         response = jsonify({
             'message': 'unauthorized',
@@ -283,6 +293,7 @@ def feed():
             "message": "success",
             "data": r
         })
+
         if response_compress():
             response.data = compress(response.data)
 
