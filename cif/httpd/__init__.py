@@ -182,7 +182,8 @@ def search():
 
         else:
             if app.config.get('dummy'):
-                r = DummyClient(remote, pull_token()).indicators_search(filters)
+                r = DummyClient(remote, pull_token()).indicators_search(filters, decode=False)
+
             else:
                 r = Client(remote, pull_token()).indicators_search(filters, decode=False)
 
