@@ -5,6 +5,9 @@ from cif.store.plugin import Store
 from cif.store.zelasticsearch.token import TokenMixin
 from cif.store.zelasticsearch.indicator import IndicatorMixin
 from elasticsearch_dsl.connections import connections
+from cif.constants import TOKEN_CACHE_DELAY
+import arrow
+
 
 ES_NODES = os.getenv('CIF_ES_NODES', '127.0.0.1:9200')
 
@@ -22,6 +25,9 @@ class _ElasticSearch(IndicatorMixin, TokenMixin, Store):
 
         self.logger.info('setting es nodes {}'.format(nodes))
         connections.create_connection(hosts=nodes)
+
+        self.token_cache = {}
+        self.token_cache_check = arrow.utcnow().timestamp + TOKEN_CACHE_DELAY
 
     def ping(self, token):
         # http://elasticsearch-py.readthedocs.org/en/master/api.html#elasticsearch.client.IndicesClient.stats

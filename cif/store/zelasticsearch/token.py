@@ -4,6 +4,9 @@ from elasticsearch_dsl.connections import connections
 import os
 from pprint import pprint
 
+from cif.constants import TOKEN_CACHE_DELAY
+import arrow
+
 ES_NODES = os.getenv('CIF_ES_NODES', '127.0.0.1:9200')
 VALID_FILTERS = ['indicator', 'confidence', 'provider', 'itype', 'group']
 
@@ -112,6 +115,17 @@ class TokenMixin(object):
             return True
 
     def token_read(self, token):
+        if arrow.utcnow().timestamp > self.token_cache_check:
+            self.token_cache = {}
+            self.token_cache_check = arrow.utcnow().timestamp + TOKEN_CACHE_DELAY
+
+        if token in self.token_cache:
+            try:
+                if self.token_cache[token]['read'] is True:
+                    return True
+            except KeyError:
+                pass
+
         s = Token.search()
 
         s = s.filter('term', token=token)
@@ -124,6 +138,19 @@ class TokenMixin(object):
         return False
 
     def token_write(self, token):
+        if arrow.utcnow().timestamp > self.token_cache_check:
+            self.token_cache = {}
+            self.token_cache_check = arrow.utcnow().timestamp + TOKEN_CACHE_DELAY
+
+        if token in self.token_cache:
+            try:
+                if self.token_cache[token]['write'] is True:
+                    return True
+            except KeyError:
+                pass
+
+        self.logger.debug('testing token: {}'.format(token))
+
         s = Token.search()
 
         s = s.filter('term', token=token)
@@ -153,18 +180,36 @@ class TokenMixin(object):
 
     def token_last_activity_at(self, token, timestamp=None):
         s = Token.search()
-        s = s.filter('term', token=token.decode('utf-8'))
-        rv = s.execute()
-        if rv.hits.total > 0:
-            rv = rv.hits.hits[0]
-            rv = Token.get(rv['_id'])
+        timestamp = arrow.get(timestamp)
+        token = token.decode('utf-8')
+        if timestamp:
+            if arrow.utcnow().timestamp > self.token_cache_check:
+                self.token_cache = {}
+                self.token_cache_check = arrow.utcnow().timestamp + TOKEN_CACHE_DELAY
 
-            if timestamp:
-                self.logger.debug('updating timestamp to: {}'.format(timestamp))
-                rv.update(last_activity_at=timestamp)
-                connections.get_connection().indices.flush(index='tokens')
-                return timestamp
-            else:
-                return rv.last_activity_at
+            if token in self.token_cache:
+                try:
+                    if self.token_cache[token]['last_activity_at']:
+                        return self.token_cache[token]['last_activity_at']
+                except KeyError:
+                    s = s.filter('term', token=token)
+                    rv = s.execute()
+                    if rv.hits.total > 0:
+                        rv = rv.hits.hits[0]
+                        rv = Token.get(rv['_id'])
+
+                        self.logger.debug('updating timestamp to: {}'.format(timestamp))
+                        rv.update(last_activity_at=timestamp)
+                        connections.get_connection().indices.flush(index='tokens')
+                        return timestamp
+                    else:
+                        self.logger.error('failed to update token: {}'.format(token))
         else:
-            return timestamp
+            s = s.filter('term', token=token)
+            rv = s.execute()
+            if rv.hits.total > 0:
+                rv = rv.hits.hits[0]
+                rv = Token.get(rv['_id'])
+                return rv.last_activity_at
+            else:
+                return timestamp
