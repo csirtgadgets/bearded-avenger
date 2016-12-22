@@ -1,9 +1,9 @@
+import logging
+import os
+import re
 
 from cif.utils import resolve_ns
-import logging
-import re
-import os
-from cif.asn_client import ASNClient
+from cif.utils.asn_client import ASNClient
 
 ASN_FAST = os.environ.get('CIF_GATHERER_ASN_FAST')
 
