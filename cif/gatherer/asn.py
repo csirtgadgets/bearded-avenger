@@ -10,11 +10,11 @@ ASN_FAST = os.environ.get('CIF_GATHERER_ASN_FAST')
 
 class Asn(object):
 
-    def __init__(self, *args, **kv):
+    def __init__(self, *args, **kwargs):
         self.logger = logging.getLogger(__name__)
-        self.asn_fast = None
-        if ASN_FAST:
-            self.asn_fast = ASNClient(ASN_FAST)
+        self.asn_fast = kwargs.get('fast', ASN_FAST)
+        if self.asn_fast:
+            self.asn_fast = ASNClient(self.asn_fast)
 
     def _resolve(self, data):
         return resolve_ns('{}.{}'.format(data, 'origin.asn.cymru.com'), t='TXT')

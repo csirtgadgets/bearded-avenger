@@ -1,7 +1,6 @@
 import pytest
 import os
 
-os.environ['CIF_GATHERER_ASN_FAST'] = 'tcp://localhost:5555'
 from cif.gatherer.asn import Asn
 from csirtg_indicator import Indicator
 from pprint import pprint
@@ -19,6 +18,7 @@ data = [
 
 def test_gatherer_asn():
     a = Asn()
+    a.asn_fast = None
 
     def _resolve(i):
         return data
@@ -32,8 +32,7 @@ def test_gatherer_asn():
 
 @pytest.mark.skipif(DISABLE_FAST_TESTS, reason='need to set CIF_ASN_FAST_TEST=1 to run')
 def test_gatherer_asn_fast():
-
-    a = Asn()
+    a = Asn(fast='tcp://localhost:5555')
 
     x = a._resolve_fast('216.90.108.0')
 
