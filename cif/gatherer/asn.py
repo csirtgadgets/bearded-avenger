@@ -39,9 +39,12 @@ class Asn(object):
             bits = self._resolve_fast(indicator.indicator)
             for k in bits:
                 if bits[k] == 'NA':
-                    bits[k] = None
+                    bits[k] = False
 
-            indicator.asn = str(bits['asn'])
+            if bits['asn']:
+                bits['asn'] = str(bits['asn'])
+
+            indicator.asn = bits['asn']
             indicator.prefix = bits['prefix']
             indicator.asn_desc = bits['owner']
             indicator.cc = bits['cc']
