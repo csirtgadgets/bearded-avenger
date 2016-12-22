@@ -29,7 +29,7 @@ class Asn(object):
         # TODO ipv6
         if indicator.itype != 'ipv4':
             return
-        
+
         i = str(indicator.indicator)
         match = re.search('^(\S+)\/\d+$', i)
         if match:
@@ -39,7 +39,7 @@ class Asn(object):
             bits = self._resolve_fast(indicator.indicator)
             for k in bits:
                 if bits[k] == 'NA':
-                    bits[k] = ''
+                    bits[k] = None
 
             indicator.asn = str(bits['asn'])
             indicator.prefix = bits['prefix']
