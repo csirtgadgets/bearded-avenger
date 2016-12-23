@@ -175,7 +175,7 @@ class Router(object):
     def handle_message(self, s):
         id, token, mtype, data = Msg().recv(s)
 
-        if mtype in ['indicators_create']:
+        if mtype in ['indicators_create', 'indicators_search']:
             handler = getattr(self, "handle_" + mtype)
         else:
             handler = self.handle_message_default
@@ -215,6 +215,11 @@ class Router(object):
             for d in data:
                 if d.get('confidence', 0) >= HUNTER_MIN_CONFIDENCE:
                     self.hunters_s.send_string(json.dumps(d))
+
+    def handle_indicators_search(self, id, mtype, token, data):
+        self.handle_message_default(id, mtype, token, data)
+        self.logger.debug('sending to hunters..')
+        self.hunters_s.send_string(data)
 
     def handle_indicators_create(self, id, mtype, token, data):
         self.logger.debug('sending to gatherers..')

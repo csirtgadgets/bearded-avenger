@@ -58,6 +58,7 @@ class Store(multiprocessing.Process):
 
     def __init__(self, store_type=STORE_DEFAULT, store_address=STORE_ADDR, **kwargs):
         multiprocessing.Process.__init__(self)
+
         self.store_addr = store_address
         self.store = store_type
         self.kwargs = kwargs

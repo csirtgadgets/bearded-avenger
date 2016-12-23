@@ -63,6 +63,7 @@ setup(
         'csirtg_indicator',
         'cifsdk',
         'csirtg_smrt',
+        'csirtg_dnsdb'
     ],
     scripts=[],
     entry_points={

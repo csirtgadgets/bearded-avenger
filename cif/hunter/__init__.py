@@ -61,7 +61,6 @@ class Hunter(multiprocessing.Process):
         self.exit.set()
 
     def start(self):
-        # TODO - convert this to an async socket
         router = Client(remote=self.router, token=self.token, nowait=True)
         plugins = self._load_plugins()
         socket = zmq.Context().socket(zmq.PULL)
@@ -87,7 +86,11 @@ class Hunter(multiprocessing.Process):
 
                 logger.debug(data)
                 data = json.loads(data[0])
+
                 if isinstance(data, dict):
+                    if data.get('indicator') and not data.get('itype'):
+                        data = Indicator(indicator=data['indicator'], tags='search').__dict__()
+
                     data = [data]
 
                 for d in data:
