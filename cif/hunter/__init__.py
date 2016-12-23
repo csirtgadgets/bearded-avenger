@@ -88,8 +88,20 @@ class Hunter(multiprocessing.Process):
                 data = json.loads(data[0])
 
                 if isinstance(data, dict):
-                    if data.get('indicator') and not data.get('itype'):
-                        data = Indicator(indicator=data['indicator'], tags='search').__dict__()
+                    if not data.get('indicator'):
+                        continue
+
+                    if not data.get('itype'):
+                        data = Indicator(
+                            indicator=data['indicator'],
+                            tags='search',
+                            confidence=10,
+                            group='everyone',
+                            tlp='amber',
+                        ).__dict__()
+
+                    if not data.get('tags'):
+                        data['tags'] = []
 
                     data = [data]
 

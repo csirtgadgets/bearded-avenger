@@ -20,6 +20,9 @@ class Farsight(object):
         self.token = kwargs.get('token', TOKEN)
 
     def process(self, i, router):
+        if not self.token:
+            return
+
         if i.itype != 'ipv4':
             return
 

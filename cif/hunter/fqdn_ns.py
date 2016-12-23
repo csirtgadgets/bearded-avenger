@@ -1,21 +1,12 @@
 import logging
+from csirtg_indicator import resolve_itype
+from csirtg_indicator.exceptions import InvalidIndicator
 from cif.utils import resolve_ns
 from csirtg_indicator import Indicator
 from dns.resolver import Timeout
-from pprint import pprint
-from cifsdk.constants import PYVERSION
-from csirtg_indicator import resolve_itype
-from csirtg_indicator.exceptions import InvalidIndicator
-import re
 
 
-def is_subdomain(i):
-    bits = i.split('.')
-    if len(bits) > 2:
-        return True
-
-
-class Fqdn(object):
+class FqdnNs(object):
 
     def __init__(self):
         self.logger = logging.getLogger(__name__)
@@ -47,9 +38,4 @@ class Fqdn(object):
                 ip.confidence = (int(ip.confidence) / 4)
                 router.indicators_create(ip)
 
-                # also create a passive dns tag
-                ip.tags = 'pdns'
-                ip.confidence = 10
-                router.indicators_create(ip)
-
-Plugin = Fqdn
+Plugin = FqdnNs

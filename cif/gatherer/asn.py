@@ -35,7 +35,7 @@ class Asn(object):
         if match:
             i = match.group(1)
 
-        if ASN_FAST:
+        if self.asn_fast:
             bits = self._resolve_fast(indicator.indicator)
             for k in bits:
                 if bits[k] == 'NA':

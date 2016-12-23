@@ -17,8 +17,7 @@ data = [
 
 
 def test_gatherer_asn():
-    a = Asn()
-    a.asn_fast = None
+    a = Asn(fast=False)
 
     def _resolve(i):
         return data
