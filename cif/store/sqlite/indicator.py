@@ -321,6 +321,9 @@ class IndicatorMixin(object):
                 provider=d['provider'],
             ).order_by(Indicator.lasttime.desc())
 
+            if d.get('rdata'):
+                i = i.filter_by(rdata=d['rdata'])
+
             if len(tags):
                 i = i.join(Tag).filter(Tag.tag == tags[0])
 
