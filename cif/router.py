@@ -197,6 +197,8 @@ class Router(object):
 
         # re-routing from store to front end
         id, mtype, token, data = Msg().recv(s)
+        self.logger.debug(data)
+
         Msg(id=id, mtype=mtype, token=token, data=data).send(self.frontend_s)
 
     def handle_message_gatherer(self, s):
@@ -218,8 +220,10 @@ class Router(object):
 
     def handle_indicators_search(self, id, mtype, token, data):
         self.handle_message_default(id, mtype, token, data)
-        self.logger.debug('sending to hunters..')
-        self.hunters_s.send_string(data)
+
+        if self.hunters:
+            self.logger.debug('sending to hunters..')
+            self.hunters_s.send_string(data)
 
     def handle_indicators_create(self, id, mtype, token, data):
         self.logger.debug('sending to gatherers..')

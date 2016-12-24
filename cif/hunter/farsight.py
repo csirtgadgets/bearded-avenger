@@ -4,6 +4,7 @@ from csirtg_dnsdb.exceptions import QuotaLimit
 import os
 from csirtg_indicator import Indicator
 import arrow
+import re
 from pprint import pprint
 
 TOKEN = os.environ.get('FARSIGHT_TOKEN')
@@ -30,6 +31,9 @@ class Farsight(object):
             return
 
         if i.confidence and i.confidence < 9:
+            return
+
+        if re.search('^(\S+)\/(\d+)$', i.indicator):
             return
 
         try:

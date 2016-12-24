@@ -16,6 +16,7 @@ import multiprocessing
 from csirtg_indicator import Indicator
 import zmq
 import time
+from base64 import b64decode, b64encode
 
 from cifsdk.msg import Msg
 import cif.store
@@ -228,36 +229,45 @@ class Store(multiprocessing.Process):
             raise AuthError('invalid token')
 
     def handle_indicators_search(self, token, data, **kwargs):
-        if self.store.token_read(token):
-            logger.debug('searching')
-            try:
-                x = self.store.indicators_search(data)
-
-                if data.get('indicator'):
-                    t = self.store.tokens_search({'token': token})
-                    ts = arrow.utcnow().format('YYYY-MM-DDTHH:mm:ss.SSZ')
-                    s = Indicator(
-                        indicator=data['indicator'],
-                        tlp='amber',
-                        confidence=10,
-                        tags=['search'],
-                        provider=t[0]['username'],
-                        firsttime=ts,
-                        lasttime=ts,
-                        reporttime=ts,
-                        group='everyone'
-                    )
-                    self.store.indicators_create(s.__dict__())
-            except Exception as e:
-                logger.error(e)
-                if logger.getEffectiveLevel() == logging.DEBUG:
-                    import traceback
-                    logger.error(traceback.print_exc())
-                raise InvalidSearch('invalid search')
-            else:
-                return x
-        else:
+        t = self.store.token_read(token)
+        if not t:
             raise AuthError('invalid token')
+
+        try:
+            x = self.store.indicators_search(data)
+        except Exception as e:
+            logger.error(e)
+            if logger.getEffectiveLevel() == logging.DEBUG:
+                import traceback
+                logger.error(traceback.print_exc())
+            raise InvalidSearch('invalid search')
+
+        if data.get('indicator'):
+            t = self.store.tokens_search({'token': token})
+            ts = arrow.utcnow().format('YYYY-MM-DDTHH:mm:ss.SSZ')
+            s = Indicator(
+                indicator=data['indicator'],
+                tlp='amber',
+                confidence=10,
+                tags=['search'],
+                provider=t[0]['username'],
+                firsttime=ts,
+                lasttime=ts,
+                reporttime=ts,
+                group='everyone',
+                count=0
+            )
+            self.store.indicators_create(s.__dict__())
+
+        from types import GeneratorType
+        if isinstance(x, GeneratorType):
+            x = list(x)
+
+        for xx in x:
+            if xx.get('message'):
+                xx['message'] = b64encode(xx['message']).encode('utf-8')
+
+        return x
 
     def handle_ping(self, token, data='[]', **kwargs):
         logger.debug('handling ping message')

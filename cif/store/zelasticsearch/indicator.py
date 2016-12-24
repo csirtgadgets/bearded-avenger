@@ -1,4 +1,4 @@
-from elasticsearch_dsl import DocType, String, Date, Integer, Float, Ip, Mapping, Index, GeoPoint, Byte
+from elasticsearch_dsl import DocType, String, Date, Integer, Float, Ip, Mapping, Index, GeoPoint, Byte, Q, FacetedSearch
 
 import elasticsearch.exceptions
 from elasticsearch_dsl.connections import connections
@@ -88,13 +88,7 @@ def _create_index():
 
 class IndicatorMixin(object):
 
-    def indicators_create(self, data, raw=False):
-        index = _create_index()
-
-        self.logger.debug('index: {}'.format(index))
-        data['meta'] = {}
-        data['meta']['index'] = index
-
+    def _expand_ip_idx(self, data):
         itype = resolve_itype(data['indicator'])
         if itype is 'ipv4':
             match = re.search('^(\S+)\/(\d+)$', data['indicator'])
@@ -103,14 +97,25 @@ class IndicatorMixin(object):
                 data['indicator_ipv4_mask'] = match.group(2)
             else:
                 data['indicator_ipv4'] = data['indicator']
+
         elif itype is 'ipv6':
             match = re.search('^(\S+)\/(\d+)$', data['indicator'])
             if match:
 
-                data['indicator_ipv6'] = binascii.b2a_hex(socket.inet_pton(socket.AF_INET6, match.group(1))).decode('utf-8')
+                data['indicator_ipv6'] = binascii.b2a_hex(socket.inet_pton(socket.AF_INET6, match.group(1))).decode(
+                    'utf-8')
                 data['indicator_ipv6_mask'] = match.group(2)
             else:
-                data['indicator_ipv6'] = binascii.b2a_hex(socket.inet_pton(socket.AF_INET6, data['indicator'])).decode('utf-8')
+                data['indicator_ipv6'] = binascii.b2a_hex(socket.inet_pton(socket.AF_INET6, data['indicator'])).decode(
+                    'utf-8')
+
+    def indicators_create(self, data, raw=False):
+        index = _create_index()
+
+        data['meta'] = {}
+        data['meta']['index'] = index
+
+        self._expand_ip_idx(data)
 
         if data.get('group') and type(data['group']) != list:
             data['group'] = [data['group']]
@@ -123,13 +128,13 @@ class IndicatorMixin(object):
 
         i = Indicator(**data)
 
-        if i.save():
-            if raw:
-                return i
-            else:
-                return i.__dict__['_d_']
-        else:
+        if not i.save():
             raise AuthError('invalid token')
+
+        if raw:
+            return i
+
+        return i.__dict__['_d_']
 
     def indicators_upsert(self, data):
         index = _create_index()
@@ -153,10 +158,10 @@ class IndicatorMixin(object):
             if d.get('tags'):
                 filters['tags'] = d['tags']
 
-            # TODO -- make sure the initial list is sorted first (by lasttime)
-            rv = self.indicators_search(filters, sort='lasttime', raw=True)
+            rv = list(self.indicators_search(filters, sort='lasttime', raw=True))
 
             # if we have results
+
             if len(rv) > 0:
                 r = rv[0]
 
@@ -214,70 +219,52 @@ class IndicatorMixin(object):
 
         return n
 
-    def indicators_search(self, filters, sort=None, raw=False):
-        # build filters with elasticsearch-dsl
-        # http://elasticsearch-dsl.readthedocs.org/en/latest/search_dsl.html
+    def _filter_indicator(self, q_filters, s):
+        if not q_filters.get('indicator'):
+            return s
 
-        limit = filters.get('limit')
-        if limit:
-            del filters['limit']
-        else:
-            limit = LIMIT
+        if PYVERSION == 2:
+            q_filters['indicator'] = unicode(q_filters['indicator'])
 
-        nolog = filters.get('nolog')
-        if nolog:
-            del filters['nolog']
+        itype = None
+        i = q_filters['indicator']
+        del q_filters['indicator']
 
-        timeout = TIMEOUT
+        try:
+            itype = resolve_itype(i)
+        except InvalidIndicator:
+            s = s.query("match", message=i)
+            return s
 
-        s = Indicator.search(index='indicators-*')
-        s = s.params(size=limit, timeout=timeout)
-        if sort:
-            s = s.sort(sort)
+        if itype in ('email', 'url', 'fqdn'):
+            s = s.filter('term', indicator=i)
+            return s
 
-        q_filters = {}
-        for f in VALID_FILTERS:
-            if filters.get(f):
-                q_filters[f] = filters[f]
+        if itype is 'ipv4':
+            ip = ipaddress.IPv4Network(i)
+            mask = ip.prefixlen
+            if mask < 8:
+                raise InvalidSearch('prefix needs to be greater than or equal to 8')
 
-        if q_filters.get('indicator'):
-            try:
-                itype = resolve_itype(q_filters['indicator'])
+            start = str(ip.network_address)
+            end = str(ip.broadcast_address)
 
-                if itype == 'ipv4':
-                    if PYVERSION == 2:
-                        q_filters['indicator'] = unicode(q_filters['indicator'])
+            s = s.filter('range', indicator_ipv4={'gte': start, 'lte': end})
+            return s
 
-                    ip = ipaddress.IPv4Network(q_filters['indicator'])
-                    mask = ip.prefixlen
-                    if mask < 8:
-                        raise InvalidSearch('prefix needs to be greater than or equal to 8')
-                    start = str(ip.network_address)
-                    end = str(ip.broadcast_address)
+        if itype is 'ipv6':
+            ip = ipaddress.IPv6Network(i)
+            mask = ip.prefixlen
+            if mask < 32:
+                raise InvalidSearch('prefix needs to be greater than or equal to 32')
 
-                    s = s.filter('range', indicator_ipv4={'gte': start, 'lte': end})
-                elif itype is 'ipv6':
-                    if PYVERSION == 2:
-                        q_filters['indicator'] = unicode(q_filters['indicator'])
+            start = binascii.b2a_hex(socket.inet_pton(socket.AF_INET6, str(ip.network_address))).decode('utf-8')
+            end = binascii.b2a_hex(socket.inet_pton(socket.AF_INET6, str(ip.broadcast_address))).decode('utf-8')
 
-                    ip = ipaddress.IPv6Network(q_filters['indicator'])
-                    mask = ip.prefixlen
-                    if mask < 32:
-                        raise InvalidSearch('prefix needs to be greater than or equal to 32')
+            s = s.filter('range', indicator_ipv6={'gte': start, 'lte': end})
+            return s
 
-                    start = binascii.b2a_hex(socket.inet_pton(socket.AF_INET6, str(ip.network_address))).decode('utf-8')
-                    end = binascii.b2a_hex(socket.inet_pton(socket.AF_INET6, str(ip.broadcast_address))).decode('utf-8')
-
-                    s = s.filter('range', indicator_ipv6={'gte': start, 'lte': end})
-
-                elif itype in ('email', 'url', 'fqdn'):
-                    s = s.filter('term', indicator=q_filters['indicator'])
-
-            except InvalidIndicator:
-                s = s.query("match", message=q_filters['indicator'])
-
-            del q_filters['indicator']
-
+    def _filter_terms(self, q_filters, s):
         for f in q_filters:
             kwargs = {f: q_filters[f]}
             if isinstance(q_filters[f], list):
@@ -285,25 +272,39 @@ class IndicatorMixin(object):
             else:
                 s = s.filter('term', **kwargs)
 
+        return s
+
+    def indicators_search(self, filters, sort='reporttime', raw=False, timeout=TIMEOUT):
+        limit = filters.get('limit', LIMIT)
+
+        s = Indicator.search(index='indicators-*')
+        s = s.params(size=limit, timeout=timeout, sort=sort)
+
+        q_filters = {}
+        for f in VALID_FILTERS:
+            if filters.get(f):
+                q_filters[f] = filters[f]
+
+        # treat indicator as special, transform into Search
+        s = self._filter_indicator(q_filters, s)
+
+        # transform all other filters into term=
+        s = self._filter_terms(q_filters, s)
+
+        self.logger.debug(s.to_dict())
+
         try:
             rv = s.execute()
         except elasticsearch.exceptions.RequestError as e:
             self.logger.error(e)
-            return []
+            return iter([])
+
+        if not rv.hits.hits:
+            return iter([])
 
         if raw:
-            try:
-                return rv.hits.hits
-            except KeyError:
-                return []
-        else:
-            try:
-                data = []
-                for x in rv.hits.hits:
-                    if x['_source'].get('message'):
-                        x['_source']['message'] = b64encode(x['_source']['message'].encode('utf-8'))
-                    data.append(x['_source'])
-                return data
-            except KeyError as e:
-                self.logger.error(e)
-                return []
+            for r in rv.hits.hits:
+                yield r
+
+        for x in rv.hits.hits:
+            yield x['_source']
