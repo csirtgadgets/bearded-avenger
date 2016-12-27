@@ -92,6 +92,15 @@ def test_store_elasticsearch_tokens(store, token):
     x = store.handle_tokens_search(token, {})
     assert len(x) == 2
 
+    # test last_activity_at
+    x = store.handle_indicators_search(token, {
+        'indicator': 'example.com'
+    })
+
+    x = store.store.token_last_activity_at(token.encode('utf-8'))
+    from pprint import pprint
+    pprint(x)
+
 
 @pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
 def test_store_elasticsearch_ipv6(store, token, indicator_ipv6):

@@ -9,6 +9,7 @@ from pprint import pprint
 
 TOKEN = os.environ.get('FARSIGHT_TOKEN')
 PROVIDER = os.environ.get('FARSIGHT_PROVIDER', 'dnsdb.info')
+MAX_QUERY_RESULTS = os.environ.get('FARSIGHT_QUERY_MAX', 10000)
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +37,8 @@ class Farsight(object):
         if re.search('^(\S+)\/(\d+)$', i.indicator):
             return
 
+        max = MAX_QUERY_RESULTS
+
         try:
             for r in self.client.search(i.indicator):
                 first = arrow.get(r.get('time_first') or r.get('zone_time_first'))
@@ -62,6 +65,10 @@ class Farsight(object):
                 )
 
                 router.indicators_create(ii)
+                max -= 1
+                if max == 0:
+                    break
+
         except QuotaLimit:
             logger.warn('farsight quota limit reached... skipping')
         except Exception as e:

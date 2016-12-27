@@ -192,12 +192,8 @@ class IndicatorMixin(object):
     def indicators_search(self, filters, limit=500):
         self.logger.debug('running search')
 
-        if filters.get('limit'):
-            limit = filters['limit']
-            del filters['limit']
-
-        if filters.get('nolog'):
-            del filters['nolog']
+        limit = filters.pop('limit', limit)
+        nolog = filters.pop('nolog', False)
 
         q_filters = {}
         for f in VALID_FILTERS:

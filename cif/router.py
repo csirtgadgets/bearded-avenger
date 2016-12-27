@@ -277,6 +277,7 @@ def main():
     args = p.parse_args()
     setup_logging(args)
     logger = logging.getLogger(__name__)
+    logger.propagate = False
     logger.info('loglevel is: {}'.format(logging.getLevelName(logger.getEffectiveLevel())))
 
     if args.logging_ignore:
