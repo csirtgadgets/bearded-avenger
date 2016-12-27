@@ -20,6 +20,13 @@ from .indicator import Indicator, IndicatorMixin
 DB_FILE = os.path.join(RUNTIME_PATH, 'cif.sqlite')
 
 logger = logging.getLogger(__name__)
+TRACE = os.environ.get('CIF_STORE_SQLITE_TRACE')
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+if not TRACE:
+    logger.setLevel(logging.ERROR)
 
 VALID_FILTERS = ['indicator', 'confidence', 'provider', 'itype', 'group', 'tags']
 
@@ -47,8 +54,8 @@ class SQLite(IndicatorMixin, TokenMixin, Store):
         self.path = "sqlite:///{0}".format(self.dbfile)
 
         echo = False
-        # if self.logger.getEffectiveLevel() == logging.DEBUG:
-        #     echo = True
+        if TRACE:
+            echo = True
 
         # http://docs.sqlalchemy.org/en/latest/orm/contextual.html
         self.engine = create_engine(self.path, echo=echo)
