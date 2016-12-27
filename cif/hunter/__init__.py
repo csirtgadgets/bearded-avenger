@@ -20,6 +20,14 @@ SNDTIMEO = 15000
 ZMQ_HWM = 1000000
 EXCLUDE = os.environ.get('CIF_HUNTER_EXCLUDE', None)
 
+TRACE = os.environ.get('CIF_ROUTER_TRACE') or os.environ.get('CIF_HUNTER_TRACE')
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+if TRACE:
+    logger.setLevel(logging.DEBUG)
+
 
 class Hunter(multiprocessing.Process):
     def __enter__(self):

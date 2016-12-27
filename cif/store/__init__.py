@@ -16,6 +16,7 @@ import multiprocessing
 from csirtg_indicator import Indicator
 import zmq
 import time
+from base64 import b64encode
 
 from cifsdk.msg import Msg
 import cif.store
@@ -24,14 +25,17 @@ from cifsdk.constants import REMOTE_ADDR, CONFIG_PATH
 from cifsdk.exceptions import AuthError, InvalidSearch
 from csirtg_indicator import InvalidIndicator
 from cifsdk.utils import setup_logging, get_argument_parser, setup_signals
+from types import GeneratorType
+
+if PYVERSION > 2:
+    basestring = (str, bytes)
 
 MOD_PATH = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-
 STORE_PATH = os.path.join(MOD_PATH, "store")
 RCVTIMEO = 5000
 SNDTIMEO = 2000
 LINGER = 3
-STORE_DEFAULT = 'sqlite'
+STORE_DEFAULT = os.environ.get('CIF_STORE_STORE', 'sqlite')
 STORE_PLUGINS = ['cif.store.dummy', 'cif.store.sqlite', 'cif.store.elasticsearch', 'cif.store.rdflib']
 CREATE_QUEUE_FLUSH = os.environ.get('CIF_STORE_QUEUE_FLUSH', 5)   # seconds to flush the queue [interval]
 CREATE_QUEUE_LIMIT = os.environ.get('CIF_STORE_QUEUE_LIMIT', 250)  # num of records before we start throttling a token
@@ -43,10 +47,13 @@ CREATE_QUEUE_MAX = os.environ.get('CIF_STORE_QUEUE_MAX', 1000)
 
 MORE_DATA_NEEDED = -2
 
-if PYVERSION > 2:
-    basestring = (str, bytes)
+TRACE = os.environ.get('CIF_ROUTER_TRACE') or os.environ.get('CIF_STORE_TRACE')
     
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.ERROR)
+
+if TRACE:
+    logger.setLevel(logging.DEBUG)
 
 
 class Store(multiprocessing.Process):
@@ -227,37 +234,58 @@ class Store(multiprocessing.Process):
         else:
             raise AuthError('invalid token')
 
-    def handle_indicators_search(self, token, data, **kwargs):
-        if self.store.token_read(token):
-            logger.debug('searching')
-            try:
-                x = self.store.indicators_search(data)
+    def _log_search(self, t, data):
+        if not data.get('indicator'):
+            return
 
-                if data.get('indicator'):
-                    t = self.store.tokens_search({'token': token})
-                    ts = arrow.utcnow().format('YYYY-MM-DDTHH:mm:ss.SSZ')
-                    s = Indicator(
-                        indicator=data['indicator'],
-                        tlp='amber',
-                        confidence=10,
-                        tags=['search'],
-                        provider=t[0]['username'],
-                        firsttime=ts,
-                        lasttime=ts,
-                        reporttime=ts,
-                        group='everyone'
-                    )
-                    self.store.indicators_create(s.__dict__())
-            except Exception as e:
-                logger.error(e)
-                if logger.getEffectiveLevel() == logging.DEBUG:
-                    import traceback
-                    logger.error(traceback.print_exc())
-                raise InvalidSearch('invalid search')
-            else:
-                return x
-        else:
+        if data.get('nolog'):
+            return
+
+        ts = arrow.utcnow().format('YYYY-MM-DDTHH:mm:ss.SSZ')
+        s = Indicator(
+            indicator=data['indicator'],
+            tlp='amber',
+            confidence=10,
+            tags=['search'],
+            provider=t[0]['username'],
+            firsttime=ts,
+            lasttime=ts,
+            reporttime=ts,
+            group='everyone',
+            count=1
+        )
+        self.store.indicators_create(s.__dict__())
+
+    def handle_indicators_search(self, token, data, **kwargs):
+        t = self.store.token_read(token)
+        if not t:
             raise AuthError('invalid token')
+
+        if PYVERSION == 2:
+            if data.get('indicator'):
+                if isinstance(data['indicator'], str):
+                    data['indicator'] = unicode(data['indicator'])
+
+        try:
+            x = self.store.indicators_search(data)
+        except Exception as e:
+            logger.error(e)
+            if logger.getEffectiveLevel() == logging.DEBUG:
+                import traceback
+                logger.error(traceback.print_exc())
+            raise InvalidSearch('invalid search')
+
+        t = self.store.tokens_search({'token': token})
+        self._log_search(t, data)
+
+        if isinstance(x, GeneratorType):
+            x = list(x)
+
+        for xx in x:
+            if xx.get('message'):
+                xx['message'] = b64encode(xx['message']).encode('utf-8')
+
+        return x
 
     def handle_ping(self, token, data='[]', **kwargs):
         logger.debug('handling ping message')

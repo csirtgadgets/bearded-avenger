@@ -6,15 +6,22 @@ import traceback
 import zmq
 import multiprocessing
 from cifsdk.msg import Msg
-
+import os
 import cif.gatherer
 from cif.constants import GATHERER_ADDR, GATHERER_SINK_ADDR
 from csirtg_indicator import Indicator
 
-logger = logging.getLogger(__name__)
-
 SNDTIMEO = 15000
 LINGER = 0
+
+logger = logging.getLogger(__name__)
+TRACE = os.environ.get('CIF_ROUTER_TRACE') or os.environ.get('CIF_GATHERER_TRACE')
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.ERROR)
+
+if TRACE:
+    logger.setLevel(logging.DEBUG)
 
 
 class Gatherer(multiprocessing.Process):

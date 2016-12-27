@@ -7,9 +7,26 @@ from cif.store.zelasticsearch.indicator import IndicatorMixin
 from elasticsearch_dsl.connections import connections
 from cif.constants import TOKEN_CACHE_DELAY
 import arrow
-
+from cif.constants import PYVERSION
 
 ES_NODES = os.getenv('CIF_ES_NODES', '127.0.0.1:9200')
+TRACE = os.environ.get('CIF_STORE_ES_TRACE')
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+if not TRACE:
+    logger.setLevel(logging.ERROR)
+
+    es_logger = logging.getLogger('elasticsearch')
+    es_logger.propagate = False
+    es_logger.setLevel(logging.ERROR)
+
+    if PYVERSION == 2:
+        urllib_logger = logging.getLogger('urllib2')
+    else:
+        urllib_logger = logging.getLogger('urllib3')
+    urllib_logger.setLevel(logging.ERROR)
 
 
 class _ElasticSearch(IndicatorMixin, TokenMixin, Store):
@@ -18,12 +35,11 @@ class _ElasticSearch(IndicatorMixin, TokenMixin, Store):
     name = 'elasticsearch'
 
     def __init__(self, nodes=ES_NODES, **kwargs):
-        self.logger = logging.getLogger(__name__)
 
         if type(nodes) == str:
             nodes = nodes.split(',')
 
-        self.logger.info('setting es nodes {}'.format(nodes))
+        logger.info('setting es nodes {}'.format(nodes))
         connections.create_connection(hosts=nodes)
 
         self.token_cache = {}
