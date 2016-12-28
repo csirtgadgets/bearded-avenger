@@ -133,8 +133,6 @@ class Store(multiprocessing.Process):
         self.exit.set()
 
     def handle_message(self, m):
-        logger.debug('message received')
-
         id, client_id, token, mtype, data = m
 
         if isinstance(data, basestring):
@@ -150,14 +148,9 @@ class Store(multiprocessing.Process):
         handler = getattr(self, "handle_" + mtype)
         err = None
         if handler:
-            logger.debug("mtype: {0}".format(mtype))
-            logger.debug('running handler: {}'.format(mtype))
-
             try:
                 rv = handler(token, data, id=id, client_id=client_id)
-                if rv == MORE_DATA_NEEDED:
-                    logger.debug('waiting for more data..')
-                else:
+                if rv != MORE_DATA_NEEDED:
                     rv = {"status": "success", "data": rv}
                     ts = arrow.utcnow().format('YYYY-MM-DDTHH:mm:ss.SSSSS')
                     ts = '{}Z'.format(ts)
@@ -230,7 +223,16 @@ class Store(multiprocessing.Process):
                 return MORE_DATA_NEEDED
 
         if self.store.token_write(token):
-            return self.store.indicators_upsert(data)
+            start_time = time.time()
+            if len(data) > 1:
+                logger.info('Upserting %d indicators..', len(data))
+
+            r = self.store.indicators_upsert(data)
+
+            if len(data) > 1:
+                logger.info('Upserting %d indicators.. took %0.2f seconds', len(data), time.time() - start_time)
+                
+            return r
         else:
             raise AuthError('invalid token')
 

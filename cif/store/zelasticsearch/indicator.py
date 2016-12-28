@@ -181,7 +181,7 @@ class IndicatorMixin(object):
 
             if len(rv) == 0:
                 if was_added.get(d['indicator']):
-                    if d['lasttime'] in was_added[d['indicator']]:
+                    if d.get('lasttime') in was_added[d['indicator']]:
                         logger.debug('skipping: %s' % d['indicator'])
                         continue
                 else:
