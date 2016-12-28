@@ -39,6 +39,10 @@ TOKEN_FILTERS = ['username', 'token']
 LIMIT_DAY = os.environ.get('CIF_HTTPD_LIMIT_DAY', 250000)
 LIMIT_HOUR = os.environ.get('CIF_HTTPD_LIMIT_HOUR', 100000)
 
+if PYVERSION > 2:
+    basestring = (str, bytes)
+else:
+    basestring = (str, unicode)
 
 # https://github.com/mitsuhiko/flask/blob/master/examples/minitwit/minitwit.py
 # http://stackoverflow.com/questions/28795561/support-multiple-api-versions-in-flask
@@ -193,9 +197,6 @@ def search():
         if response_compress():
             logger.debug('compressing')
             response.data = compress(response.data)
-
-        if PYVERSION == 3:
-            basestring = (str, bytes)
 
         response.status_code = 200
         if isinstance(r, basestring):
