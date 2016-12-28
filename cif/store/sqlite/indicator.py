@@ -1,7 +1,7 @@
 import os
 
 import arrow
-from sqlalchemy import Column, Integer, String, Float, DateTime, UnicodeText, desc, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, DateTime, UnicodeText, desc, ForeignKey, text
 from sqlalchemy.orm import relationship, backref, class_mapper, lazyload
 
 from cifsdk.constants import RUNTIME_PATH, PYVERSION
@@ -249,6 +249,7 @@ class IndicatorMixin(object):
 
                 elif itype in ('fqdn', 'email', 'url'):
                     sql.append("indicator = '{}'".format(filters['indicator']))
+
             except InvalidIndicator as e:
                 self.logger.error(e)
                 sql.append("message LIKE '%{}%'".format(filters['indicator']))
@@ -276,7 +277,7 @@ class IndicatorMixin(object):
         if filters.get('tags'):
             s = s.join(Tag)
 
-        rv = s.order_by(desc(Indicator.reporttime)).filter(sql).limit(limit)
+        rv = s.order_by(desc(Indicator.reporttime)).filter(text(sql)).limit(limit)
 
         return [self._as_dict(x) for x in rv]
 
