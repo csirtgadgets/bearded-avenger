@@ -193,7 +193,7 @@ def search():
             logger.debug('compressing')
             response.data = compress(response.data)
 
-        if r == b'{"message":"unauthorized","status":"failed"}':
+        if "unauthorized" in r.decode('utf-8'):
             response.status_code = 401
         else:
             response.status_code = 200
