@@ -26,6 +26,7 @@ from cifsdk.exceptions import AuthError, InvalidSearch
 from csirtg_indicator import InvalidIndicator
 from cifsdk.utils import setup_logging, get_argument_parser, setup_signals
 from types import GeneratorType
+import traceback
 
 if PYVERSION > 2:
     basestring = (str, bytes)
@@ -85,6 +86,8 @@ class Store(multiprocessing.Process):
             if modname == 'cif.store.{}'.format(self.store) or modname == 'cif.store.z{}'.format(self.store):
                 logger.debug('Loading plugin: {0}'.format(modname))
                 self.store = loader.find_module(modname).load_module(modname)
+
+
                 self.store = self.store.Plugin(**kwargs)
 
     def start(self):
@@ -272,12 +275,15 @@ class Store(multiprocessing.Process):
             x = self.store.indicators_search(data)
         except Exception as e:
             logger.error(e)
+
             if logger.getEffectiveLevel() == logging.DEBUG:
-                import traceback
                 logger.error(traceback.print_exc())
+
             raise InvalidSearch('invalid search')
 
         t = self.store.tokens_search({'token': token})
+
+
         self._log_search(t, data)
 
         if isinstance(x, GeneratorType):

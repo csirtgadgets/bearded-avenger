@@ -53,6 +53,8 @@ class SQLite(IndicatorMixin, TokenMixin, Store):
         self.dictrows = dictrows
         self.path = "sqlite:///{0}".format(self.dbfile)
 
+
+
         echo = False
         if TRACE:
             echo = True
@@ -68,6 +70,7 @@ class SQLite(IndicatorMixin, TokenMixin, Store):
 
         self.token_cache = {}
         self.token_cache_check = arrow.utcnow().timestamp + TOKEN_CACHE_DELAY
+
 
     def ping(self, token):
         if self.token_read(token) or self.token_write(token):
