@@ -199,7 +199,6 @@ class IndicatorMixin(object):
                 continue
 
             r = rv[0]
-
             if not self._is_newer(d, r['_source']):
                 continue
 
@@ -315,10 +314,10 @@ class IndicatorMixin(object):
             rv = s.execute()
         except elasticsearch.exceptions.RequestError as e:
             logger.error(e)
-            yield iter([])
+            return
 
         if not rv.hits.hits:
-            yield iter([])
+            return
 
         if raw:
             for r in rv.hits.hits:

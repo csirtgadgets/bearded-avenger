@@ -21,6 +21,7 @@ import arrow
 import copy
 from .feed import factory as feed_factory
 from .feed import FEED_PLUGINS
+from cif.constants import PYVERSION
 
 from pprint import pprint
 
@@ -193,10 +194,13 @@ def search():
             logger.debug('compressing')
             response.data = compress(response.data)
 
-        if "unauthorized" in r.decode('utf-8'):
-            response.status_code = 401
-        else:
-            response.status_code = 200
+        if PYVERSION == 3:
+            basestring = (str, bytes)
+
+        response.status_code = 200
+        if isinstance(r, basestring):
+            if '"message":"unauthorized"' in r.decode('utf-8') and '"message":"unauthorized"' in r.decode('utf-8'):
+                response.status_code = 401
 
     except AuthError as e:
         response = jsonify({
