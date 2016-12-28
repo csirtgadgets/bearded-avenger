@@ -189,27 +189,20 @@ class Router(object):
         self._log_counter()
 
     def handle_message_default(self, id, mtype, token, data='[]'):
-        self.logger.debug('sending message to store...')
         Msg(id=id, mtype=mtype, token=token, data=data).send(self.store_s)
 
     def handle_message_store(self, s):
-        self.logger.debug('msg from store received')
-
         # re-routing from store to front end
         id, mtype, token, data = Msg().recv(s)
-        self.logger.debug(data)
 
         Msg(id=id, mtype=mtype, token=token, data=data).send(self.frontend_s)
 
     def handle_message_gatherer(self, s):
-        self.logger.debug('received message from gatherer')
         id, token, mtype, data = Msg().recv(s)
 
-        self.logger.debug('sending to store')
         Msg(id=id, mtype=mtype, token=token, data=data).send(self.store_s)
 
         if len(self.hunters) > 0:
-            self.logger.debug('sending to hunters...')
             data = json.loads(data)
             if isinstance(data, dict):
                 data = [data]
@@ -222,11 +215,9 @@ class Router(object):
         self.handle_message_default(id, mtype, token, data)
 
         if self.hunters:
-            self.logger.debug('sending to hunters..')
             self.hunters_s.send_string(data)
 
     def handle_indicators_create(self, id, mtype, token, data):
-        self.logger.debug('sending to gatherers..')
         Msg(id=id, mtype=mtype, token=token, data=data).send(self.gatherer_s)
 
 

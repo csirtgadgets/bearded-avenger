@@ -21,6 +21,7 @@ import arrow
 import copy
 from .feed import factory as feed_factory
 from .feed import FEED_PLUGINS
+from cif.constants import PYVERSION
 
 from pprint import pprint
 
@@ -38,6 +39,10 @@ TOKEN_FILTERS = ['username', 'token']
 LIMIT_DAY = os.environ.get('CIF_HTTPD_LIMIT_DAY', 250000)
 LIMIT_HOUR = os.environ.get('CIF_HTTPD_LIMIT_HOUR', 100000)
 
+if PYVERSION > 2:
+    basestring = (str, bytes)
+else:
+    basestring = (str, unicode)
 
 # https://github.com/mitsuhiko/flask/blob/master/examples/minitwit/minitwit.py
 # http://stackoverflow.com/questions/28795561/support-multiple-api-versions-in-flask
@@ -193,10 +198,10 @@ def search():
             logger.debug('compressing')
             response.data = compress(response.data)
 
-        if r == b'{"message":"unauthorized","status":"failed"}':
-            response.status_code = 401
-        else:
-            response.status_code = 200
+        response.status_code = 200
+        if isinstance(r, basestring):
+            if '"message":"unauthorized"' in r.decode('utf-8') and '"message":"unauthorized"' in r.decode('utf-8'):
+                response.status_code = 401
 
     except AuthError as e:
         response = jsonify({
