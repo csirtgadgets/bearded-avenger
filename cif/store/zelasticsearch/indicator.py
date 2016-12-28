@@ -315,10 +315,10 @@ class IndicatorMixin(object):
             rv = s.execute()
         except elasticsearch.exceptions.RequestError as e:
             logger.error(e)
-            return iter([])
+            yield iter([])
 
         if not rv.hits.hits:
-            return iter([])
+            yield iter([])
 
         if raw:
             for r in rv.hits.hits:
