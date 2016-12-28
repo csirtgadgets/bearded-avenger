@@ -238,7 +238,7 @@ class Store(multiprocessing.Process):
         if not data.get('indicator'):
             return
 
-        if data.get('nolog'):
+        if data.get('nolog') in ['1', 'True', 1, True]:
             return
 
         ts = arrow.utcnow().format('YYYY-MM-DDTHH:mm:ss.SSZ')
@@ -254,7 +254,7 @@ class Store(multiprocessing.Process):
             group='everyone',
             count=1
         )
-        self.store.indicators_create(s.__dict__())
+        self.store.indicators_upsert(s.__dict__())
 
     def handle_indicators_search(self, token, data, **kwargs):
         t = self.store.token_read(token)

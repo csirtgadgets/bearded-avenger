@@ -193,7 +193,10 @@ def search():
             logger.debug('compressing')
             response.data = compress(response.data)
 
-        response.status_code = 200
+        if r == b'{"message":"unauthorized","status":"failed"}':
+            response.status_code = 401
+        else:
+            response.status_code = 200
 
     except AuthError as e:
         response = jsonify({
