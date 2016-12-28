@@ -60,7 +60,7 @@ class Indicator(DocType):
 
 def _current_index():
     dt = datetime.utcnow()
-    dt = dt.strftime('%Y.%m')
+    dt = dt.strftime('%Y.%m.%d')
     idx = '{}-{}'.format('indicators', dt)
     return idx
 
