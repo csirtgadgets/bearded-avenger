@@ -5,6 +5,9 @@ import os
 from cif.constants import TOKEN_CACHE_DELAY
 import arrow
 from pprint import pprint
+import logging
+
+logger = logging.getLogger('cif.store.zelasticsearch')
 
 INDEX_NAME = 'tokens'
 
@@ -42,7 +45,7 @@ class TokenMixin(object):
         try:
             rv = s.execute()
         except elasticsearch.exceptions.NotFoundError as e:
-            self.logger.error(e)
+            logger.error(e)
             return False
 
         if rv.hits.total == 0:
@@ -73,7 +76,7 @@ class TokenMixin(object):
         return self.token_check(token, 'write')
 
     def tokens_create(self, data):
-        self.logger.debug(data)
+        logger.debug(data)
         for v in ['admin', 'read', 'write']:
             if data.get(v):
                 data[v] = True
@@ -132,7 +135,7 @@ class TokenMixin(object):
         rv = self.tokens_search({'token': token}, raw=True)
         rv = Token.get(rv[0]['_id'])
 
-        self.logger.debug('updating timestamp to: {}'.format(timestamp))
+        logger.debug('updating timestamp to: {}'.format(timestamp))
         rv.update(last_activity_at=timestamp)
 
         if token not in self.token_cache:

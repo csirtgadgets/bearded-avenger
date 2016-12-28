@@ -28,6 +28,8 @@ TIMEOUT = '120'
 TIMEOUT = os.getenv('CIF_ES_TIMEOUT', TIMEOUT)
 TIMEOUT = '{}s'.format(TIMEOUT)
 
+logger = logging.getLogger('cif.store.zelasticsearch')
+
 
 class Indicator(DocType):
     indicator = String(index="not_analyzed")
