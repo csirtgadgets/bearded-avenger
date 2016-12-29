@@ -21,3 +21,4 @@
     - libxslt-devel
     - libcurl-devel
     - net-tools
+    - wget
