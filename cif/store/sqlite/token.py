@@ -97,12 +97,10 @@ class TokenMixin(TokenPlugin):
             return 'token required for updating'
 
         s = self.handle()
-        rv = s.query(Token).filter_by(token=data['token']).update
+        rv = s.query(Token).filter_by(token=data['token']).update(data)
 
-        if not rv.count():
+        if not rv:
             return 'token not found'
-
-        rv = rv.first()
 
         if data.get('groups'):
             rv.groups = ','.join(data['groups'])

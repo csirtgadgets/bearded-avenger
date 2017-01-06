@@ -58,6 +58,20 @@ def test_store_sqlite(store, indicator):
     t = store.store.tokens_admin_exists()
     assert t
 
+    t = list(store.store.tokens_search({'token': t}))
+    assert len(t) > 0
+
+    t = t[0]['token']
+
+    assert store.store.token_check(t, 'read')
+    assert store.store.token_read(t)
+    assert store.store.token_write(t)
+    assert store.store.token_admin(t)
+    assert store.store.token_last_activity_at(t) is None
+    from datetime import datetime
+    assert store.store.token_update_last_activity_at(t, datetime.now())
+    assert store.store._token_cache_check(t)
+
     indicator['tags'] = 'malware'
 
     x = store.handle_indicators_create(t, indicator)
@@ -152,3 +166,6 @@ def test_store_sqlite(store, indicator):
         pass
 
     assert x is None
+
+    assert store.store.token_edit({'token': t, 'write': False})
+    assert store.store.tokens_delete({'token': t})
