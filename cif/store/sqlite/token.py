@@ -1,20 +1,12 @@
 import logging
-import os
-
 import arrow
-from sqlalchemy import Column, Integer, String, DateTime, UnicodeText, Boolean
-from sqlalchemy.ext.declarative import declarative_base
-
-from cifsdk.constants import RUNTIME_PATH
+from sqlalchemy import Column, Integer, String, DateTime, UnicodeText, Boolean, or_
 from cifsdk.constants import PYVERSION
 from pprint import pprint
 from cif.store.sqlite import Base
-
-from cif.constants import TOKEN_CACHE_DELAY
+from cif.store.token_plugin import TokenPlugin
 
 logger = logging.getLogger(__name__)
-
-VALID_FILTERS = ['indicator', 'confidence', 'provider', 'itype', 'group', 'tags']
 
 if PYVERSION > 2:
     basestring = (str, bytes)
@@ -36,15 +28,25 @@ class Token(Base):
     last_activity_at = Column(DateTime)
 
 
-class TokenMixin(object):
-    def token_admin(self, token):
-        x = self.handle().query(Token) \
-            .filter_by(token=str(token)) \
-            .filter_by(admin=True) \
-            .filter(Token.revoked is not True)
+class TokenMixin(TokenPlugin):
 
-        if x.count():
-            return True
+    def tokens_search(self, data):
+        s = self.handle().query(Token)
+
+        for k in ['token', 'username', 'admin', 'write', 'read']:
+            if data.get(k):
+                s = s.filter_by(**{k: data[k]})
+
+        s = s.filter(Token.revoked is not True)
+
+        s = s.filter(or_(Token.expires == None, Token.expires >= arrow.utcnow().datetime))
+
+        # update the cache
+        for x in s:
+            if x.token not in self.token_cache:
+                self.token_cache[x.token] = x.__dict__
+
+            yield self._as_dict(x)
 
     def tokens_create(self, data):
         groups = data.get('groups')
@@ -65,28 +67,11 @@ class TokenMixin(object):
             expires=data.get('expires'),
             admin=data.get('admin')
         )
+
         s = self.handle()
         s.add(t)
         s.commit()
         return self._as_dict(t)
-
-    def tokens_admin_exists(self):
-        rv = self.handle().query(Token).filter_by(admin=True)
-        if rv.count():
-            return rv.first().token
-
-    def tokens_search(self, data):
-        rv = self.handle().query(Token)
-        if data.get('token'):
-            rv = rv.filter_by(token=data['token'])
-
-        if data.get('username'):
-            rv = rv.filter_by(username=data['username'])
-
-        if rv.count():
-            return [self._as_dict(x) for x in rv]
-
-        return []
 
     # http://stackoverflow.com/questions/1484235/replace-delete-field-using-sqlalchemy
     def tokens_delete(self, data):
@@ -95,75 +80,27 @@ class TokenMixin(object):
         rv = s.query(Token)
         if data.get('username'):
             rv = rv.filter_by(username=data['username'])
+
         if data.get('token'):
             rv = rv.filter_by(token=data['token'])
 
-        if rv.count():
-            c = rv.count()
-            rv.delete()
-            s.commit()
-            return c
-        else:
+        if not rv.count():
             return 0
 
-    def token_read(self, token):
-        if arrow.utcnow().timestamp > self.token_cache_check:
-            self.token_cache = {}
-            self.token_cache_check = arrow.utcnow().timestamp + TOKEN_CACHE_DELAY
-
-        if token in self.token_cache:
-            try:
-                if self.token_cache[token]['read'] is True:
-                    return True
-            except KeyError:
-                pass
-
-        x = self.handle().query(Token) \
-            .filter_by(token=token) \
-            .filter_by(read=True) \
-            .filter(Token.revoked is not True)
-
-        if x.count():
-            if not self.token_cache.get('token'):
-                self.token_cache[token] = {}
-            self.token_cache[token]['read'] = True
-            return True
-
-    def token_write(self, token):
-        if arrow.utcnow().timestamp > self.token_cache_check:
-            self.token_cache = {}
-            self.token_cache_check = arrow.utcnow().timestamp + TOKEN_CACHE_DELAY
-
-        if token in self.token_cache:
-            try:
-                if self.token_cache[token]['write'] is True:
-                    return True
-            except KeyError:
-                pass
-
-        self.logger.debug('testing token: {}'.format(token))
-        rv = self.handle().query(Token) \
-            .filter_by(token=token) \
-            .filter_by(write=True) \
-            .filter(Token.revoked is not True)
-
-        if rv.count():
-            if not self.token_cache.get('token'):
-                self.token_cache[token] = {}
-            self.token_cache[token]['write'] = True
-            return True
+        c = rv.count()
+        rv.delete()
+        s.commit()
+        return c
 
     def token_edit(self, data):
         if not data.get('token'):
             return 'token required for updating'
 
         s = self.handle()
-        rv = s.query(Token).filter_by(token=data['token'])
+        rv = s.query(Token).filter_by(token=data['token']).update(data)
 
-        if not rv.count():
+        if not rv:
             return 'token not found'
-
-        rv = rv.first()
 
         if data.get('groups'):
             rv.groups = ','.join(data['groups'])
@@ -172,30 +109,21 @@ class TokenMixin(object):
 
         return True
 
-    def token_last_activity_at(self, token, timestamp=None):
+    def token_update_last_activity_at(self, token, timestamp):
+        timestamp = arrow.get(timestamp).datetime
+
+        if self._token_cache_check(token):
+            if self.token_cache[token].get('last_activity_at'):
+                return self.token_cache[token]['last_activity_at']
+
+            self.token_cache[token]['last_activity_at'] = timestamp
+            return timestamp
+
         s = self.handle()
-        timestamp = arrow.get(timestamp)
-        token = token.decode('utf-8')
-        if timestamp:
-            if arrow.utcnow().timestamp > self.token_cache_check:
-                self.token_cache = {}
-                self.token_cache_check = arrow.utcnow().timestamp + TOKEN_CACHE_DELAY
+        s.query(Token).filter_by(token=token).update({Token.last_activity_at: timestamp})
+        s.commit()
 
-            if token in self.token_cache:
-                try:
-                    if self.token_cache[token]['last_activity_at']:
-                        return self.token_cache[token]['last_activity_at']
-                except KeyError:
-                    x = s.query(Token).filter_by(token=token).update({Token.last_activity_at: timestamp.datetime})
-                    s.commit()
+        t = list(self.tokens_search({'token': token}))
 
-                    if x:
-                        self.token_cache[token]['last_activity_at'] = timestamp.datetime
-                        return timestamp.datetime
-                    else:
-                        self.logger.error('failed to update token: {}'.format(token))
-
-        else:
-            x = s.query(Token).filter_by(token=token)
-            if x.count():
-                return x.first().last_activity_at
+        self.token_cache[token] = t[0]
+        self.token_cache[token]['last_activity_at'] = timestamp

@@ -26,6 +26,7 @@ from cifsdk.exceptions import AuthError, InvalidSearch
 from csirtg_indicator import InvalidIndicator
 from cifsdk.utils import setup_logging, get_argument_parser, setup_signals
 from types import GeneratorType
+import traceback
 
 if PYVERSION > 2:
     basestring = (str, bytes)
@@ -154,7 +155,7 @@ class Store(multiprocessing.Process):
                     rv = {"status": "success", "data": rv}
                     ts = arrow.utcnow().format('YYYY-MM-DDTHH:mm:ss.SSSSS')
                     ts = '{}Z'.format(ts)
-                    self.store.token_last_activity_at(token.encode('utf-8'), timestamp=ts)
+                    self.store.token_update_last_activity_at(token, ts)
 
             except AuthError as e:
                 logger.error(e)
@@ -196,7 +197,7 @@ class Store(multiprocessing.Process):
                 logger.debug('updating last_active')
                 ts = arrow.utcnow().format('YYYY-MM-DDTHH:mm:ss.SSSSS')
                 ts = '{}Z'.format(ts)
-                self.store.token_last_activity_at(t.encode('utf-8'), timestamp=ts)
+                self.store.token_update_last_activity_at(t, ts)
             except AuthError as e:
                 rv = {'status': 'failed', 'message': 'unauthorized'}
 
@@ -272,12 +273,17 @@ class Store(multiprocessing.Process):
             x = self.store.indicators_search(data)
         except Exception as e:
             logger.error(e)
+
             if logger.getEffectiveLevel() == logging.DEBUG:
-                import traceback
                 logger.error(traceback.print_exc())
+
             raise InvalidSearch('invalid search')
 
         t = self.store.tokens_search({'token': token})
+
+        if isinstance(t, GeneratorType):
+            t = list(t)
+
         self._log_search(t, data)
 
         if isinstance(x, GeneratorType):

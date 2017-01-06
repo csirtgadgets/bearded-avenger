@@ -36,6 +36,8 @@ omit =
     cif/hunter/url.py
     cif/router.py
     cif/gatherer/geo.py
+    cif/store/sqlite/message.py
+    cif/store/sqlite/tag.py
 
 [html]
 directory = coverage_html_report
