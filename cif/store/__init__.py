@@ -86,8 +86,6 @@ class Store(multiprocessing.Process):
             if modname == 'cif.store.{}'.format(self.store) or modname == 'cif.store.z{}'.format(self.store):
                 logger.debug('Loading plugin: {0}'.format(modname))
                 self.store = loader.find_module(modname).load_module(modname)
-
-
                 self.store = self.store.Plugin(**kwargs)
 
     def start(self):
@@ -157,7 +155,7 @@ class Store(multiprocessing.Process):
                     rv = {"status": "success", "data": rv}
                     ts = arrow.utcnow().format('YYYY-MM-DDTHH:mm:ss.SSSSS')
                     ts = '{}Z'.format(ts)
-                    self.store.token_last_activity_at(token.encode('utf-8'), timestamp=ts)
+                    self.store.token_update_last_activity_at(token, ts)
 
             except AuthError as e:
                 logger.error(e)
@@ -199,7 +197,7 @@ class Store(multiprocessing.Process):
                 logger.debug('updating last_active')
                 ts = arrow.utcnow().format('YYYY-MM-DDTHH:mm:ss.SSSSS')
                 ts = '{}Z'.format(ts)
-                self.store.token_last_activity_at(t.encode('utf-8'), timestamp=ts)
+                self.store.token_update_last_activity_at(t, ts)
             except AuthError as e:
                 rv = {'status': 'failed', 'message': 'unauthorized'}
 
@@ -283,6 +281,8 @@ class Store(multiprocessing.Process):
 
         t = self.store.tokens_search({'token': token})
 
+        if isinstance(t, GeneratorType):
+            t = list(t)
 
         self._log_search(t, data)
 

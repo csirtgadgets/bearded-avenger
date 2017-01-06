@@ -73,13 +73,13 @@ def test_store_elasticsearch(store, token, indicator):
 @pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
 def test_store_elasticsearch_tokens(store, token):
     x = store.handle_tokens_search(token, {'token': token})
-    assert len(x) > 0
+    assert len(list(x)) > 0
 
     x = store.handle_tokens_search(token, {'admin': True})
-    assert len(x) > 0
+    assert len(list(x)) > 0
 
     x = store.handle_tokens_search(token, {'write': True})
-    assert len(x) > 0
+    assert len(list(x)) > 0
 
     t = store.store.tokens_create({
         'username': u'test_admin2',
@@ -87,10 +87,10 @@ def test_store_elasticsearch_tokens(store, token):
     })
 
     x = store.handle_tokens_search(token, {'admin': True})
-    assert len(x) == 1
+    assert len(list(x)) == 1
 
     x = store.handle_tokens_search(token, {})
-    assert len(x) == 2
+    assert len(list(x)) == 2
 
     # test last_activity_at
     x = store.handle_indicators_search(token, {
@@ -98,8 +98,6 @@ def test_store_elasticsearch_tokens(store, token):
     })
 
     x = store.store.token_last_activity_at(token.encode('utf-8'))
-    from pprint import pprint
-    pprint(x)
 
 
 @pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
