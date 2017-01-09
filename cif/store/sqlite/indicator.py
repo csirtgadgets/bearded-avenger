@@ -168,6 +168,7 @@ class Message(Base):
 
 
 class IndicatorMixin(object):
+
     def _as_dict(self, obj):
         d = {}
         for col in class_mapper(obj.__class__).mapped_table.c:
@@ -188,96 +189,98 @@ class IndicatorMixin(object):
 
         return d
 
-    # TODO - normalize this out into filters
-    def indicators_search(self, filters, limit=500):
-        self.logger.debug('running search')
+    def _filter_indicator(self, filters, s):
 
-        limit = filters.pop('limit', limit)
-        nolog = filters.pop('nolog', False)
+        for k, v in list(filters.items()):
+            if k not in VALID_FILTERS:
+                del filters[k]
 
-        q_filters = {}
-        for f in VALID_FILTERS:
-            if filters.get(f):
-                q_filters[f] = filters[f]
+        if not filters.get('indicator'):
+            return s
 
-        s = self.handle().query(Indicator)
+        i = filters.pop('indicator')
+        if PYVERSION == 2:
+            if isinstance(i, str):
+                i = unicode(i)
 
-        filters = q_filters
+        try:
+            itype = resolve_itype(i)
+        except InvalidIndicator as e:
+            self.logger.error(e)
+            s = s.join(Message).filter(Indicator.Message.like('%{}%'.format(i)))
+            return s
 
-        sql = []
+        if itype in ['fqdn', 'email', 'url']:
+            s = s.filter(Indicator.indicator == i)
+            return s
 
-        if filters.get('indicator'):
-            try:
-                itype = resolve_itype(filters['indicator'])
-                self.logger.debug('itype %s' % itype)
-                if itype == 'ipv4':
+        if itype == 'ipv4':
+            ip = ipaddress.IPv4Network(i)
+            mask = ip.prefixlen
 
-                    if PYVERSION < 3 and (filters['indicator'], str):
-                        filters['indicator'] = filters['indicator'].decode('utf-8')
+            if mask < 8:
+                raise InvalidSearch('prefix needs to be >= 8')
 
-                    ip = ipaddress.IPv4Network(filters['indicator'])
-                    mask = ip.prefixlen
+            start = str(ip.network_address)
+            end = str(ip.broadcast_address)
 
-                    if mask < 8:
-                        raise InvalidSearch('prefix needs to be >= 8')
+            self.logger.debug('{} - {}'.format(start, end))
 
-                    start = str(ip.network_address)
-                    end = str(ip.broadcast_address)
+            s = s.join(Ipv4).filter(Ipv4.ipv4 >= start)
+            s = s.filter(Ipv4.ipv4 <= end)
+            return s
 
-                    self.logger.debug('{} - {}'.format(start, end))
+        if itype == 'ipv6':
+            ip = ipaddress.IPv6Network(i)
+            mask = ip.prefixlen
 
-                    s = s.join(Ipv4).filter(Ipv4.ipv4 >= start)
-                    s = s.filter(Ipv4.ipv4 <= end)
+            if mask < 32:
+                raise InvalidSearch('prefix needs to be >= 32')
 
-                elif itype == 'ipv6':
-                    if PYVERSION < 3 and (filters['indicator'], str):
-                        filters['indicator'] = filters['indicator'].decode('utf-8')
+            start = str(ip.network_address)
+            end = str(ip.broadcast_address)
 
-                    ip = ipaddress.IPv6Network(filters['indicator'])
-                    mask = ip.prefixlen
+            self.logger.debug('{} - {}'.format(start, end))
 
-                    if mask < 32:
-                        raise InvalidSearch('prefix needs to be >= 32')
+            s = s.join(Ipv6).filter(Ipv6.ip >= start)
+            s = s.filter(Ipv6.ip <= end)
+            return s
 
-                    start = str(ip.network_address)
-                    end = str(ip.broadcast_address)
+        raise InvalidIndicator
 
-                    self.logger.debug('{} - {}'.format(start, end))
-
-                    s = s.join(Ipv6).filter(Ipv6.ip >= start)
-                    s = s.filter(Ipv6.ip <= end)
-
-                elif itype in ('fqdn', 'email', 'url'):
-                    sql.append("indicator = '{}'".format(filters['indicator']))
-
-            except InvalidIndicator as e:
-                self.logger.error(e)
-                sql.append("message LIKE '%{}%'".format(filters['indicator']))
-                s = s.join(Message)
-
-            del filters['indicator']
+    def _filter_terms(self, filters, s):
 
         for k in filters:
             if k == 'reporttime':
-                sql.append("{} >= '{}'".format('reporttime', filters[k]))
+                s = s.filter(Indicator.reporttime >= filters[k])
+
             elif k == 'reporttimeend':
-                sql.append("{} <= '{}'".format('reporttime', filters[k]))
+                s = s.filter(Indicator.reporttime <= filters[k])
+
             elif k == 'tags':
-                sql.append("tags.tag == '{}'".format(filters[k]))
+                s = s.join(Tag).filter(Tag.tag == filters[k])
+
             elif k == 'confidence':
-                sql.append("{} >= '{}'".format(k, filters[k]))
+                s = s.filter(Indicator.confidence >= filters[k])
+
             else:
-                sql.append("{} = '{}'".format(k, filters[k]))
+                s = s.filter(k == filters[k])
 
-        sql = ' AND '.join(sql)
+        return s
 
-        if sql:
-            self.logger.debug(sql)
+    def indicators_search(self, filters, limit=500):
+        self.logger.debug('running search')
 
-        if filters.get('tags'):
-            s = s.join(Tag)
+        myfilters = dict(filters.items())
 
-        rv = s.order_by(desc(Indicator.reporttime)).filter(text(sql)).limit(limit)
+        s = self.handle().query(Indicator)
+
+        s = self._filter_indicator(myfilters, s)
+        s = self._filter_terms(myfilters, s)
+
+        limit = filters.pop('limit', limit)
+
+        rv = s.order_by(desc(Indicator.reporttime)).limit(limit)
 
         return [self._as_dict(x) for x in rv]
 
@@ -303,6 +306,10 @@ class IndicatorMixin(object):
 
         for d in data:
             self.logger.debug(d)
+
+            if PYVERSION == 2:
+                if isinstance(d['indicator'], str):
+                    d['indicator'] = unicode(d['indicator'])
 
             self.test_valid_indicator(d)
 
