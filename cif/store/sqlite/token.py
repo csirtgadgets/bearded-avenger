@@ -1,12 +1,15 @@
 import logging
 import arrow
 from sqlalchemy import Column, Integer, String, DateTime, UnicodeText, Boolean, or_
+from sqlalchemy.orm import class_mapper
 from cifsdk.constants import PYVERSION
 from pprint import pprint
 from cif.store.sqlite import Base
-from cif.store.token_plugin import TokenPlugin
+from cif.store.token_plugin import TokenManagerPlugin
 
-logger = logging.getLogger(__name__)
+import logging
+
+logger = logging.getLogger('cif.store.sqlite')
 
 if PYVERSION > 2:
     basestring = (str, bytes)
@@ -28,9 +31,20 @@ class Token(Base):
     last_activity_at = Column(DateTime)
 
 
-class TokenMixin(TokenPlugin):
+class TokenManager(TokenManagerPlugin):
 
-    def tokens_search(self, data):
+    def __init__(self, handle, **kwargs):
+        super(TokenManager, self).__init__(**kwargs)
+        self.handle = handle
+
+    def to_dict(self, obj):
+        d = {}
+        for col in class_mapper(obj.__class__).mapped_table.c:
+            d[col.name] = getattr(obj, col.name)
+
+        return d
+
+    def search(self, data):
         s = self.handle().query(Token)
 
         for k in ['token', 'username', 'admin', 'write', 'read']:
@@ -43,12 +57,12 @@ class TokenMixin(TokenPlugin):
 
         # update the cache
         for x in s:
-            if x.token not in self.token_cache:
-                self.token_cache[x.token] = x.__dict__
+            if x.token not in self._cache:
+                self._cache[x.token] = self.to_dict(x)
 
-            yield self._as_dict(x)
+            yield self._cache[x.token]
 
-    def tokens_create(self, data):
+    def create(self, data):
         groups = data.get('groups')
         if type(groups) == list:
             groups = ','.join(groups)
@@ -59,7 +73,7 @@ class TokenMixin(TokenPlugin):
 
         t = Token(
             username=data.get('username'),
-            token=self._token_generate(),
+            token=self._generate(),
             groups=groups,
             acl=acl,
             read=data.get('read'),
@@ -71,10 +85,10 @@ class TokenMixin(TokenPlugin):
         s = self.handle()
         s.add(t)
         s.commit()
-        return self._as_dict(t)
+        return self.to_dict(t)
 
     # http://stackoverflow.com/questions/1484235/replace-delete-field-using-sqlalchemy
-    def tokens_delete(self, data):
+    def delete(self, data):
         s = self.handle()
 
         rv = s.query(Token)
@@ -92,7 +106,7 @@ class TokenMixin(TokenPlugin):
         s.commit()
         return c
 
-    def token_edit(self, data):
+    def edit(self, data):
         if not data.get('token'):
             return 'token required for updating'
 
@@ -109,21 +123,22 @@ class TokenMixin(TokenPlugin):
 
         return True
 
-    def token_update_last_activity_at(self, token, timestamp):
+    def update_last_activity_at(self, token, timestamp):
         timestamp = arrow.get(timestamp).datetime
 
-        if self._token_cache_check(token):
-            if self.token_cache[token].get('last_activity_at'):
-                return self.token_cache[token]['last_activity_at']
+        if self._cache_check(token):
+            if self._cache[token].get('last_activity_at'):
+                return self._cache[token]['last_activity_at']
 
-            self.token_cache[token]['last_activity_at'] = timestamp
+            self._cache[token]['last_activity_at'] = timestamp
             return timestamp
 
         s = self.handle()
         s.query(Token).filter_by(token=token).update({Token.last_activity_at: timestamp})
         s.commit()
 
-        t = list(self.tokens_search({'token': token}))
+        t = list(self.search({'token': token}))
 
-        self.token_cache[token] = t[0]
-        self.token_cache[token]['last_activity_at'] = timestamp
+        self._cache[token] = t[0]
+        self._cache[token]['last_activity_at'] = timestamp
+        return timestamp

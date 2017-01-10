@@ -3,13 +3,14 @@ from elasticsearch_dsl import DocType, String, Date, Integer, Float, Ip, Mapping
 import elasticsearch.exceptions
 from elasticsearch_dsl.connections import connections
 import os
+from cif.store.indicator_plugin import IndicatorManagerPlugin
 from pprint import pprint
 from cifsdk.exceptions import AuthError, InvalidSearch
 from csirtg_indicator import resolve_itype
 from csirtg_indicator.exceptions import InvalidIndicator
 from datetime import datetime
 import ipaddress
-import arrow
+
 import re
 from base64 import b64decode
 import binascii
@@ -58,53 +59,36 @@ class Indicator(DocType):
     message = String(multi=True)
 
 
-def _current_index():
-    dt = datetime.utcnow()
-    dt = dt.strftime('%Y.%m')
-    idx = '{}-{}'.format('indicators', dt)
-    return idx
+class IndicatorManager(IndicatorManagerPlugin):
 
+    def __init__(self, *args, **kwargs):
+        super(IndicatorManager, self).__init__(*args, **kwargs)
 
-def _create_index():
-    # https://github.com/csirtgadgets/massive-octo-spice/blob/develop/elasticsearch/observables.json
-    # http://elasticsearch-py.readthedocs.org/en/master/api.html#elasticsearch.Elasticsearch.bulk
-    idx = _current_index()
-    es = connections.get_connection()
-    if not es.indices.exists(idx):
-        index = Index(idx)
-        index.aliases(live={})
-        index.doc_type(Indicator)
-        index.create()
+        self.indicators_prefix = kwargs.get('indicators_prefix', 'indicators')
 
-        m = Mapping('indicator')
-        m.field('indicator_ipv4', 'ip')
-        m.field('indicator_ipv4_mask', 'integer')
-        m.field('lasttime', 'date')
-        m.save(idx)
-    return idx
+    def _current_index(self):
+        dt = datetime.utcnow()
+        dt = dt.strftime('%Y.%m')
+        idx = '{}-{}'.format(self.indicators_prefix, dt)
+        return idx
 
+    def _create_index(self):
+        # https://github.com/csirtgadgets/massive-octo-spice/blob/develop/elasticsearch/observables.json
+        # http://elasticsearch-py.readthedocs.org/en/master/api.html#elasticsearch.Elasticsearch.bulk
+        idx = self._current_index()
+        es = connections.get_connection()
+        if not es.indices.exists(idx):
+            index = Index(idx)
+            index.aliases(live={})
+            index.doc_type(Indicator)
+            index.create()
 
-class IndicatorMixin(object):
-
-    def _timestamps_fix(self, i):
-        if not i.get('lasttime'):
-            i['lasttime'] = arrow.utcnow().datetime
-
-        if not i.get('firsttime'):
-            i['firsttime'] = i['lasttime']
-
-        if not i.get('reporttime'):
-            i['reporttime'] = arrow.utcnow().datetime
-
-    def _is_newer(self, i, rec):
-        if not i.get('lasttime'):
-            return False
-
-        i_last = arrow.get(i['lasttime']).datetime
-        rec_last = arrow.get(rec['lasttime']).datetime
-
-        if i_last > rec_last:
-            return True
+            m = Mapping('indicator')
+            m.field('indicator_ipv4', 'ip')
+            m.field('indicator_ipv4_mask', 'integer')
+            m.field('lasttime', 'date')
+            m.save(idx)
+        return idx
 
     def _expand_ip_idx(self, data):
         itype = resolve_itype(data['indicator'])
@@ -127,8 +111,8 @@ class IndicatorMixin(object):
                 data['indicator_ipv6'] = binascii.b2a_hex(socket.inet_pton(socket.AF_INET6, data['indicator'])).decode(
                     'utf-8')
 
-    def indicators_create(self, data, raw=False):
-        index = _create_index()
+    def create(self, data, raw=False):
+        index = self._create_index()
 
         data['meta'] = {}
         data['meta']['index'] = index
@@ -154,7 +138,7 @@ class IndicatorMixin(object):
 
         return i.to_dict()
 
-    def indicators_upsert(self, indicators):
+    def upsert(self, indicators):
         count = 0
         was_added = {}  # to deal with es flushing
 
@@ -177,7 +161,7 @@ class IndicatorMixin(object):
             if d.get('rdata'):
                 filters['rdata'] = d['rdata']
 
-            rv = list(self.indicators_search(filters, sort='reporttime', raw=True))
+            rv = list(self.search(filters, sort='reporttime', raw=True))
 
             if len(rv) == 0:
                 if was_added.get(d['indicator']):
@@ -192,8 +176,8 @@ class IndicatorMixin(object):
 
                 self._timestamps_fix(d)
 
-                self.indicators_create(d)
-                es.indices.flush(index=_current_index())
+                self.create(d)
+                es.indices.flush(index=self._current_index())
                 was_added[d['indicator']].add(d['lasttime'])
                 count += 1
                 continue
@@ -206,7 +190,7 @@ class IndicatorMixin(object):
             i = es.get(index=r['_index'], doc_type='indicator', id=r['_id'])
             i = i['_source']
 
-            if r['_index'] == _current_index():
+            if r['_index'] == self._current_index():
                 i['count'] += 1
                 i['lasttime'] = d['lasttime']
                 i['reporttime'] = d['lasttime']
@@ -231,7 +215,7 @@ class IndicatorMixin(object):
 
                 i['message'].append(d['message'])
 
-            self.indicators_create(d)
+            self.create(d)
             es.delete(index=r['_index'], doc_type='indicator', id=r['_id'], refresh=True)
 
         return count
@@ -302,7 +286,7 @@ class IndicatorMixin(object):
 
         return s
 
-    def indicators_search(self, filters, sort='reporttime', raw=False, timeout=TIMEOUT):
+    def search(self, filters, sort='reporttime', raw=False, timeout=TIMEOUT):
         limit = filters.get('limit', LIMIT)
 
         s = Indicator.search(index='indicators-*')

@@ -155,7 +155,7 @@ class Store(multiprocessing.Process):
                     rv = {"status": "success", "data": rv}
                     ts = arrow.utcnow().format('YYYY-MM-DDTHH:mm:ss.SSSSS')
                     ts = '{}Z'.format(ts)
-                    self.store.token_update_last_activity_at(token, ts)
+                    self.store.tokens.update_last_activity_at(token, ts)
 
             except AuthError as e:
                 logger.error(e)
@@ -192,12 +192,12 @@ class Store(multiprocessing.Process):
             logger.debug('flushing queue...')
             data = [msg[0] for _, _, msg in self.create_queue[t]['messages']]
             try:
-                rv = self.store.indicators_upsert(data)
+                rv = self.store.indicators.upsert(data)
                 rv = {"status": "success", "data": rv}
                 logger.debug('updating last_active')
                 ts = arrow.utcnow().format('YYYY-MM-DDTHH:mm:ss.SSSSS')
                 ts = '{}Z'.format(ts)
-                self.store.token_update_last_activity_at(t, ts)
+                self.store.tokens.update_last_activity_at(t, ts)
             except AuthError as e:
                 rv = {'status': 'failed', 'message': 'unauthorized'}
 
@@ -208,7 +208,7 @@ class Store(multiprocessing.Process):
 
     def handle_indicators_create(self, token, data, id=None, client_id=None):
         if len(data) == 1:
-            if not self.store.token_write(token):
+            if not self.store.tokens.write(token):
                 raise AuthError('invalid token')
 
             if not self.create_queue.get(token):
@@ -223,12 +223,12 @@ class Store(multiprocessing.Process):
 
                 return MORE_DATA_NEEDED
 
-        if self.store.token_write(token):
+        if self.store.tokens.write(token):
             start_time = time.time()
             if len(data) > 1:
                 logger.info('Upserting %d indicators..', len(data))
 
-            r = self.store.indicators_upsert(data)
+            r = self.store.indicators.upsert(data)
 
             if len(data) > 1:
                 logger.info('Upserting %d indicators.. took %0.2f seconds', len(data), time.time() - start_time)
@@ -257,10 +257,10 @@ class Store(multiprocessing.Process):
             group='everyone',
             count=1
         )
-        self.store.indicators_upsert(s.__dict__())
+        self.store.indicators.upsert(s.__dict__())
 
     def handle_indicators_search(self, token, data, **kwargs):
-        t = self.store.token_read(token)
+        t = self.store.tokens.read(token)
         if not t:
             raise AuthError('invalid token')
 
@@ -270,7 +270,7 @@ class Store(multiprocessing.Process):
                     data['indicator'] = unicode(data['indicator'])
 
         try:
-            x = self.store.indicators_search(data)
+            x = self.store.indicators.search(data)
         except Exception as e:
             logger.error(e)
 
@@ -279,7 +279,7 @@ class Store(multiprocessing.Process):
 
             raise InvalidSearch('invalid search')
 
-        t = self.store.tokens_search({'token': token})
+        t = self.store.tokens.search({'token': token})
 
         if isinstance(t, GeneratorType):
             t = list(t)
@@ -301,42 +301,42 @@ class Store(multiprocessing.Process):
 
     def handle_ping_write(self, token, data='[]', **kwargs):
         logger.debug('handling ping write')
-        return self.store.token_write(token)
+        return self.store.tokens.write(token)
 
     def handle_tokens_search(self, token, data, **kwargs):
-        if self.store.token_admin(token):
+        if self.store.tokens.admin(token):
             logger.debug('tokens_search')
-            return self.store.tokens_search(data)
+            return self.store.tokens.search(data)
         else:
             raise AuthError('invalid token')
 
     def handle_tokens_create(self, token, data, **kwargs):
-        if self.store.token_admin(token):
+        if self.store.tokens.admin(token):
             logger.debug('tokens_create')
-            return self.store.tokens_create(data)
+            return self.store.tokens.create(data)
         else:
             raise AuthError('invalid token')
 
     def handle_tokens_delete(self, token, data, **kwargs):
-        if self.store.token_admin(token):
-            return self.store.tokens_delete(data)
+        if self.store.tokens.admin(token):
+            return self.store.tokens.delete(data)
         else:
             raise AuthError('invalid token')
 
     def handle_token_write(self, token, data=None, **kwargs):
-        return self.store.token_write(token)
+        return self.store.tokens.write(token)
 
     def handle_tokens_edit(self, token, data, **kwargs):
-        if self.store.token_admin(token):
-            return self.store.token_edit(data)
+        if self.store.tokens.admin(token):
+            return self.store.tokens.edit(data)
         else:
             raise AuthError('invalid token')
 
     def token_create_admin(self):
         logger.info('testing for tokens...')
-        if not self.store.tokens_admin_exists():
+        if not self.store.tokens.admin_exists():
             logger.info('admin token does not exist, generating..')
-            rv = self.store.tokens_create({
+            rv = self.store.tokens.create({
                 'username': u'admin',
                 'groups': [u'everyone'],
                 'read': u'1',
@@ -350,7 +350,7 @@ class Store(multiprocessing.Process):
 
     def token_create_smrt(self):
         logger.info('generating smrt token')
-        rv = self.store.tokens_create({
+        rv = self.store.tokens.create({
             'username': u'csirtg-smrt',
             'groups': [u'everyone'],
             'write': u'1',
@@ -360,7 +360,7 @@ class Store(multiprocessing.Process):
 
     def token_create_hunter(self):
         logger.info('generating hunter token')
-        rv = self.store.tokens_create({
+        rv = self.store.tokens.create({
             'username': u'hunter',
             'groups': [u'everyone'],
             'write': u'1',

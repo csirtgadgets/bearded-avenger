@@ -5,7 +5,7 @@ import arrow
 from pprint import pprint
 import logging
 from cif.constants import PYVERSION
-from cif.store.token_plugin import TokenPlugin
+from cif.store.token_plugin import TokenManagerPlugin
 
 logger = logging.getLogger('cif.store.zelasticsearch')
 
@@ -28,9 +28,11 @@ class Token(DocType):
         index = INDEX_NAME
 
 
-class TokenMixin(TokenPlugin):
+class TokenManager(TokenManagerPlugin):
+    def __init__(self, *args, **kwargs):
+        super(TokenManager, self).__init__(**kwargs)
 
-    def tokens_search(self, data, raw=False):
+    def search(self, data, raw=False):
         s = Token.search()
 
         for k in ['token', 'username', 'admin', 'write', 'read']:
@@ -51,19 +53,23 @@ class TokenMixin(TokenPlugin):
             return
 
         for x in rv.hits.hits:
+            # update cache
+            if x['_source']['token'] not in self._cache:
+                self._cache[x['_source']['token']] = x['_source']
+
             if raw:
                 yield x
             else:
                 yield x['_source']
 
-    def tokens_create(self, data):
+    def create(self, data):
         logger.debug(data)
         for v in ['admin', 'read', 'write']:
             if data.get(v):
                 data[v] = True
 
         if not data.get('token'):
-            data['token'] = self._token_generate()
+            data['token'] = self._generate()
 
         t = Token(**data)
 
@@ -71,11 +77,11 @@ class TokenMixin(TokenPlugin):
             connections.get_connection().indices.flush(index='tokens')
             return t.to_dict()
 
-    def tokens_delete(self, data):
+    def delete(self, data):
         if not (data.get('token') or data.get('username')):
             return 'username or token required'
 
-        rv = self.tokens_search(data, raw=True)
+        rv = self.search(data, raw=True)
 
         if not rv:
             return 0
@@ -87,30 +93,31 @@ class TokenMixin(TokenPlugin):
         connections.get_connection().indices.flush(index='tokens')
         return len(rv)
 
-    def token_edit(self, data):
+    def edit(self, data):
         if not data.get('token'):
             return 'token required for updating'
 
-        d = list(self.tokens_search({'token': data['token']}))
+        d = list(self.search({'token': data['token']}))
         if not d:
             return 'token not found'
 
         d.update(fields=data)
         connections.get_connection().indices.flush(index='tokens')
 
-    def token_update_last_activity_at(self, token, timestamp):
+    def update_last_activity_at(self, token, timestamp):
         timestamp = arrow.get(timestamp).datetime
 
-        if self._token_cache_check(token):
-            if self.token_cache[token].get('last_activity_at'):
-                return self.token_cache[token]['last_activity_at']
+        if self._cache_check(token):
+            if self._cache[token].get('last_activity_at'):
+                return self._cache[token]['last_activity_at']
 
-            self.token_cache[token]['last_activity_at'] = timestamp
+            self._cache[token]['last_activity_at'] = timestamp
             return timestamp
 
-        rv = list(self.tokens_search({'token': token}, raw=True))
+        rv = list(self.search({'token': token}, raw=True))
         rv = Token.get(rv[0]['_id'])
         rv.update(last_activity_at=timestamp)
 
-        self.token_cache[token] = rv.to_dict()
-        self.token_cache[token]['last_activity_at'] = timestamp
+        self._cache[token] = rv.to_dict()
+        self._cache[token]['last_activity_at'] = timestamp
+        return timestamp

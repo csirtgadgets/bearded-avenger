@@ -14,8 +14,8 @@ from cif.constants import TOKEN_CACHE_DELAY
 import arrow
 
 Base = declarative_base()
-from .token import TokenMixin, Token
-from .indicator import Indicator, IndicatorMixin
+from .token import TokenManager, Token
+from .indicator import Indicator, IndicatorManager
 
 DB_FILE = os.path.join(RUNTIME_PATH, 'cif.sqlite')
 
@@ -41,7 +41,7 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
     cursor.close()
 
 
-class SQLite(IndicatorMixin, TokenMixin, Store):
+class SQLite(Store):
     # http://www.pythoncentral.io/sqlalchemy-orm-examples/
     name = 'sqlite'
 
@@ -66,11 +66,12 @@ class SQLite(IndicatorMixin, TokenMixin, Store):
 
         self.logger.debug('database path: {}'.format(self.path))
 
-        self.token_cache = {}
-        self.token_cache_check = arrow.utcnow().timestamp + TOKEN_CACHE_DELAY
+        from .token import TokenManager
+        self.tokens = TokenManager(self.handle)
+        self.indicators = IndicatorManager(self.handle)
 
     def ping(self, token):
-        if self.token_read(token) or self.token_write(token):
+        if self.tokens.read(token) or self.tokens.write(token):
             return True
 
 Plugin = SQLite
