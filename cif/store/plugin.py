@@ -1,8 +1,4 @@
 import abc
-import os
-import binascii
-
-from cif.constants import TOKEN_LENGTH
 
 
 class Store(object):

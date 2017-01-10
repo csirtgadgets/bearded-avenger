@@ -29,6 +29,10 @@ class TokenManagerPlugin(object):
     def edit(self, data):
         raise NotImplementedError
 
+    @abc.abstractmethod
+    def update_last_activity_at(self, timestamp):
+        raise NotImplementedError
+
     def _generate(self):
         return binascii.b2a_hex(os.urandom(TOKEN_LENGTH)).decode('utf-8')
 
