@@ -192,7 +192,7 @@ class Store(multiprocessing.Process):
             logger.debug('flushing queue...')
             data = [msg[0] for _, _, msg in self.create_queue[t]['messages']]
             try:
-                rv = self.store.indicators_upsert(data)
+                rv = self.store.indicators.upsert(data)
                 rv = {"status": "success", "data": rv}
                 logger.debug('updating last_active')
                 ts = arrow.utcnow().format('YYYY-MM-DDTHH:mm:ss.SSSSS')
@@ -228,7 +228,7 @@ class Store(multiprocessing.Process):
             if len(data) > 1:
                 logger.info('Upserting %d indicators..', len(data))
 
-            r = self.store.indicators_upsert(data)
+            r = self.store.indicators.upsert(data)
 
             if len(data) > 1:
                 logger.info('Upserting %d indicators.. took %0.2f seconds', len(data), time.time() - start_time)
@@ -257,7 +257,7 @@ class Store(multiprocessing.Process):
             group='everyone',
             count=1
         )
-        self.store.indicators_upsert(s.__dict__())
+        self.store.indicators.upsert(s.__dict__())
 
     def handle_indicators_search(self, token, data, **kwargs):
         t = self.store.tokens.read(token)
@@ -270,7 +270,7 @@ class Store(multiprocessing.Process):
                     data['indicator'] = unicode(data['indicator'])
 
         try:
-            x = self.store.indicators_search(data)
+            x = self.store.indicators.search(data)
         except Exception as e:
             logger.error(e)
 

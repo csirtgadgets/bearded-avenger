@@ -5,9 +5,11 @@ from sqlalchemy.orm import class_mapper
 from cifsdk.constants import PYVERSION
 from pprint import pprint
 from cif.store.sqlite import Base
-from cif.store.token_plugin import TokenPlugin
+from cif.store.token_plugin import TokenManagerPlugin
 
-logger = logging.getLogger(__name__)
+import logging
+
+logger = logging.getLogger('cif.store.sqlite')
 
 if PYVERSION > 2:
     basestring = (str, bytes)
@@ -29,7 +31,7 @@ class Token(Base):
     last_activity_at = Column(DateTime)
 
 
-class TokenManager(TokenPlugin):
+class TokenManager(TokenManagerPlugin):
 
     def __init__(self, handle, **kwargs):
         super(TokenManager, self).__init__(**kwargs)

@@ -5,7 +5,7 @@ import os
 import binascii
 
 
-class TokenPlugin(object):
+class TokenManagerPlugin(object):
 
     def __init__(self, *args, **kwargs):
         self._cache = {}

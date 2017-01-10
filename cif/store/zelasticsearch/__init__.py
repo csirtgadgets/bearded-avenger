@@ -3,7 +3,7 @@ import os
 
 from cif.store.plugin import Store
 from cif.store.zelasticsearch.token import TokenManager
-from cif.store.zelasticsearch.indicator import IndicatorMixin
+from cif.store.zelasticsearch.indicator import IndicatorManager
 from elasticsearch_dsl.connections import connections
 from cif.constants import TOKEN_CACHE_DELAY
 import arrow
@@ -29,7 +29,7 @@ if not TRACE:
     urllib_logger.setLevel(logging.ERROR)
 
 
-class _ElasticSearch(IndicatorMixin, Store):
+class _ElasticSearch(Store):
     # http://stackoverflow.com/questions/533631/what-is-a-mixin-and-why-are-they-useful
 
     name = 'elasticsearch'
@@ -46,6 +46,7 @@ class _ElasticSearch(IndicatorMixin, Store):
         connections.create_connection(hosts=nodes)
 
         self.tokens = TokenManager()
+        self.indicators = IndicatorManager()
 
     def ping(self, token):
         # http://elasticsearch-py.readthedocs.org/en/master/api.html#elasticsearch.client.IndicesClient.stats

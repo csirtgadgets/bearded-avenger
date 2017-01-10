@@ -9,12 +9,16 @@ import json
 from base64 import b64decode, b64encode
 from csirtg_indicator import resolve_itype
 from csirtg_indicator.exceptions import InvalidIndicator
+from cif.store.indicator_plugin import IndicatorManagerPlugin
 from cifsdk.exceptions import InvalidSearch
 import ipaddress
 from .ip import Ip
 from cif.store.sqlite import Base
 from pprint import pprint
 import re
+import logging
+
+logger = logging.getLogger('cif.store.sqlite')
 
 DB_FILE = os.path.join(RUNTIME_PATH, 'cif.sqlite')
 VALID_FILTERS = ['indicator', 'confidence', 'provider', 'itype', 'group', 'tags']
@@ -167,15 +171,19 @@ class Message(Base):
     )
 
 
-class IndicatorMixin(object):
+class IndicatorManager(IndicatorManagerPlugin):
 
-    def _as_dict(self, obj):
+    def __init__(self, handle, **kwargs):
+        super(IndicatorManager, self).__init__(**kwargs)
+
+        self.handle = handle
+
+    def to_dict(self, obj):
         d = {}
         for col in class_mapper(obj.__class__).mapped_table.c:
             d[col.name] = getattr(obj, col.name)
             if d[col.name] and col.name.endswith('time'):
                 d[col.name] = getattr(obj, col.name).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-            d[col.name] = d[col.name]
 
         try:
             d['tags'] = [t.tag for t in obj.tags]
@@ -188,6 +196,17 @@ class IndicatorMixin(object):
             pass
 
         return d
+
+    def test_valid_indicator(self, i):
+        if isinstance(i, Indicator):
+            i = i.__dict__()
+
+        for f in REQUIRED_FIELDS:
+            if not i.get(f):
+                raise InvalidIndicator("Missing required field: {} for \n{}".format(f, i))
+
+    def create(self, data):
+        return self.indicators_upsert(data)
 
     def _filter_indicator(self, filters, s):
 
@@ -206,7 +225,7 @@ class IndicatorMixin(object):
         try:
             itype = resolve_itype(i)
         except InvalidIndicator as e:
-            self.logger.error(e)
+            logger.error(e)
             s = s.join(Message).filter(Indicator.Message.like('%{}%'.format(i)))
             return s
 
@@ -224,7 +243,7 @@ class IndicatorMixin(object):
             start = str(ip.network_address)
             end = str(ip.broadcast_address)
 
-            self.logger.debug('{} - {}'.format(start, end))
+            logger.debug('{} - {}'.format(start, end))
 
             s = s.join(Ipv4).filter(Ipv4.ipv4 >= start)
             s = s.filter(Ipv4.ipv4 <= end)
@@ -240,7 +259,7 @@ class IndicatorMixin(object):
             start = str(ip.network_address)
             end = str(ip.broadcast_address)
 
-            self.logger.debug('{} - {}'.format(start, end))
+            logger.debug('{} - {}'.format(start, end))
 
             s = s.join(Ipv6).filter(Ipv6.ip >= start)
             s = s.filter(Ipv6.ip <= end)
@@ -268,8 +287,8 @@ class IndicatorMixin(object):
 
         return s
 
-    def indicators_search(self, filters, limit=500):
-        self.logger.debug('running search')
+    def search(self, filters, limit=500):
+        logger.debug('running search')
 
         myfilters = dict(filters.items())
 
@@ -282,20 +301,9 @@ class IndicatorMixin(object):
 
         rv = s.order_by(desc(Indicator.reporttime)).limit(limit)
 
-        return [self._as_dict(x) for x in rv]
+        return [self.to_dict(x) for x in rv]
 
-    def test_valid_indicator(self, i):
-        if isinstance(i, Indicator):
-            i = i.__dict__()
-
-        for f in REQUIRED_FIELDS:
-            if not i.get(f):
-                raise InvalidIndicator("Missing required field: {} for \n{}".format(f, i))
-
-    def indicators_create(self, data):
-        return self.indicators_upsert(data)
-
-    def indicators_upsert(self, data):
+    def upsert(self, data):
         if type(data) == dict:
             data = [data]
 
@@ -305,7 +313,7 @@ class IndicatorMixin(object):
         tmp_added = {}
 
         for d in data:
-            self.logger.debug(d)
+            logger.debug(d)
 
             if PYVERSION == 2:
                 if isinstance(d['indicator'], str):
@@ -334,8 +342,8 @@ class IndicatorMixin(object):
             r = i.first()
             if r:
                 if d.get('lasttime') and arrow.get(d['lasttime']).datetime > arrow.get(r.lasttime).datetime:
-                    self.logger.debug('{} {}'.format(arrow.get(r.lasttime).datetime, arrow.get(d['lasttime']).datetime))
-                    self.logger.debug('upserting: %s' % d['indicator'])
+                    logger.debug('{} {}'.format(arrow.get(r.lasttime).datetime, arrow.get(d['lasttime']).datetime))
+                    logger.debug('upserting: %s' % d['indicator'])
 
                     r.count += 1
                     r.lasttime = arrow.get(d['lasttime']).datetime.replace(tzinfo=None)
@@ -355,11 +363,11 @@ class IndicatorMixin(object):
 
                     n += 1
                 else:
-                    self.logger.debug('skipping: %s' % d['indicator'])
+                    logger.debug('skipping: %s' % d['indicator'])
             else:
                 if tmp_added.get(d['indicator']):
                     if d.get('lasttime') in tmp_added[d['indicator']]:
-                        self.logger.debug('skipping: %s' % d['indicator'])
+                        logger.debug('skipping: %s' % d['indicator'])
                         continue
                 else:
                     tmp_added[d['indicator']] = set()
@@ -419,6 +427,6 @@ class IndicatorMixin(object):
             # see test_store_sqlite
             d['tags'] = ','.join(tags)
 
-        self.logger.debug('committing')
+        logger.debug('committing')
         s.commit()
         return n

@@ -15,7 +15,7 @@ import arrow
 
 Base = declarative_base()
 from .token import TokenManager, Token
-from .indicator import Indicator, IndicatorMixin
+from .indicator import Indicator, IndicatorManager
 
 DB_FILE = os.path.join(RUNTIME_PATH, 'cif.sqlite')
 
@@ -41,7 +41,7 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
     cursor.close()
 
 
-class SQLite(IndicatorMixin, Store):
+class SQLite(Store):
     # http://www.pythoncentral.io/sqlalchemy-orm-examples/
     name = 'sqlite'
 
@@ -68,6 +68,7 @@ class SQLite(IndicatorMixin, Store):
 
         from .token import TokenManager
         self.tokens = TokenManager(self.handle)
+        self.indicators = IndicatorManager(self.handle)
 
     def ping(self, token):
         if self.tokens.read(token) or self.tokens.write(token):

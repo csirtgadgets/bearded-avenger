@@ -5,7 +5,7 @@ import arrow
 from pprint import pprint
 import logging
 from cif.constants import PYVERSION
-from cif.store.token_plugin import TokenPlugin
+from cif.store.token_plugin import TokenManagerPlugin
 
 logger = logging.getLogger('cif.store.zelasticsearch')
 
@@ -28,7 +28,7 @@ class Token(DocType):
         index = INDEX_NAME
 
 
-class TokenManager(TokenPlugin):
+class TokenManager(TokenManagerPlugin):
     def __init__(self, *args, **kwargs):
         super(TokenManager, self).__init__(**kwargs)
 
