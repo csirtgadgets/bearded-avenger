@@ -18,43 +18,36 @@ class Store(object):
     def ping(self, token):
         return True
 
-    def _token_generate(self):
-        return binascii.b2a_hex(os.urandom(TOKEN_LENGTH)).decode('utf-8')
-
     @abc.abstractmethod
-    def tokens_admin_exists(self):
+    def admin_exists(self):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def tokens_create(self, data):
+    def create(self, data):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def tokens_delete(self, data):
+    def delete(self, data):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def tokens_search(self, data):
+    def search(self, data):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def token_admin(self, token):
+    def admin(self, token):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def token_read(self, token):
+    def read(self, token):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def token_write(self, token):
+    def write(self, token):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def token_edit(self, data):
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def token_last_activity_at(self, token, timestamp=None):
+    def edit(self, data):
         raise NotImplementedError
 
     @abc.abstractmethod

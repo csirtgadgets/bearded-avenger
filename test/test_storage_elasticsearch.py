@@ -4,6 +4,8 @@ from csirtg_indicator import Indicator
 from cif.store import Store
 from elasticsearch_dsl.connections import connections
 import os
+from datetime import datetime
+from uuid import uuid4
 
 DISABLE_TESTS = True
 if os.environ.get('CIF_ELASTICSEARCH_TEST'):
@@ -27,7 +29,7 @@ def store():
 
 @pytest.yield_fixture
 def token(store):
-    t = store.store.tokens_create({
+    t = store.store.tokens.create({
         'username': u'test_admin',
         'groups': [u'everyone'],
         'read': u'1',
@@ -59,7 +61,7 @@ def indicator_ipv6():
 
 
 @pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
-def test_store_elasticsearch(store, token, indicator):
+def test_store_elasticsearch_indicator(store, token, indicator):
     x = store.handle_indicators_create(token, indicator.__dict__())
     assert x > 0
 
@@ -72,6 +74,18 @@ def test_store_elasticsearch(store, token, indicator):
 
 @pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
 def test_store_elasticsearch_tokens(store, token):
+    assert store.store.tokens.update_last_activity_at(token, datetime.now())
+    assert store.store.tokens.check(token, 'read')
+    assert store.store.tokens.read(token)
+    assert store.store.tokens.write(token)
+    assert store.store.tokens.admin(token)
+    assert store.store.tokens.last_activity_at(token) is None
+    assert store.store.tokens._cache_check(token)
+    assert store.store.tokens.update_last_activity_at(token, datetime.now())
+
+
+@pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
+def test_store_elasticsearch_tokens_advanced(store, token):
     x = store.handle_tokens_search(token, {'token': token})
     assert len(list(x)) > 0
 
@@ -81,7 +95,7 @@ def test_store_elasticsearch_tokens(store, token):
     x = store.handle_tokens_search(token, {'write': True})
     assert len(list(x)) > 0
 
-    t = store.store.tokens_create({
+    t = store.store.tokens.create({
         'username': u'test_admin2',
         'groups': [u'everyone']
     })
@@ -97,7 +111,7 @@ def test_store_elasticsearch_tokens(store, token):
         'indicator': 'example.com'
     })
 
-    x = store.store.token_last_activity_at(token.encode('utf-8'))
+    x = store.store.tokens.last_activity_at(token.encode('utf-8'))
 
 
 @pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')

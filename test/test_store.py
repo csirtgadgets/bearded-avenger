@@ -7,10 +7,9 @@ import pytest
 
 from cif.store import Store
 from cifsdk.utils import setup_logging
-from csirtg_indicator import Indicator
 from csirtg_indicator.exceptions import InvalidIndicator
-from cifsdk.constants import PYVERSION
 import arrow
+from datetime import datetime
 from pprint import pprint
 
 args = Namespace(debug=True, verbose=None)
@@ -44,7 +43,7 @@ def indicator():
 
 def test_store_dummy(indicator):
     with Store(store_type='dummy') as s:
-        t = s.store.tokens_admin_exists()
+        t = s.store.tokens.admin_exists()
 
         x = s.handle_indicators_search(indicator)
         assert x[0]['indicator'] == 'example.com'
@@ -55,22 +54,22 @@ def test_store_dummy(indicator):
 
 def test_store_sqlite(store, indicator):
     store.token_create_admin()
-    t = store.store.tokens_admin_exists()
+    t = store.store.tokens.admin_exists()
     assert t
 
-    t = list(store.store.tokens_search({'token': t}))
+    t = list(store.store.tokens.search({'token': t}))
     assert len(t) > 0
 
     t = t[0]['token']
 
-    assert store.store.token_check(t, 'read')
-    assert store.store.token_read(t)
-    assert store.store.token_write(t)
-    assert store.store.token_admin(t)
-    assert store.store.token_last_activity_at(t) is None
-    from datetime import datetime
-    assert store.store.token_update_last_activity_at(t, datetime.now())
-    assert store.store._token_cache_check(t)
+    assert store.store.tokens.update_last_activity_at(t, datetime.now())
+    assert store.store.tokens.check(t, 'read')
+    assert store.store.tokens.read(t)
+    assert store.store.tokens.write(t)
+    assert store.store.tokens.admin(t)
+    assert store.store.tokens.last_activity_at(t) is None
+    assert store.store.tokens._cache_check(t)
+    assert store.store.tokens.update_last_activity_at(t, datetime.now())
 
     indicator['tags'] = 'malware'
 
@@ -167,5 +166,5 @@ def test_store_sqlite(store, indicator):
 
     assert x is None
 
-    assert store.store.token_edit({'token': t, 'write': False})
-    assert store.store.tokens_delete({'token': t})
+    assert store.store.tokens.edit({'token': t, 'write': False})
+    assert store.store.tokens.delete({'token': t})
