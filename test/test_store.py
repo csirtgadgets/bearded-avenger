@@ -2,15 +2,14 @@ import logging
 import os
 import tempfile
 from argparse import Namespace
-
 import pytest
-
 from cif.store import Store
 from cifsdk.utils import setup_logging
 from csirtg_indicator.exceptions import InvalidIndicator
 import arrow
 from datetime import datetime
 from pprint import pprint
+from cifsdk.exceptions import AuthError
 
 args = Namespace(debug=True, verbose=None)
 setup_logging(args)
@@ -37,7 +36,7 @@ def indicator():
         'provider': 'csirtgadgets.org',
         'group': 'everyone',
         'lasttime': arrow.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
-        'itype': 'fqdn'
+        'itype': 'fqdn',
     }
 
 
@@ -67,8 +66,7 @@ def test_store_sqlite(store, indicator):
     assert store.store.tokens.read(t)
     assert store.store.tokens.write(t)
     assert store.store.tokens.admin(t)
-    assert store.store.tokens.last_activity_at(t) is None
-    assert store.store.tokens._cache_check(t)
+    assert store.store.tokens.last_activity_at(t) is not None
     assert store.store.tokens.update_last_activity_at(t, datetime.now())
 
     indicator['tags'] = 'malware'
@@ -168,3 +166,32 @@ def test_store_sqlite(store, indicator):
 
     assert store.store.tokens.edit({'token': t, 'write': False})
     assert store.store.tokens.delete({'token': t})
+
+    # groups
+    t = store.store.tokens.create({
+        'username': 'test',
+        'groups': ['staff', 'everyone'],
+        'read': True,
+        'write': True
+    })
+
+    assert t
+    assert t['groups'] == ['staff', 'everyone']
+
+    assert t['write']
+    assert t['read']
+    assert not t['admin']
+
+    i = None
+    try:
+        i = store.store.indicators.create(t, {
+            'indicator': 'example.com',
+            'group': 'staff2',
+            'provider': 'example.com',
+            'tags': ['test'],
+            'itype': 'fqdn'
+        })
+    except AuthError as e:
+        pass
+
+    assert i is None

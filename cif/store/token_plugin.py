@@ -63,28 +63,36 @@ class TokenManagerPlugin(object):
         self._flush_cache()
         x = self.check(token, 'admin')
         if len(x) > 0:
-            return True
+            if isinstance(x, list):
+                return x[0]
+
+            return x
 
         raise AuthError('unauthorized')
 
     def read(self, token):
         x = self.check(token, 'read')
         if len(x) > 0:
-            return True
+            if isinstance(x, list):
+                return x[0]
+
+            return x
 
         raise AuthError('unauthorized')
 
     def write(self, token):
         x = self.check(token, 'write')
         if len(x) > 0:
-            return True
+            if isinstance(x, list):
+                return x[0]
+
+            return x
 
         raise AuthError('unauthorized')
 
     def last_activity_at(self, token):
-
         if token in self._cache and self._cache[token].get('last_activity_at'):
-            return self._cache[token].get('last_activity_a')
+            return self._cache[token].get('last_activity_at')
 
         rv = list(self.search({'token': token}))
 

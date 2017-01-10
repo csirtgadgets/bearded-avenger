@@ -111,12 +111,13 @@ class IndicatorManager(IndicatorManagerPlugin):
                 data['indicator_ipv6'] = binascii.b2a_hex(socket.inet_pton(socket.AF_INET6, data['indicator'])).decode(
                     'utf-8')
 
-    def create(self, data, raw=False):
+    def create(self, token, data, raw=False):
         index = self._create_index()
 
         data['meta'] = {}
         data['meta']['index'] = index
 
+        self._check_token_groups(token, data)
         self._expand_ip_idx(data)
 
         if data.get('group') and type(data['group']) != list:
@@ -138,7 +139,7 @@ class IndicatorManager(IndicatorManagerPlugin):
 
         return i.to_dict()
 
-    def upsert(self, indicators):
+    def upsert(self, token, indicators):
         count = 0
         was_added = {}  # to deal with es flushing
 
@@ -148,6 +149,7 @@ class IndicatorManager(IndicatorManagerPlugin):
             indicators = [indicators]
 
         for d in indicators:
+            self._check_token_groups(token, d)
 
             filters = {
                 'indicator': d['indicator'],
@@ -161,7 +163,7 @@ class IndicatorManager(IndicatorManagerPlugin):
             if d.get('rdata'):
                 filters['rdata'] = d['rdata']
 
-            rv = list(self.search(filters, sort='reporttime', raw=True))
+            rv = list(self.search(token, filters, sort='reporttime', raw=True))
 
             if len(rv) == 0:
                 if was_added.get(d['indicator']):
@@ -176,7 +178,7 @@ class IndicatorManager(IndicatorManagerPlugin):
 
                 self._timestamps_fix(d)
 
-                self.create(d)
+                self.create(token, d)
                 es.indices.flush(index=self._current_index())
                 was_added[d['indicator']].add(d['lasttime'])
                 count += 1
@@ -286,7 +288,7 @@ class IndicatorManager(IndicatorManagerPlugin):
 
         return s
 
-    def search(self, filters, sort='reporttime', raw=False, timeout=TIMEOUT):
+    def search(self, token, filters, sort='reporttime', raw=False, timeout=TIMEOUT):
         limit = filters.get('limit', LIMIT)
 
         s = Indicator.search(index='indicators-*')

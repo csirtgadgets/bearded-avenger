@@ -6,6 +6,7 @@ from elasticsearch_dsl.connections import connections
 import os
 from datetime import datetime
 from uuid import uuid4
+from cifsdk.exceptions import AuthError
 
 DISABLE_TESTS = True
 if os.environ.get('CIF_ELASTICSEARCH_TEST'):
@@ -38,8 +39,7 @@ def token(store):
     })
 
     assert t
-    t = t['token']
-    yield t
+    yield t['token']
 
 @pytest.fixture
 def indicator():
@@ -79,7 +79,7 @@ def test_store_elasticsearch_tokens(store, token):
     assert store.store.tokens.read(token)
     assert store.store.tokens.write(token)
     assert store.store.tokens.admin(token)
-    assert store.store.tokens.last_activity_at(token) is None
+    assert store.store.tokens.last_activity_at(token) is not None
     assert store.store.tokens._cache_check(token)
     assert store.store.tokens.update_last_activity_at(token, datetime.now())
 
@@ -111,7 +111,43 @@ def test_store_elasticsearch_tokens_advanced(store, token):
         'indicator': 'example.com'
     })
 
-    x = store.store.tokens.last_activity_at(token.encode('utf-8'))
+    x = store.store.tokens.update_last_activity_at(token, datetime.now())
+    assert x
+
+    assert store.store.tokens.last_activity_at(token)
+
+
+@pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
+def test_store_elasticsearch_tokens_groups(store, token, indicator):
+    t = store.store.tokens.create({
+        'username': 'test',
+        'groups': ['staff', 'everyone'],
+        'read': True,
+        'write': True
+    })
+
+    assert t
+    assert t['groups'] == ['staff', 'everyone']
+
+    assert t['write']
+    assert t['read']
+    assert not t.get('admin')
+
+    i = None
+    try:
+        i = store.store.indicators.create(t, {
+            'indicator': 'example.com',
+            'group': 'staff2',
+            'provider': 'example.com',
+            'tags': ['test'],
+            'itype': 'fqdn'
+        })
+    except AuthError as e:
+        pass
+
+    assert i is None
+
+
 
 
 @pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
@@ -130,4 +166,3 @@ def test_store_elasticsearch_ipv6(store, token, indicator_ipv6):
     })
 
     assert len(x) > 0
-

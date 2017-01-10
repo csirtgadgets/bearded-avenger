@@ -192,7 +192,7 @@ class Store(multiprocessing.Process):
             logger.debug('flushing queue...')
             data = [msg[0] for _, _, msg in self.create_queue[t]['messages']]
             try:
-                rv = self.store.indicators.upsert(data)
+                rv = self.store.indicators.upsert(t, data)
                 rv = {"status": "success", "data": rv}
                 logger.debug('updating last_active')
                 ts = arrow.utcnow().format('YYYY-MM-DDTHH:mm:ss.SSSSS')
@@ -207,35 +207,36 @@ class Store(multiprocessing.Process):
         logger.debug('done..')
 
     def handle_indicators_create(self, token, data, id=None, client_id=None):
-        if len(data) == 1:
-            if not self.store.tokens.write(token):
-                raise AuthError('invalid token')
+        # this will raise AuthError if false
+        t = self.store.tokens.write(token)
 
-            if not self.create_queue.get(token):
-                self.create_queue[token] = {'count': 0, "messages": []}
-
-            self.create_queue[token]['count'] += 1
-            self.create_queue_count += 1
-            self.create_queue[token]['last_activity'] = time.time()
-
-            if self.create_queue[token]['count'] > self.create_queue_limit:
-                self.create_queue[token]['messages'].append((id, client_id, data))
-
-                return MORE_DATA_NEEDED
-
-        if self.store.tokens.write(token):
+        if len(data) >= 1:
             start_time = time.time()
             if len(data) > 1:
                 logger.info('Upserting %d indicators..', len(data))
 
-            r = self.store.indicators.upsert(data)
+            # this will raise AuthError if the groups don't match
+            r = self.store.indicators.upsert(t, data)
 
             if len(data) > 1:
                 logger.info('Upserting %d indicators.. took %0.2f seconds', len(data), time.time() - start_time)
-                
+
             return r
-        else:
-            raise AuthError('invalid token')
+
+        if data['group'] not in t['groups']:
+            raise AuthError('unauthorized to write to group: %s' % g)
+
+        if not self.create_queue.get(token):
+            self.create_queue[token] = {'count': 0, "messages": []}
+
+        self.create_queue[token]['count'] += 1
+        self.create_queue_count += 1
+        self.create_queue[token]['last_activity'] = time.time()
+
+        if self.create_queue[token]['count'] > self.create_queue_limit:
+            self.create_queue[token]['messages'].append((id, client_id, data))
+
+        return MORE_DATA_NEEDED
 
     def _log_search(self, t, data):
         if not data.get('indicator'):
@@ -250,19 +251,17 @@ class Store(multiprocessing.Process):
             tlp='amber',
             confidence=10,
             tags=['search'],
-            provider=t[0]['username'],
+            provider=t['username'],
             firsttime=ts,
             lasttime=ts,
             reporttime=ts,
-            group='everyone',
+            group=t['groups'][0],
             count=1
         )
-        self.store.indicators.upsert(s.__dict__())
+        self.store.indicators.upsert(t, s.__dict__())
 
     def handle_indicators_search(self, token, data, **kwargs):
         t = self.store.tokens.read(token)
-        if not t:
-            raise AuthError('invalid token')
 
         if PYVERSION == 2:
             if data.get('indicator'):
@@ -270,7 +269,7 @@ class Store(multiprocessing.Process):
                     data['indicator'] = unicode(data['indicator'])
 
         try:
-            x = self.store.indicators.search(data)
+            x = self.store.indicators.search(t, data)
         except Exception as e:
             logger.error(e)
 
@@ -278,11 +277,6 @@ class Store(multiprocessing.Process):
                 logger.error(traceback.print_exc())
 
             raise InvalidSearch('invalid search')
-
-        t = self.store.tokens.search({'token': token})
-
-        if isinstance(t, GeneratorType):
-            t = list(t)
 
         self._log_search(t, data)
 

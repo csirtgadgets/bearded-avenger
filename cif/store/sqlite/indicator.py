@@ -1,7 +1,7 @@
 import os
 
 import arrow
-from sqlalchemy import Column, Integer, String, Float, DateTime, UnicodeText, desc, ForeignKey, text
+from sqlalchemy import Column, Integer, String, Float, DateTime, UnicodeText, desc, ForeignKey, text, or_
 from sqlalchemy.orm import relationship, backref, class_mapper, lazyload
 
 from cifsdk.constants import RUNTIME_PATH, PYVERSION
@@ -10,9 +10,10 @@ from base64 import b64decode, b64encode
 from csirtg_indicator import resolve_itype
 from csirtg_indicator.exceptions import InvalidIndicator
 from cif.store.indicator_plugin import IndicatorManagerPlugin
-from cifsdk.exceptions import InvalidSearch
+from cifsdk.exceptions import InvalidSearch, AuthError
 import ipaddress
 from .ip import Ip
+from .token import Group
 from cif.store.sqlite import Base
 from pprint import pprint
 import re
@@ -205,8 +206,8 @@ class IndicatorManager(IndicatorManagerPlugin):
             if not i.get(f):
                 raise InvalidIndicator("Missing required field: {} for \n{}".format(f, i))
 
-    def create(self, data):
-        return self.indicators_upsert(data)
+    def create(self, token, data):
+        return self.upsert(token, data)
 
     def _filter_indicator(self, filters, s):
 
@@ -287,15 +288,28 @@ class IndicatorManager(IndicatorManagerPlugin):
 
         return s
 
-    def search(self, filters, limit=500):
+    def _filter_groups(self, token, s):
+        groups = token.get('groups', 'everyone')
+        if isinstance(groups, str):
+            groups = [groups]
+
+        for g in groups:
+            s = s.filter(or_(Group.group == g))
+
+        return s
+
+    def search(self, token, filters, limit=500):
         logger.debug('running search')
 
         myfilters = dict(filters.items())
 
         s = self.handle().query(Indicator)
 
+        # group support
+
         s = self._filter_indicator(myfilters, s)
         s = self._filter_terms(myfilters, s)
+        s = self._filter_groups(token, s)
 
         limit = filters.pop('limit', limit)
 
@@ -303,7 +317,7 @@ class IndicatorManager(IndicatorManagerPlugin):
 
         return [self.to_dict(x) for x in rv]
 
-    def upsert(self, data):
+    def upsert(self, token, data):
         if type(data) == dict:
             data = [data]
 
@@ -314,6 +328,9 @@ class IndicatorManager(IndicatorManagerPlugin):
 
         for d in data:
             logger.debug(d)
+
+            # raises AuthError if invalid group
+            self._check_token_groups(token, d)
 
             if PYVERSION == 2:
                 if isinstance(d['indicator'], str):
