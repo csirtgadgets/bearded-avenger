@@ -1,7 +1,21 @@
 import arrow
+import abc
 
 
 class IndicatorManagerPlugin(object):
+    __metaclass__ = abc.ABCMeta
+
+    @abc.abstractmethod
+    def search(self, data):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def create(self, data):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def upsert(self, data):
+        raise NotImplementedError
 
     def _timestamps_fix(self, i):
         if not i.get('lasttime'):

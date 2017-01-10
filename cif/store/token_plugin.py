@@ -3,13 +3,31 @@ from cif.constants import TOKEN_CACHE_DELAY, TOKEN_LENGTH
 from cifsdk.exceptions import AuthError
 import os
 import binascii
+import abc
 
 
 class TokenManagerPlugin(object):
+    __metaclass__ = abc.ABCMeta
 
     def __init__(self, *args, **kwargs):
         self._cache = {}
         self._cache_check_next = arrow.utcnow().timestamp + TOKEN_CACHE_DELAY
+
+    @abc.abstractmethod
+    def create(self, data):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def delete(self, data):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def search(self, data):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def edit(self, data):
+        raise NotImplementedError
 
     def _generate(self):
         return binascii.b2a_hex(os.urandom(TOKEN_LENGTH)).decode('utf-8')
