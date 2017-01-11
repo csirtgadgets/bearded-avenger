@@ -3,7 +3,7 @@ import arrow
 from sqlalchemy import Column, Integer, String, DateTime, UnicodeText, Boolean, or_, ForeignKey
 from sqlalchemy.orm import class_mapper, relationship, backref
 from cifsdk.constants import PYVERSION
-from cif.store.sqlite import Base
+from sqlalchemy.ext.declarative import declarative_base
 from cif.store.token_plugin import TokenManagerPlugin
 from pprint import pprint
 
@@ -11,6 +11,8 @@ logger = logging.getLogger('cif.store.sqlite')
 
 if PYVERSION > 2:
     basestring = (str, bytes)
+
+Base = declarative_base()
 
 
 class Token(Base):
@@ -48,9 +50,10 @@ class Group(Base):
 
 class TokenManager(TokenManagerPlugin):
 
-    def __init__(self, handle, **kwargs):
+    def __init__(self, handle, engine, **kwargs):
         super(TokenManager, self).__init__(**kwargs)
         self.handle = handle
+        Base.metadata.create_all(engine)
 
     def to_dict(self, obj):
         d = {}

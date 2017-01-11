@@ -14,8 +14,8 @@ from cifsdk.exceptions import InvalidSearch, AuthError
 import ipaddress
 from .ip import Ip
 from .token import Group
-from cif.store.sqlite import Base
 from pprint import pprint
+from sqlalchemy.ext.declarative import declarative_base
 import re
 import logging
 
@@ -27,6 +27,9 @@ REQUIRED_FIELDS = ['provider', 'indicator', 'tags', 'group', 'itype']
 
 if PYVERSION > 2:
     basestring = (str, bytes)
+
+
+Base = declarative_base()
 
 
 class Indicator(Base):
@@ -174,10 +177,11 @@ class Message(Base):
 
 class IndicatorManager(IndicatorManagerPlugin):
 
-    def __init__(self, handle, **kwargs):
+    def __init__(self, handle, engine, **kwargs):
         super(IndicatorManager, self).__init__(**kwargs)
 
         self.handle = handle
+        Base.metadata.create_all(engine)
 
     def to_dict(self, obj):
         d = {}
@@ -293,10 +297,10 @@ class IndicatorManager(IndicatorManagerPlugin):
 
     def _filter_groups(self, token, s):
         groups = token.get('groups', 'everyone')
-        if isinstance(groups, basestring):
+        if isinstance(groups, str):
             groups = [groups]
 
-        s = s.filter(or_(Group.group == g for g in groups))
+        s = s.filter(or_(Indicator.group == g for g in groups))
         return s
 
     def search(self, token, filters, limit=500):
@@ -317,6 +321,7 @@ class IndicatorManager(IndicatorManagerPlugin):
         rv = s.order_by(desc(Indicator.reporttime)).limit(limit)
 
         for i in rv:
+            pprint(self.to_dict(i))
             yield self.to_dict(i)
 
     def upsert(self, token, data):
