@@ -307,7 +307,6 @@ class IndicatorManager(IndicatorManagerPlugin):
         limit = filters.get('limit', LIMIT)
 
         s = Indicator.search(index='{}-*'.format(self.indicators_prefix))
-        s = Search(index='{}-*'.format(self.indicators_prefix))
         s = s.params(size=limit, timeout=timeout, sort=sort)
 
         s = self._filters_build(filters, s)
