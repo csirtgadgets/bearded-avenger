@@ -1,17 +1,18 @@
 import pytest
-
 from csirtg_indicator import Indicator
 from cif.store import Store
 from elasticsearch_dsl.connections import connections
 import os
 from datetime import datetime
-from uuid import uuid4
+import arrow
+from time import sleep
 from cifsdk.exceptions import AuthError
 
 DISABLE_TESTS = True
 if os.environ.get('CIF_ELASTICSEARCH_TEST'):
     if os.environ['CIF_ELASTICSEARCH_TEST'] == '1':
         DISABLE_TESTS = False
+
 
 @pytest.yield_fixture
 def store():
@@ -27,6 +28,7 @@ def store():
 
     assert connections.get_connection().indices.delete(index='indicators-*')
     assert connections.get_connection().indices.delete(index='tokens')
+
 
 @pytest.yield_fixture
 def token(store):
@@ -47,29 +49,10 @@ def indicator():
         indicator='example.com',
         tags='botnet',
         provider='csirtg.io',
-        group='everyone'
+        group='everyone',
+        lasttime=arrow.utcnow().datetime,
+        reporttime=arrow.utcnow().datetime
     )
-
-@pytest.fixture
-def indicator_ipv6():
-    return Indicator(
-        indicator='2001:4860:4860::8888',
-        tags='botnet',
-        provider='csirtg.io',
-        group='everyone'
-    )
-
-
-@pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
-def test_store_elasticsearch_indicator(store, token, indicator):
-    x = store.handle_indicators_create(token, indicator.__dict__())
-    assert x > 0
-
-    x = store.handle_indicators_search(token, {
-        'indicator': 'example.com'
-    })
-
-    assert len(x) > 0
 
 
 @pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
@@ -140,7 +123,57 @@ def test_store_elasticsearch_tokens_groups(store, token, indicator):
             'group': 'staff2',
             'provider': 'example.com',
             'tags': ['test'],
-            'itype': 'fqdn'
+            'itype': 'fqdn',
+            'lasttime': arrow.utcnow().datetime,
+            'reporttime': arrow.utcnow().datetime
+
+        })
+    except AuthError as e:
+        pass
+
+    assert i is None
+
+    i = store.store.indicators.create(t, {
+        'indicator': 'example.com',
+        'group': 'staff',
+        'provider': 'example.com',
+        'tags': ['test'],
+        'itype': 'fqdn',
+        'lasttime': arrow.utcnow().datetime,
+        'reporttime': arrow.utcnow().datetime
+    })
+
+    assert i
+
+    sleep(1)
+
+    i = store.store.indicators.search(t, {'itype': 'fqdn'})
+    assert len(list(i)) > 0
+
+    i = store.store.indicators.search(t, {'indicator': 'example.com'})
+    assert len(list(i)) > 0
+
+
+@pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
+def test_store_elasticsearch_tokens_groups2(store, indicator):
+    t = store.store.tokens.create({
+        'username': 'test',
+        'groups': ['staff'],
+        'read': True,
+        'write': True
+    })
+
+    i = None
+    try:
+        i = store.store.indicators.create(t, {
+            'indicator': 'example.com',
+            'group': 'staff2',
+            'provider': 'example.com',
+            'tags': ['test'],
+            'itype': 'fqdn',
+            'lasttime': arrow.utcnow().datetime,
+            'reporttime': arrow.utcnow().datetime
+
         })
     except AuthError as e:
         pass
@@ -148,21 +181,35 @@ def test_store_elasticsearch_tokens_groups(store, token, indicator):
     assert i is None
 
 
-
-
 @pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
-def test_store_elasticsearch_ipv6(store, token, indicator_ipv6):
-    x = store.handle_indicators_create(token, indicator_ipv6.__dict__())
-    assert x > 0
-
-    x = store.handle_indicators_search(token, {
-        'indicator': '2001:4860:4860::8888'
+def test_store_elasticsearch_tokens_groups3(store, indicator):
+    t = store.store.tokens.create({
+        'username': 'test',
+        'groups': ['staff'],
+        'write': True
     })
 
-    assert len(x) > 0
-
-    x = store.handle_indicators_search(token, {
-        'indicator': '2001:4860::/32'
+    t2 = store.store.tokens.create({
+        'username': 'test',
+        'groups': ['staff2'],
+        'read': True,
     })
 
-    assert len(x) > 0
+    i = store.store.indicators.create(t, {
+        'indicator': 'example.com',
+        'group': 'staff',
+        'provider': 'example.com',
+        'tags': ['test'],
+        'itype': 'fqdn',
+        'lasttime': arrow.utcnow().datetime,
+        'reporttime': arrow.utcnow().datetime
+
+    })
+
+    assert i
+
+    i = store.store.indicators.search(t2, {'itype': 'fqdn'})
+    assert len(list(i)) == 0
+
+    i = store.store.indicators.search(t2, {'indicator': 'example.com'})
+    assert len(list(i)) == 0

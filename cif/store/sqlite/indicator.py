@@ -283,19 +283,20 @@ class IndicatorManager(IndicatorManagerPlugin):
             elif k == 'confidence':
                 s = s.filter(Indicator.confidence >= filters[k])
 
+            elif k == 'itype':
+                s = s.filter(Indicator.itype == filters[k])
+
             else:
-                s = s.filter(k == filters[k])
+                raise InvalidIndicator('invalid filter: %s' % k)
 
         return s
 
     def _filter_groups(self, token, s):
         groups = token.get('groups', 'everyone')
-        if isinstance(groups, str):
+        if isinstance(groups, basestring):
             groups = [groups]
 
-        for g in groups:
-            s = s.filter(or_(Group.group == g))
-
+        s = s.filter(or_(Group.group == g for g in groups))
         return s
 
     def search(self, token, filters, limit=500):
@@ -315,7 +316,8 @@ class IndicatorManager(IndicatorManagerPlugin):
 
         rv = s.order_by(desc(Indicator.reporttime)).limit(limit)
 
-        return [self.to_dict(x) for x in rv]
+        for i in rv:
+            yield self.to_dict(i)
 
     def upsert(self, token, data):
         if type(data) == dict:

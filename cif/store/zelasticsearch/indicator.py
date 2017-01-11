@@ -1,4 +1,4 @@
-from elasticsearch_dsl import DocType, String, Date, Integer, Float, Ip, Mapping, Index, GeoPoint, Byte
+from elasticsearch_dsl import DocType, String, Date, Integer, Float, Ip, Mapping, Index, GeoPoint, Byte, Q, A, Search
 
 import elasticsearch.exceptions
 from elasticsearch_dsl.connections import connections
@@ -10,12 +10,13 @@ from csirtg_indicator import resolve_itype
 from csirtg_indicator.exceptions import InvalidIndicator
 from datetime import datetime
 import ipaddress
-
+from cifsdk.constants import PYVERSION
 import re
 from base64 import b64decode
 import binascii
 import socket
 import logging
+import json
 
 VALID_FILTERS = ['indicator', 'confidence', 'provider', 'itype', 'group', 'tags', 'rdata']
 
@@ -30,6 +31,8 @@ TIMEOUT = os.getenv('CIF_ES_TIMEOUT', TIMEOUT)
 TIMEOUT = '{}s'.format(TIMEOUT)
 
 logger = logging.getLogger('cif.store.zelasticsearch')
+if PYVERSION > 2:
+    basestring = (str, bytes)
 
 
 class Indicator(DocType):
@@ -37,7 +40,7 @@ class Indicator(DocType):
     indicator_ipv4 = Ip()
     indicator_ipv6 = String(index='not_analyzed')
     indicator_ipv6_mask = Integer()
-    group = String(multi=True, index="not_analyzed")
+    group = String(index="not_analyzed")
     itype = String(index="not_analyzed")
     tlp = String(index="not_analyzed")
     provider = String(index="not_analyzed")
@@ -220,6 +223,7 @@ class IndicatorManager(IndicatorManagerPlugin):
             self.create(d)
             es.delete(index=r['_index'], doc_type='indicator', id=r['_id'], refresh=True)
 
+        es.indices.flush(index=self._current_index())
         return count
 
     def _filter_indicator(self, q_filters, s):
@@ -284,17 +288,32 @@ class IndicatorManager(IndicatorManagerPlugin):
         # transform all other filters into term=
         s = self._filter_terms(q_filters, s)
 
-        logger.debug(s.to_dict())
+        return s
+
+    def _filters_groups(self, token, s):
+        groups = token.get('groups', 'everyone')
+        if isinstance(groups, basestring):
+            groups = [groups]
+
+        gg = []
+        for g in groups:
+            gg.append(Q('term', group=g))
+
+        s.query = Q('bool', must=s.query, should=gg)
 
         return s
 
     def search(self, token, filters, sort='reporttime', raw=False, timeout=TIMEOUT):
         limit = filters.get('limit', LIMIT)
 
-        s = Indicator.search(index='indicators-*')
+        s = Indicator.search(index='{}-*'.format(self.indicators_prefix))
+        s = Search(index='{}-*'.format(self.indicators_prefix))
         s = s.params(size=limit, timeout=timeout, sort=sort)
 
         s = self._filters_build(filters, s)
+        s = self._filters_groups(token, s)
+
+        logger.debug(json.dumps(s.to_dict(), indent=4))
 
         try:
             rv = s.execute()

@@ -85,6 +85,8 @@ def test_store_sqlite(store, indicator):
         'indicator': 'example.com',
     })
 
+    assert len(list(x)) > 0
+
     indicator['tags'] = 'botnet'
     indicator['indicator'] = 'example2.com'
 
@@ -96,7 +98,7 @@ def test_store_sqlite(store, indicator):
         'indicator': 'example2.com',
     })
 
-    assert len(x) > 0
+    assert len(list(x)) > 0
 
     x = store.handle_indicators_search(t, {
         'indicator': 'example2.com',
@@ -116,13 +118,13 @@ def test_store_sqlite(store, indicator):
         'indicator': '192.168.1.1',
     })
 
-    assert len(x) > 0
+    assert len(list(x)) > 0
 
     x = store.handle_indicators_search(t, {
         'indicator': '192.168.1.0/24',
     })
 
-    assert len(x) > 0
+    assert len(list(x)) > 0
 
     indicator['indicator'] = '2001:4860:4860::8888'
     indicator['tags'] = 'botnet'
@@ -135,13 +137,13 @@ def test_store_sqlite(store, indicator):
         'indicator': '2001:4860:4860::8888',
     })
 
-    assert len(x) > 0
+    assert len(list(x)) > 0
 
     x = store.handle_indicators_search(t, {
         'indicator': '2001:4860::/32',
     })
 
-    assert len(x) > 0
+    assert len(list(x)) > 0
 
     del indicator['tags']
 
@@ -195,3 +197,19 @@ def test_store_sqlite(store, indicator):
         pass
 
     assert i is None
+
+    i = store.store.indicators.create(t, {
+        'indicator': 'example.com',
+        'group': 'staff',
+        'provider': 'example.com',
+        'tags': ['test'],
+        'itype': 'fqdn'
+    })
+
+    assert i
+
+    x = store.store.indicators.search(t, {'indicator': 'example.com'})
+    assert len(list(x)) > 0
+
+    x = store.store.indicators.search(t, {'itype': 'fqdn'})
+    assert len(list(x)) > 0
