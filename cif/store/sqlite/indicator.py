@@ -1,7 +1,7 @@
 import os
 
 import arrow
-from sqlalchemy import Column, Integer, String, Float, DateTime, UnicodeText, desc, ForeignKey, text, or_
+from sqlalchemy import Column, Integer, String, Float, DateTime, UnicodeText, desc, ForeignKey, or_
 from sqlalchemy.orm import relationship, backref, class_mapper, lazyload
 
 from cifsdk.constants import RUNTIME_PATH, PYVERSION
@@ -10,10 +10,9 @@ from base64 import b64decode, b64encode
 from csirtg_indicator import resolve_itype
 from csirtg_indicator.exceptions import InvalidIndicator
 from cif.store.indicator_plugin import IndicatorManagerPlugin
-from cifsdk.exceptions import InvalidSearch, AuthError
+from cifsdk.exceptions import InvalidSearch
 import ipaddress
 from .ip import Ip
-from .token import Group
 from pprint import pprint
 from sqlalchemy.ext.declarative import declarative_base
 import re

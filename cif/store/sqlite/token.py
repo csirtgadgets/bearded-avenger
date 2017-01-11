@@ -14,7 +14,6 @@ if PYVERSION > 2:
 
 Base = declarative_base()
 
-
 class Token(Base):
     __tablename__ = 'tokens'
 
