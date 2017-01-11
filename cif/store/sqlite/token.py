@@ -1,13 +1,11 @@
 import logging
 import arrow
-from sqlalchemy import Column, Integer, String, DateTime, UnicodeText, Boolean, or_
-from sqlalchemy.orm import class_mapper
+from sqlalchemy import Column, Integer, String, DateTime, UnicodeText, Boolean, or_, ForeignKey
+from sqlalchemy.orm import class_mapper, relationship, backref
 from cifsdk.constants import PYVERSION
-from pprint import pprint
 from cif.store.sqlite import Base
 from cif.store.token_plugin import TokenManagerPlugin
-
-import logging
+from pprint import pprint
 
 logger = logging.getLogger('cif.store.sqlite')
 
@@ -30,6 +28,23 @@ class Token(Base):
     admin = Column(Boolean)
     last_activity_at = Column(DateTime)
 
+    groups = relationship(
+        'Group',
+        primaryjoin='and_(Token.id==Group.token_id)',
+        backref=backref('groups', uselist=True),
+        lazy='subquery',
+        cascade="all,delete"
+    )
+
+
+class Group(Base):
+    __tablename__ = 'groups'
+    id = Column(Integer, primary_key=True)
+    group = Column(UnicodeText, index=True)
+
+    token_id = Column(Integer, ForeignKey('tokens.id', ondelete='CASCADE'))
+    token = relationship(Token)
+
 
 class TokenManager(TokenManagerPlugin):
 
@@ -41,6 +56,11 @@ class TokenManager(TokenManagerPlugin):
         d = {}
         for col in class_mapper(obj.__class__).mapped_table.c:
             d[col.name] = getattr(obj, col.name)
+
+        try:
+            d['groups'] = [g.group for g in obj.groups]
+        except AttributeError:
+            pass
 
         return d
 
@@ -59,13 +79,14 @@ class TokenManager(TokenManagerPlugin):
         for x in s:
             if x.token not in self._cache:
                 self._cache[x.token] = self.to_dict(x)
+                self._cache[x.token]['groups'] = []
+                for g in x.groups:
+                    self._cache[x.token]['groups'].append(g.group)
 
             yield self._cache[x.token]
 
     def create(self, data):
-        groups = data.get('groups')
-        if type(groups) == list:
-            groups = ','.join(groups)
+        s = self.handle()
 
         acl = data.get('acl')
         if type(acl) == list:
@@ -74,7 +95,6 @@ class TokenManager(TokenManagerPlugin):
         t = Token(
             username=data.get('username'),
             token=self._generate(),
-            groups=groups,
             acl=acl,
             read=data.get('read'),
             write=data.get('write'),
@@ -82,8 +102,19 @@ class TokenManager(TokenManagerPlugin):
             admin=data.get('admin')
         )
 
-        s = self.handle()
         s.add(t)
+
+        groups = data.get('groups', 'everyone')
+        if isinstance(groups, str):
+            groups = [groups]
+
+        for g in groups:
+            gg = Group(
+                group=g,
+                token=t
+            )
+            s.add(gg)
+
         s.commit()
         return self.to_dict(t)
 

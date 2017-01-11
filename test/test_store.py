@@ -2,15 +2,14 @@ import logging
 import os
 import tempfile
 from argparse import Namespace
-
 import pytest
-
 from cif.store import Store
 from cifsdk.utils import setup_logging
 from csirtg_indicator.exceptions import InvalidIndicator
 import arrow
 from datetime import datetime
 from pprint import pprint
+from cifsdk.exceptions import AuthError
 
 args = Namespace(debug=True, verbose=None)
 setup_logging(args)
@@ -37,7 +36,7 @@ def indicator():
         'provider': 'csirtgadgets.org',
         'group': 'everyone',
         'lasttime': arrow.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
-        'itype': 'fqdn'
+        'itype': 'fqdn',
     }
 
 
@@ -67,8 +66,7 @@ def test_store_sqlite(store, indicator):
     assert store.store.tokens.read(t)
     assert store.store.tokens.write(t)
     assert store.store.tokens.admin(t)
-    assert store.store.tokens.last_activity_at(t) is None
-    assert store.store.tokens._cache_check(t)
+    assert store.store.tokens.last_activity_at(t) is not None
     assert store.store.tokens.update_last_activity_at(t, datetime.now())
 
     indicator['tags'] = 'malware'
@@ -87,6 +85,8 @@ def test_store_sqlite(store, indicator):
         'indicator': 'example.com',
     })
 
+    assert len(list(x)) > 0
+
     indicator['tags'] = 'botnet'
     indicator['indicator'] = 'example2.com'
 
@@ -98,7 +98,7 @@ def test_store_sqlite(store, indicator):
         'indicator': 'example2.com',
     })
 
-    assert len(x) > 0
+    assert len(list(x)) > 0
 
     x = store.handle_indicators_search(t, {
         'indicator': 'example2.com',
@@ -118,13 +118,13 @@ def test_store_sqlite(store, indicator):
         'indicator': '192.168.1.1',
     })
 
-    assert len(x) > 0
+    assert len(list(x)) > 0
 
     x = store.handle_indicators_search(t, {
         'indicator': '192.168.1.0/24',
     })
 
-    assert len(x) > 0
+    assert len(list(x)) > 0
 
     indicator['indicator'] = '2001:4860:4860::8888'
     indicator['tags'] = 'botnet'
@@ -137,13 +137,13 @@ def test_store_sqlite(store, indicator):
         'indicator': '2001:4860:4860::8888',
     })
 
-    assert len(x) > 0
+    assert len(list(x)) > 0
 
     x = store.handle_indicators_search(t, {
         'indicator': '2001:4860::/32',
     })
 
-    assert len(x) > 0
+    assert len(list(x)) > 0
 
     del indicator['tags']
 
@@ -168,3 +168,48 @@ def test_store_sqlite(store, indicator):
 
     assert store.store.tokens.edit({'token': t, 'write': False})
     assert store.store.tokens.delete({'token': t})
+
+    # groups
+    t = store.store.tokens.create({
+        'username': 'test',
+        'groups': ['staff', 'everyone'],
+        'read': True,
+        'write': True
+    })
+
+    assert t
+    assert t['groups'] == ['staff', 'everyone']
+
+    assert t['write']
+    assert t['read']
+    assert not t['admin']
+
+    i = None
+    try:
+        i = store.store.indicators.create(t, {
+            'indicator': 'example.com',
+            'group': 'staff2',
+            'provider': 'example.com',
+            'tags': ['test'],
+            'itype': 'fqdn'
+        })
+    except AuthError as e:
+        pass
+
+    assert i is None
+
+    i = store.store.indicators.create(t, {
+        'indicator': 'example.com',
+        'group': 'staff',
+        'provider': 'example.com',
+        'tags': ['test'],
+        'itype': 'fqdn'
+    })
+
+    assert i
+
+    x = store.store.indicators.search(t, {'indicator': 'example.com'})
+    assert len(list(x)) > 0
+
+    x = store.store.indicators.search(t, {'itype': 'fqdn'})
+    assert len(list(x)) > 0

@@ -1,5 +1,7 @@
 import arrow
 import abc
+from cifsdk.exceptions import AuthError
+from csirtg_indicator.exceptions import InvalidIndicator
 
 
 class IndicatorManagerPlugin(object):
@@ -16,6 +18,13 @@ class IndicatorManagerPlugin(object):
     @abc.abstractmethod
     def upsert(self, data):
         raise NotImplementedError
+
+    def _check_token_groups(self, t, i):
+        if not i.get('group'):
+            raise InvalidIndicator('missing group')
+
+        if i['group'] not in t['groups']:
+            raise AuthError('unable to write to %s' % i['group'])
 
     def _timestamps_fix(self, i):
         if not i.get('lasttime'):

@@ -108,6 +108,7 @@ class TokenManager(TokenManagerPlugin):
         timestamp = arrow.get(timestamp).datetime
 
         if self._cache_check(token):
+
             if self._cache[token].get('last_activity_at'):
                 return self._cache[token]['last_activity_at']
 
