@@ -1,0 +1,24 @@
+defaults:
+  description: 'eval("cisco umbrella #{rank}".format(**obs))'
+  tags: whitelist
+  protocol: tcp
+  altid: 'http://s3-us-west-1.amazonaws.com/umbrella-static/index.html'
+  provider: umbrella.cisco.com
+  tlp: green
+  altid_tlp: white
+  values:
+    - rank
+    - indicator
+  confidence: |
+    eval(max(0, min(
+        12.5 - 2.5 * math.ceil(
+            math.log10(
+                int(obs['rank'])
+            )
+        ),
+    10)))
+
+feeds:
+  top1m:
+    remote: http://s3-us-west-1.amazonaws.com/umbrella-static/top-1m.csv.zip
+    pattern: '^(\d+),(\S{4,})$'
