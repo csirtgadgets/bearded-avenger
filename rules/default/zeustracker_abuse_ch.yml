@@ -1,0 +1,62 @@
+parser: rss
+defaults:
+  provider: zeustracker.abuse.ch
+  tlp: green
+  alt_tlp: white
+  confidence: 9
+  altid: https://zeustracker.abuse.ch/monitor.php?search={indicator}
+  tags:
+    - zeus
+    - botnet
+
+feeds:
+  configs:
+    remote: https://zeustracker.abuse.ch/monitor.php?urlfeed=configs
+    description: zeus config urls
+    pattern:
+      description:
+        pattern: '^URL: ([^\,]+), status: \S+, version: \d, MD5 hash:'
+        values:
+          - indicator
+      title:
+        pattern: ^\S+\s\((\S+)\)$
+        values:
+          - lasttime
+
+  configs_md5:
+    remote: https://zeustracker.abuse.ch/monitor.php?urlfeed=configs
+    description: zeus config hashes
+    pattern:
+      description:
+        pattern: '^URL: [^\,]+, status: \S+, version: \d, MD5 hash: (\S+)$'
+        values:
+          - indicator
+      title:
+        pattern: ^\S+\s\((\S+)\)$
+        values:
+          - lasttime
+
+  dropzones:
+    remote: https://zeustracker.abuse.ch/monitor.php?urlfeed=dropzones
+    description: dropzone
+    pattern:
+      description:
+        pattern: '^URL: ([^\,]+), status: \w+$'
+        values:
+          - indicator
+
+  domains:
+    parser: pattern
+    remote: https://zeustracker.abuse.ch/blocklist.php?download=domainblocklist
+    confidence: 7
+    pattern: ^(\S+)$
+    values:
+      - indicator
+
+  ips:
+    parser: pattern
+    remote: https://zeustracker.abuse.ch/blocklist.php?download=ipblocklist
+    confidence: 6
+    pattern: ^(\S+)$
+    values:
+      - indicator

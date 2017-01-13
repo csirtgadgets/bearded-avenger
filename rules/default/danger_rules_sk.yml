@@ -1,0 +1,20 @@
+defaults:
+  provider: 'danger.rulez.sk'
+  confidence: 9
+  tlp: green
+  altid_tlp: white
+
+feeds:
+  ssh:
+    remote: http://danger.rulez.sk/projects/bruteforceblocker/blist.php
+    application: ssh
+    protocol: tcp
+    portlist: 22
+    tags:
+      - scanner
+      - bruteforce
+    description:
+    pattern: '^(\S+)[\s|\t]+#\s(\S+\s\S+)'
+    values:
+      - indicator
+      - lasttime

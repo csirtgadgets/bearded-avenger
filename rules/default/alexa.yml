@@ -1,0 +1,27 @@
+parser: csv
+defaults:
+  values:
+    - rank
+    - indicator
+  description: 'eval("alexa #{rank}".format(**obs))'
+  tags: whitelist
+  application:
+      - http
+      - https
+  protocol: tcp
+  altid: 'eval("http://www.alexa.com/siteinfo/{indicator}".format(**obs))'
+  provider: alexa.com
+  tlp: green
+  altid_tlp: white
+  confidence: |
+    eval(max(0, min(
+        12.5 - 2.5 * math.ceil(
+            math.log10(
+                int(obs['rank'])
+            )
+        ),
+    10)))
+
+feeds:
+  top1m:
+    remote: http://s3.amazonaws.com/alexa-static/top-1m.csv.zip
