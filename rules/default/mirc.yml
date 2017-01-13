@@ -1,0 +1,17 @@
+defaults:
+  tags: whitelist
+  provider: mirc.com
+  protocol: tcp
+  tlp: green
+  altid_tlp: white
+  confidence: 9
+  application: irc
+  remote: http://www.mirc.com/servers.ini
+  altid: http://www.mirc.com/servers.ini
+
+feeds:
+  domains:
+    pattern: SERVER:([a-zA-Z0-9-.]+\.[a-z]{2,3}):(\d+[-[\d+,]+):?GROUP
+    values:
+      - indicator
+      - portlist

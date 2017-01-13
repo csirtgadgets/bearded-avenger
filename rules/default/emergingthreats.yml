@@ -1,0 +1,17 @@
+defaults:
+  provider: emergingthreats.net
+  confidence: 8
+  tlp: green
+  altid_tlp: white
+  tags:
+    - malware
+  description: 'compromised host'
+  altid: http://rules.emergingthreats.net/blockrules/compromised-ips.txt
+
+
+feeds:
+  compromised-ips:
+    remote: http://rules.emergingthreats.net/blockrules/compromised-ips.txt
+    pattern: '^(\S+)$'
+    values:
+    - indicator
