@@ -1,4 +1,4 @@
-from elasticsearch_dsl import DocType, String, Date, Integer, Float, Ip, Mapping, Index, GeoPoint, Byte, Q, A, Search
+from elasticsearch_dsl import DocType, String, Date, Integer, Float, Ip, Mapping, Index, GeoPoint, Byte, Q, MetaField
 
 import elasticsearch.exceptions
 from elasticsearch_dsl.connections import connections
@@ -61,6 +61,9 @@ class Indicator(DocType):
     count = Integer()
     message = String(multi=True)
 
+    class Meta:
+        timestamp = MetaField(enabled=True)
+
 
 class IndicatorManager(IndicatorManagerPlugin):
 
@@ -119,6 +122,7 @@ class IndicatorManager(IndicatorManagerPlugin):
 
         data['meta'] = {}
         data['meta']['index'] = index
+        data['meta']['timestamp'] = data.get('lasttime', data['reporttime'])
 
         self._check_token_groups(token, data)
         self._expand_ip_idx(data)
