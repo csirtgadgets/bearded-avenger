@@ -1,0 +1,14 @@
+# requires APWG_TOKEN environment var to be set
+# more info from our friends at apwg.org
+fetcher: apwg
+parser: indicator
+
+defaults:
+  confidence: 9
+  provider: apwg.org
+  tlp: amber
+
+feeds:
+  urls:
+    defaults:
+      confidence: 9
