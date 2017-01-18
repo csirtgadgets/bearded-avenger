@@ -1,4 +1,5 @@
 prune packaging
+include .coveragerc
 include README.md COPYING LICENSE
 include requirements.txt dev_requirements.txt
 include Makefile
@@ -12,9 +13,12 @@ include Vagrantfile.centos
 include Vagrantfile_es
 include Vagrantfile_prod
 include Vagrantfile_prod.centos
+recursive-include test *
 recursive-include deployment *
 recursive-include hacking *
 recursive-include docs *
 recursive-include packaging *
 recursive-include rules *
 global-exclude *.retry
+global-exclude *.pyc
+global-exclude __pycache__
