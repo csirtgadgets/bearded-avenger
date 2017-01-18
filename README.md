@@ -1,5 +1,5 @@
 # Getting Started
-### MAKE SURE YOU'RE USING ONE OF THE [RELEASES](/csirtgadgets/bearded-avenger/releases).
+### MAKE SURE YOU'RE USING ONE OF THE [RELEASES](https://github.com/csirtgadgets/bearded-avenger/releases).
 Releases are usually a little more stable than the master branch, in that *some* basic deployment testing for Ubuntu and CentOS has been performed using an SQLite backend.
 
 ## QuickStart
