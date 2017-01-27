@@ -251,7 +251,7 @@ def feed():
 
     now = arrow.utcnow()
     filters['reporttimeend'] = '{}Z'.format(now.format('YYYY-MM-DDTHH:mm:ss'))
-    now = now.replace(days=-DAYS)
+    now = now.replace(days=-int(DAYS))
     filters['reporttime'] = '{}Z'.format(now.format('YYYY-MM-DDTHH:mm:ss'))
 
     try:
@@ -281,7 +281,7 @@ def feed():
         wl_filters['confidence'] = 25
 
         now = arrow.utcnow()
-        now = now.replace(days=-DAYS)
+        now = now.replace(days=-int(DAYS))
         wl_filters['reporttime'] = '{}Z'.format(now.format('YYYY-MM-DDTHH:mm:ss'))
         wl_filters['nolog'] = True
         wl_filters['limit'] = 25000
