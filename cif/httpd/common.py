@@ -1,9 +1,10 @@
-from flask import request
+from flask import request, jsonify
 import re
 import zlib
 from base64 import b64encode
 
-VALID_FILTERS = ['indicator', 'itype', 'confidence', 'provider', 'limit', 'application', 'nolog']
+VALID_FILTERS = ['indicator', 'itype', 'confidence', 'provider', 'limit', 'application', 'nolog', 'tags', 'days',
+                 'hours']
 TOKEN_FILTERS = ['username', 'token']
 
 
@@ -18,6 +19,33 @@ def request_v2():
     if request.headers.get('Accept'):
         if 'vnd.cif.v2+json' in request.headers['Accept']:
             return True
+
+
+def jsonify_unauth(msg='unauthorized'):
+    response = jsonify({
+        "message": msg,
+        "data": []
+    })
+    response.status_code = 401
+    return response
+
+
+def jsonify_unknown(msg='failed', code=503):
+    response = jsonify({
+        "message": msg,
+        "data": []
+    })
+    response.status_code = code
+    return response
+
+
+def jsonify_success(data=[], code=200):
+    response = jsonify({
+        'message': 'success',
+        'data': data
+    })
+    response.status_code = code
+    return response
 
 
 def response_compress():
