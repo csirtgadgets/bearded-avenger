@@ -17,6 +17,7 @@ from .views.help import HelpAPI
 from .views.tokens import TokensAPI
 from .views.indicators import IndicatorsAPI
 from .views.feed import FeedAPI
+from .views.confidence import ConfidenceAPI
 
 HTTP_LISTEN = '127.0.0.1'
 HTTP_LISTEN = os.environ.get('CIF_HTTPD_LISTEN', HTTP_LISTEN)
@@ -46,6 +47,7 @@ app.add_url_rule('/tokens', view_func=TokensAPI.as_view('tokens'))
 app.add_url_rule('/indicators', view_func=IndicatorsAPI.as_view('indicators'))
 app.add_url_rule('/search', view_func=IndicatorsAPI.as_view('search'))
 app.add_url_rule('/feed', view_func=FeedAPI.as_view('feed'))
+app.add_url_rule('/help/confidence', view_func=ConfidenceAPI.as_view('confidence'))
 
 
 @app.before_request
@@ -55,7 +57,7 @@ def before_request():
 
     :return: 401 if no token is present
     """
-    if request.endpoint not in ['/', 'help']:
+    if request.endpoint not in ['/', 'help', 'confidence']:
         t = pull_token()
         if not t or t == 'None':
             return '', 401
