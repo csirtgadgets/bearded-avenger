@@ -8,6 +8,7 @@ class HelpAPI(MethodView):
         return jsonify({
             "GET /": 'this message',
             "GET /help": 'this message',
+            "GET /help/confidence": "get a list of confidence values",
             'GET /ping': 'ping the router interface',
             'GET /search': 'search for an indicator',
             'GET /indicators': 'search for a set of indicators',
