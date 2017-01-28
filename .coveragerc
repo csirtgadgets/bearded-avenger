@@ -24,6 +24,7 @@ exclude_lines =
 ignore_errors = True
 
 omit =
+    cif/httpd/views/feed/*
     cif/store/dummy.py
     cif/_version.py
     cif/constants.py

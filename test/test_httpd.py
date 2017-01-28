@@ -33,6 +33,9 @@ def test_httpd_help(client):
     rv = client.get('/')
     assert rv.status_code == 200
 
+    rv = client.get('/help')
+    assert rv.status_code == 200
+
 
 def test_httpd_ping(client):
     rv = client.get('/ping')
@@ -54,17 +57,16 @@ def test_httpd_search(client):
     assert rv['data'][0]['indicator'] == 'example.com'
 
 
-def test_httpd_search_v2(client):
-    rv = client.get('/observables?q=example.com',
-                    headers={'Authorization': 'Token token=1234', 'Accept': 'vnd.cif.v2+json'})
+def test_httpd_indicators(client):
+    rv = client.get('/indicators?q=example.com', headers={'Authorization': 'Token token=1234'})
     assert rv.status_code == 200
-    data = rv.data
 
+    data = rv.data
     if PYVERSION > 2:
         data = data.decode('utf-8')
 
     rv = json.loads(data)
-    assert rv['data'][0]['observable'] == 'example.com'
+    assert rv['data'][0]['indicator'] == 'example.com'
 
 
 def test_httpd_feed(client):
@@ -72,3 +74,7 @@ def test_httpd_feed(client):
 
     assert rv.status_code == 200
 
+
+def test_httpd_tokens(client):
+    rv = client.get('/tokens', headers={'Authorization': 'Token token=1234'})
+    assert rv.status_code == 200
