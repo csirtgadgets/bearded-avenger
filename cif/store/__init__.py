@@ -134,10 +134,10 @@ class Store(multiprocessing.Process):
         self.exit.set()
 
     def handle_message(self, m):
+        err = None
         id, client_id, token, mtype, data = m
 
         if isinstance(data, basestring):
-
             try:
                 data = json.loads(data)
             except ValueError as e:
@@ -147,42 +147,41 @@ class Store(multiprocessing.Process):
                 return
 
         handler = getattr(self, "handle_" + mtype)
-        err = None
-        if handler:
-            try:
-                rv = handler(token, data, id=id, client_id=client_id)
-                if rv != MORE_DATA_NEEDED:
-                    rv = {"status": "success", "data": rv}
-                    ts = arrow.utcnow().format('YYYY-MM-DDTHH:mm:ss.SSSSS')
-                    ts = '{}Z'.format(ts)
-                    self.store.tokens.update_last_activity_at(token, ts)
-
-            except AuthError as e:
-                logger.error(e)
-                err = 'unauthorized'
-
-            except InvalidSearch as e:
-                err = 'invalid search'
-
-            except InvalidIndicator as e:
-                logger.error(data)
-                logger.error(e)
-                traceback.print_exc()
-                err = 'invalid indicator {}'.format(e)
-
-            except Exception as e:
-                logger.error(e)
-                traceback.print_exc()
-                err = 'unknown failure'
-
-            if err:
-                rv = {'status': 'failed', 'message': err}
-
-            if rv != MORE_DATA_NEEDED:
-                Msg(id=id, client_id=client_id, mtype=mtype, data=json.dumps(rv)).send(self.router)
-        else:
+        if not handler:
             logger.error('message type {0} unknown'.format(mtype))
             Msg(id=id, data='0')
+
+        try:
+            rv = handler(token, data, id=id, client_id=client_id)
+            if rv != MORE_DATA_NEEDED:
+                rv = {"status": "success", "data": rv}
+
+        except AuthError as e:
+            logger.error(e)
+            err = 'unauthorized'
+
+        except InvalidSearch as e:
+            err = 'invalid search'
+
+        except InvalidIndicator as e:
+            logger.error(data)
+            logger.error(e)
+            traceback.print_exc()
+            err = 'invalid indicator {}'.format(e)
+
+        except Exception as e:
+            logger.error(e)
+            traceback.print_exc()
+            err = 'unknown failure'
+
+        if err:
+            rv = {'status': 'failed', 'message': err}
+
+        if rv != MORE_DATA_NEEDED:
+            Msg(id=id, client_id=client_id, mtype=mtype, data=json.dumps(rv)).send(self.router)
+
+        if not err:
+            self.store.tokens.update_last_activity_at(token, arrow.utcnow().datetime)
 
     def _flush_create_queue(self):
         for t in self.create_queue:
@@ -194,17 +193,14 @@ class Store(multiprocessing.Process):
             try:
                 rv = self.store.indicators.upsert(t, data)
                 rv = {"status": "success", "data": rv}
-                logger.debug('updating last_active')
-                ts = arrow.utcnow().format('YYYY-MM-DDTHH:mm:ss.SSSSS')
-                ts = '{}Z'.format(ts)
-                self.store.tokens.update_last_activity_at(t, ts)
             except AuthError as e:
                 rv = {'status': 'failed', 'message': 'unauthorized'}
 
             for id, client_id, _ in self.create_queue[t]['messages']:
                 Msg(id=id, client_id=client_id, mtype=Msg.INDICATORS_CREATE, data=rv)
 
-        logger.debug('done..')
+            if rv['status'] == 'success':
+                self.store.tokens.update_last_activity_at(t, arrow.utcnow().datetime)
 
     def handle_indicators_create(self, token, data, id=None, client_id=None):
         # this will raise AuthError if false
@@ -250,7 +246,7 @@ class Store(multiprocessing.Process):
             indicator=data['indicator'],
             tlp='amber',
             confidence=10,
-            tags=['search'],
+            tags='search',
             provider=t['username'],
             firsttime=ts,
             lasttime=ts,
@@ -313,21 +309,21 @@ class Store(multiprocessing.Process):
         if self.store.tokens.admin(token):
             logger.debug('tokens_search')
             return self.store.tokens.search(data)
-        else:
-            raise AuthError('invalid token')
+
+        raise AuthError('invalid token')
 
     def handle_tokens_create(self, token, data, **kwargs):
         if self.store.tokens.admin(token):
             logger.debug('tokens_create')
             return self.store.tokens.create(data)
-        else:
-            raise AuthError('invalid token')
+
+        raise AuthError('invalid token')
 
     def handle_tokens_delete(self, token, data, **kwargs):
         if self.store.tokens.admin(token):
             return self.store.tokens.delete(data)
-        else:
-            raise AuthError('invalid token')
+
+        raise AuthError('invalid token')
 
     def handle_token_write(self, token, data=None, **kwargs):
         return self.store.tokens.write(token)
@@ -335,8 +331,8 @@ class Store(multiprocessing.Process):
     def handle_tokens_edit(self, token, data, **kwargs):
         if self.store.tokens.admin(token):
             return self.store.tokens.edit(data)
-        else:
-            raise AuthError('invalid token')
+
+        raise AuthError('invalid token')
 
     def token_create_admin(self):
         logger.info('testing for tokens...')
@@ -351,8 +347,8 @@ class Store(multiprocessing.Process):
             })
             logger.info('admin token created: {}'.format(rv['token']))
             return rv['token']
-        else:
-            logger.info('admin token exists...')
+
+        logger.info('admin token exists...')
 
     def token_create_smrt(self):
         logger.info('generating smrt token')

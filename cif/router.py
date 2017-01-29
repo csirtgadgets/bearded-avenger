@@ -6,17 +6,12 @@ import textwrap
 import traceback
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
-from pprint import pprint
 from time import sleep
-
 import zmq
-from zmq.eventloop import ioloop
 import os
 from cif.constants import ROUTER_ADDR, STORE_ADDR, HUNTER_ADDR, GATHERER_ADDR, GATHERER_SINK_ADDR, HUNTER_SINK_ADDR
 from cifsdk.constants import CONFIG_PATH
-from cifsdk.utils import setup_logging, get_argument_parser, setup_signals, zhelper, setup_runtime_path, read_config
-from csirtg_indicator import Indicator
-import threading
+from cifsdk.utils import setup_logging, get_argument_parser, setup_signals, setup_runtime_path, read_config
 from cif.hunter import Hunter
 from cif.store import Store
 from cif.gatherer import Gatherer
@@ -81,14 +76,12 @@ class Router(object):
         self.hunter_sink_s.bind(HUNTER_SINK_ADDR)
 
         self.hunters = []
+        self.hunters_s = None
         if int(hunter_threads):
             self.hunters_s = self.context.socket(zmq.PUSH)
             self.logger.debug('binding hunter: {}'.format(hunter))
             self.hunters_s.bind(hunter)
-
             self._init_hunters(hunter_threads, hunter_token)
-        else:
-            self.hunters_s = None
 
         self.logger.info('launching frontend...')
         self.frontend_s = self.context.socket(zmq.ROUTER)
@@ -175,16 +168,14 @@ class Router(object):
     def handle_message(self, s):
         id, token, mtype, data = Msg().recv(s)
 
+        handler = self.handle_message_default
         if mtype in ['indicators_create', 'indicators_search']:
             handler = getattr(self, "handle_" + mtype)
-        else:
-            handler = self.handle_message_default
 
         try:
             handler(id, mtype, token, data)
         except Exception as e:
             self.logger.error(e)
-            traceback.print_exc()
 
         self._log_counter()
 
@@ -202,14 +193,16 @@ class Router(object):
 
         Msg(id=id, mtype=mtype, token=token, data=data).send(self.store_s)
 
-        if len(self.hunters) > 0:
-            data = json.loads(data)
-            if isinstance(data, dict):
-                data = [data]
+        if len(self.hunters) == 0:
+            return
 
-            for d in data:
-                if d.get('confidence', 0) >= HUNTER_MIN_CONFIDENCE:
-                    self.hunters_s.send_string(json.dumps(d))
+        data = json.loads(data)
+        if isinstance(data, dict):
+            data = [data]
+
+        for d in data:
+            if d.get('confidence', 0) >= HUNTER_MIN_CONFIDENCE:
+                self.hunters_s.send_string(json.dumps(d))
 
     def handle_indicators_search(self, id, mtype, token, data):
         self.handle_message_default(id, mtype, token, data)

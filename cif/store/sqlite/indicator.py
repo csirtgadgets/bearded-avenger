@@ -320,7 +320,6 @@ class IndicatorManager(IndicatorManagerPlugin):
         rv = s.order_by(desc(Indicator.reporttime)).limit(limit)
 
         for i in rv:
-            pprint(self.to_dict(i))
             yield self.to_dict(i)
 
     def upsert(self, token, data):
