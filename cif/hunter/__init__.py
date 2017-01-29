@@ -2,13 +2,9 @@
 
 import ujson as json
 import logging
-import traceback
 import zmq
-from pprint import pprint
-
 import cif.hunter
 from cifsdk.client.zeromq import ZMQ as Client
-from cifsdk.utils import setup_signals
 from cif.constants import HUNTER_ADDR, ROUTER_ADDR, HUNTER_SINK_ADDR
 from csirtg_indicator import Indicator
 import multiprocessing
@@ -89,42 +85,43 @@ class Hunter(multiprocessing.Process):
             except SystemExit or KeyboardInterrupt:
                 break
 
-            if socket in s:
-                data = socket.recv_multipart()
+            if socket not in s:
+                continue
 
-                logger.debug(data)
-                data = json.loads(data[0])
+            data = socket.recv_multipart()
 
-                if isinstance(data, dict):
-                    if not data.get('indicator'):
-                        continue
+            logger.debug(data)
+            data = json.loads(data[0])
 
-                    if not data.get('itype'):
-                        data = Indicator(
-                            indicator=data['indicator'],
-                            tags='search',
-                            confidence=10,
-                            group='everyone',
-                            tlp='amber',
-                        ).__dict__()
+            if isinstance(data, dict):
+                if not data.get('indicator'):
+                    continue
 
-                    if not data.get('tags'):
-                        data['tags'] = []
+                if not data.get('itype'):
+                    data = Indicator(
+                        indicator=data['indicator'],
+                        tags='search',
+                        confidence=10,
+                        group='everyone',
+                        tlp='amber',
+                    ).__dict__()
 
-                    data = [data]
+                if not data.get('tags'):
+                    data['tags'] = []
 
-                for d in data:
-                    d = Indicator(**d)
+                data = [data]
 
-                    if self.exclude.get(d.provider):
-                        for t in d.tags:
-                            if t in self.exclude[d.provider]:
-                                logger.debug('skipping: {}'.format(d.indicator))
+            for d in data:
+                d = Indicator(**d)
 
-                    for p in plugins:
-                        try:
-                            p.process(d, router)
-                        except Exception as e:
-                            logger.error(e)
-                            traceback.print_exc()
-                            logger.error('giving up on: {}'.format(d))
+                if self.exclude.get(d.provider):
+                    for t in d.tags:
+                        if t in self.exclude[d.provider]:
+                            logger.debug('skipping: {}'.format(d.indicator))
+
+                for p in plugins:
+                    try:
+                        p.process(d, router)
+                    except Exception as e:
+                        logger.error(e)
+                        logger.error('giving up on: {}'.format(d))

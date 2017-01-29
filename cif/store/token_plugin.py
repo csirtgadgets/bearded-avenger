@@ -54,41 +54,25 @@ class TokenManagerPlugin(object):
             return t[0]['token']
 
     def check(self, token, k, v=True):
+        self._flush_cache()
         if token in self._cache and self._cache[token].get(k):
             return self._cache[token]
 
-        return list(self.search({'token': token, k: v}))
+        rv = list(self.search({'token': token, k: v}))
+        if len(rv) == 0:
+            raise AuthError('unauthorized')
+
+        self._cache[token] = rv[0]
+        return rv[0]
 
     def admin(self, token):
-        self._flush_cache()
-        x = self.check(token, 'admin')
-        if len(x) > 0:
-            if isinstance(x, list):
-                return x[0]
-
-            return x
-
-        raise AuthError('unauthorized')
+        return self.check(token, 'admin')
 
     def read(self, token):
-        x = self.check(token, 'read')
-        if len(x) > 0:
-            if isinstance(x, list):
-                return x[0]
-
-            return x
-
-        raise AuthError('unauthorized')
+        return self.check(token, 'read')
 
     def write(self, token):
-        x = self.check(token, 'write')
-        if len(x) > 0:
-            if isinstance(x, list):
-                return x[0]
-
-            return x
-
-        raise AuthError('unauthorized')
+        return self.check(token, 'write')
 
     def last_activity_at(self, token):
         if token in self._cache and self._cache[token].get('last_activity_at'):

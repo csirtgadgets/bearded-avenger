@@ -47,12 +47,12 @@ class IndicatorsAPI(MethodView):
         response = current_app.response_class(r, mimetype='application/json')
 
         if isinstance(r, basestring):
-            if '"message":"unauthorized"' in r.decode('utf-8') and '"message":"unauthorized"' in r.decode('utf-8'):
+            if '"message":"unauthorized"' in r and '"message":"unauthorized"' in r:
                 response.status_code = 401
                 return response
 
         if response_compress():
-            response.data = compress(response.data)
+           response.data = compress(response.data)
 
         return response
 
@@ -67,7 +67,7 @@ class IndicatorsAPI(MethodView):
                 fireball = True
         try:
             data = request.data.decode('utf-8')
-            r = Client(remote, pull_token(), fireball=fireball).indicators_create(data, nowait=nowait)
+            r = Client(remote, pull_token()).indicators_create(data, nowait=nowait, fireball=fireball)
             if nowait:
                 r = 'pending'
 

@@ -105,7 +105,8 @@ class TokenManager(TokenManagerPlugin):
         connections.get_connection().indices.flush(index='tokens')
 
     def update_last_activity_at(self, token, timestamp):
-        timestamp = arrow.get(timestamp).datetime
+        if isinstance(timestamp, str):
+            timestamp = arrow.get(timestamp).datetime
 
         if self._cache_check(token):
 
