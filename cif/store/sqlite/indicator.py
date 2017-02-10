@@ -21,8 +21,9 @@ import logging
 logger = logging.getLogger('cif.store.sqlite')
 
 DB_FILE = os.path.join(RUNTIME_PATH, 'cif.sqlite')
-VALID_FILTERS = ['indicator', 'confidence', 'provider', 'itype', 'group', 'tags']
 REQUIRED_FIELDS = ['provider', 'indicator', 'tags', 'group', 'itype']
+
+from cif.httpd.common import VALID_FILTERS
 
 if PYVERSION > 2:
     basestring = (str, bytes)
@@ -274,6 +275,9 @@ class IndicatorManager(IndicatorManagerPlugin):
     def _filter_terms(self, filters, s):
 
         for k in filters:
+            if k in ['nolog', 'days', 'hours', 'groups', 'limit']:
+                continue
+
             if k == 'reporttime':
                 s = s.filter(Indicator.reporttime >= filters[k])
 
@@ -289,8 +293,11 @@ class IndicatorManager(IndicatorManagerPlugin):
             elif k == 'itype':
                 s = s.filter(Indicator.itype == filters[k])
 
+            elif k == 'provider':
+                s = s.filter(Indicator.provider == filters[k])
+
             else:
-                raise InvalidIndicator('invalid filter: %s' % k)
+                raise InvalidSearch('invalid filter: %s' % k)
 
         return s
 

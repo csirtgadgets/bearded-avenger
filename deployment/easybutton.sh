@@ -46,6 +46,7 @@ case $OS in
     	if [ $VER == "14.04" ]; then
     	    cd deployment/ubuntu14
     	    bash bootstrap.sh
+
     	elif [ $VER == "16.04" ]; then
     	    cd deployment/ubuntu16
     	    bash bootstrap.sh

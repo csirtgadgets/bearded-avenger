@@ -11,7 +11,7 @@ echo 'Upgrading pip...'
 sudo -H pip install --upgrade pip
 
 echo 'installing ansible...'
-sudo -H pip install 'setuptools>=11.3' 'ansible==2.1' versioneer markupsafe
+sudo -H pip install 'setuptools>=18.5,<34.0' 'ansible==2.1' versioneer markupsafe
 
 echo 'running ansible...'
 ansible-playbook -i "localhost," -c local localhost.yml -vv
