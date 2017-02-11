@@ -1,8 +1,5 @@
 .DS_Store
-kill*.sh
-cif.yml
-cif-router.yml
-csirtg-smrt.yml
+/*.yml
 *.retry
 coverage_html_report/
 deployment/aws/site.yml
