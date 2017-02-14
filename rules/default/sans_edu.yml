@@ -24,7 +24,7 @@ feeds:
     remote: http://isc.sans.edu/feeds/suspiciousdomains_High.txt
 
   block:
-    remote: https://isc.sans.edu/block.txt
+    remote: https://isc.sans.edu/feeds/block.txt
     defaults:
       confidence: 8
     pattern: ^(\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b)\t\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b\t(\d+)

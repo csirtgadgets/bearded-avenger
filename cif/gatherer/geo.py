@@ -67,8 +67,8 @@ class Geo(object):
         match = re.search('^(\S+)\/\d+$', i)
         tmp = indicator.indicator
         if match:
-            i = match.group(1)
-            indicator.indicator = i
+            self.logger.info(match.group(1))
+            indicator.indicator = match.group(1)
 
         i = indicator.indicator
 

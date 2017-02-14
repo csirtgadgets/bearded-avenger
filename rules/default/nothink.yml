@@ -9,7 +9,8 @@ feeds:
   ssh:
     remote: http://www.nothink.org/blacklist/blacklist_ssh_day.txt
     pattern: ^(\S+)$
-    application: ssh
-    portlist: 22
-    tags: scanner
-    protocol: tcp
+    defaults:
+      application: ssh
+      portlist: 22
+      tags: scanner
+      protocol: tcp

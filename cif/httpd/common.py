@@ -4,7 +4,7 @@ import zlib
 from base64 import b64encode
 
 VALID_FILTERS = ['indicator', 'itype', 'confidence', 'provider', 'limit', 'application', 'nolog', 'tags', 'days',
-                 'hours', 'groups']
+                 'hours', 'groups', 'reporttime']
 TOKEN_FILTERS = ['username', 'token']
 
 

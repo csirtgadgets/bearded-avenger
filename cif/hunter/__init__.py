@@ -114,6 +114,9 @@ class Hunter(multiprocessing.Process):
             for d in data:
                 d = Indicator(**d)
 
+                if d.indicator in ["", 'localhost']:
+                    continue
+
                 if self.exclude.get(d.provider):
                     for t in d.tags:
                         if t in self.exclude[d.provider]:
@@ -124,4 +127,4 @@ class Hunter(multiprocessing.Process):
                         p.process(d, router)
                     except Exception as e:
                         logger.error(e)
-                        logger.error('giving up on: {}'.format(d))
+                        logger.error('[{}] giving up on: {}'.format(p, d))
