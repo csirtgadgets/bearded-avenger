@@ -39,6 +39,13 @@
   command: pip install pip --upgrade
   become: yes
 
+- name: install pyopenssl for python 2.7.6
+  pip: name='pyopenssl==16.2.0'
+
+- name: update openssl deps
+  pip: name="{{ item }}" extra_args="--upgrade"
+  with_items: [ pyasn1 ndg-httpsclient ]
+
 - name: update vex and requests
   pip: name="{{ item }}" extra_args="--upgrade"
   with_items: [ requests vex ] # requests first, old version conflicts with new pip

@@ -16,6 +16,7 @@ feeds:
     pattern: ^(\S+)\,Domain used by ((?!suppobox)[^,]+)\,([^,]+)\,(\S+)$
 
   c2-domainmasterlist-suppobox:
+    remote: http://osint.bambenekconsulting.com/feeds/c2-dommasterlist.txt
     pattern: ^(\S+)\,Domain used by (suppobox)\,([^,]+)\,(\S+)$
     defaults:
       confidence: 6.5

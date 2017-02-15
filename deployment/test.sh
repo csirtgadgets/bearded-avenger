@@ -2,6 +2,9 @@
 
 set -e
 
+echo 'giving things a chance to settle...'
+sleep 10
+
 echo 'testing connectivity'
 sudo -u cif cif --config /home/cif/.cif.yml -p
 
