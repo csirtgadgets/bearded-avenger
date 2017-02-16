@@ -11,13 +11,25 @@ defaults:
       - altid
 
 feeds:
-  c2-dommasterlist:
+  c2-domainmasterlist:
     remote: http://osint.bambenekconsulting.com/feeds/c2-dommasterlist.txt
-    pattern: ^(\S+)\,Domain used by ([^,]+)\,([^,]+)\,(\S+)$
+    pattern: ^(\S+)\,Domain used by ((?!suppobox)[^,]+)\,([^,]+)\,(\S+)$
+
+  c2-domainmasterlist-suppobox:
+    remote: http://osint.bambenekconsulting.com/feeds/c2-dommasterlist.txt
+    pattern: ^(\S+)\,Domain used by (suppobox)\,([^,]+)\,(\S+)$
+    defaults:
+      confidence: 6.5
 
   c2-ipmasterlist:
     remote: http://osint.bambenekconsulting.com/feeds/c2-ipmasterlist.txt
-    pattern: ^(\S+)\,IP used by ([^,]+)\,([^,]+)\,(\S+)$
+    pattern: ^(\S+)\,IP used by ((?!suppobox)[^,]+)\,([^,]+)\,(\S+)$
+
+  c2-ipmasterlist-suppobox:
+    remote: http://osint.bambenekconsulting.com/feeds/c2-ipmasterlist.txt
+    pattern: ^(\S+)\,IP used by (suppobox C&C)\,([^,]+)\,(\S+)$
+    defaults:
+      confidence: 6.5
 
   cryptolocker_fqdn:
     remote: http://osint.bambenekconsulting.com/feeds/dga-feed.txt

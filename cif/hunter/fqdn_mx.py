@@ -5,7 +5,7 @@ from cif.utils import resolve_ns
 from csirtg_indicator import Indicator
 from dns.resolver import Timeout
 import re
-
+from pprint import pprint
 
 class FqdnMx(object):
 
@@ -27,14 +27,19 @@ class FqdnMx(object):
 
         for rr in r:
             rr = re.sub(r'^\d+ ', '', str(rr))
+            rr = str(rr).rstrip('.')
+
+            if rr in ["", 'localhost']:
+                continue
+
             fqdn = Indicator(**i.__dict__())
             fqdn.indicator = rr.rstrip('.')
+
             try:
                 resolve_itype(fqdn.indicator)
             except InvalidIndicator as e:
-                if not str(e).startswith('unknown itype for "localhost"'):
-                    self.logger.error(fqdn)
-                    self.logger.error(e)
+                self.logger.error(fqdn)
+                self.logger.error(e)
             else:
                 fqdn.itype = 'fqdn'
                 fqdn.rdata = i.indicator

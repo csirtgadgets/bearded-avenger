@@ -22,6 +22,9 @@ class FqdnCname(object):
             r = []
 
         for rr in r:
+            if str(rr).rstrip('.') in ["", 'localhost']:
+                continue
+
             fqdn = Indicator(**i.__dict__())
             fqdn.indicator = str(rr).rstrip('.')
 

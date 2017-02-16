@@ -88,6 +88,9 @@ class Gatherer(multiprocessing.Process):
                         try:
                             g.process(i)
                         except Exception as e:
+                            from pprint import pprint
+                            pprint(i)
+
                             logger.error('gatherer failed: %s' % g)
                             logger.error(e)
                             traceback.print_exc()

@@ -21,8 +21,9 @@ import logging
 logger = logging.getLogger('cif.store.sqlite')
 
 DB_FILE = os.path.join(RUNTIME_PATH, 'cif.sqlite')
-VALID_FILTERS = ['indicator', 'confidence', 'provider', 'itype', 'group', 'tags']
 REQUIRED_FIELDS = ['provider', 'indicator', 'tags', 'group', 'itype']
+
+from cif.httpd.common import VALID_FILTERS
 
 if PYVERSION > 2:
     basestring = (str, bytes)
@@ -273,9 +274,19 @@ class IndicatorManager(IndicatorManagerPlugin):
 
     def _filter_terms(self, filters, s):
 
+        # TODO also you should do for k, v in filters.items():
+        # iteritems()?
         for k in filters:
+            if k in ['nolog', 'days', 'hours', 'groups', 'limit']:
+                continue
+
             if k == 'reporttime':
-                s = s.filter(Indicator.reporttime >= filters[k])
+                if ',' in filters[k]:
+                    start, end = filters[k].split(',')
+                    s = s.filter(Indicator.reporttime >= start)
+                    s = s.filter(Indicator.reporttime <= end)
+                else:
+                    s = s.filter(Indicator.reporttime >= filters[k])
 
             elif k == 'reporttimeend':
                 s = s.filter(Indicator.reporttime <= filters[k])
@@ -284,13 +295,21 @@ class IndicatorManager(IndicatorManagerPlugin):
                 s = s.join(Tag).filter(Tag.tag == filters[k])
 
             elif k == 'confidence':
-                s = s.filter(Indicator.confidence >= filters[k])
+                if ',' in str(filters[k]):
+                    start, end = str(filters[k]).split(',')
+                    s = s.filter(Indicator.confidence >= float(start))
+                    s = s.filter(Indicator.confidence <= float(end))
+                else:
+                    s = s.filter(Indicator.confidence >= filters[k])
 
             elif k == 'itype':
                 s = s.filter(Indicator.itype == filters[k])
 
+            elif k == 'provider':
+                s = s.filter(Indicator.provider == filters[k])
+
             else:
-                raise InvalidIndicator('invalid filter: %s' % k)
+                raise InvalidSearch('invalid filter: %s' % k)
 
         return s
 

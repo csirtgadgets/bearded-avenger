@@ -34,8 +34,12 @@ class Fqdn(object):
             return
 
         for rr in r:
+            rr = str(rr)
+            if rr in ["", 'localhost']:
+                continue
+
             ip = Indicator(**i.__dict__())
-            ip.indicator = str(rr)
+            ip.indicator = rr
             try:
                 resolve_itype(ip.indicator)
             except InvalidIndicator as e:

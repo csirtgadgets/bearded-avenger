@@ -32,6 +32,7 @@ defaults:
     - lasttime
     - description
     - null
+    - null
 
 feeds:
   # A feed of IP addresses block by a firewall (e.g. port scanners)
@@ -67,3 +68,10 @@ feeds:
       tags:
         - uce
         - uce-ip
+
+  darknet:
+    remote: https://csirtg.io/api/users/wes/feeds/darknet.csv
+    defaults:
+      tags:
+        - scanner
+        - darknet

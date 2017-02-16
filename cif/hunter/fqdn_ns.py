@@ -25,6 +25,9 @@ class FqdnNs(object):
             return
 
         for rr in r:
+            if str(rr).rstrip('.') in ["", 'localhost']:
+                continue
+
             ip = Indicator(**i.__dict__())
             ip.indicator = str(rr)
             try:
