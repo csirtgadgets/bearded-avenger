@@ -1,9 +1,0 @@
----
-
-- include: production.yml
-  tags: production
-  when: not development
-
-- include: development.yml
-  tags: development
-  when: development
