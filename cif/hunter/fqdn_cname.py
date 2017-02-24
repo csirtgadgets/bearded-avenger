@@ -22,11 +22,13 @@ class FqdnCname(object):
             r = []
 
         for rr in r:
-            if str(rr).rstrip('.') in ["", 'localhost']:
+            # http://serverfault.com/questions/44618/is-a-wildcard-cname-dns-record-valid
+            rr = str(rr).rstrip('.').lstrip('*.')
+            if rr in ['', 'localhost']:
                 continue
 
             fqdn = Indicator(**i.__dict__())
-            fqdn.indicator = str(rr).rstrip('.')
+            fqdn.indicator = rr
 
             try:
                 resolve_itype(fqdn.indicator)
