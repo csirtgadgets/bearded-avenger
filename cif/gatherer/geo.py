@@ -70,13 +70,12 @@ class Geo(object):
             self.logger.info(match.group(1))
             indicator.indicator = match.group(1)
 
-        i = indicator.indicator
-
         # cache it to the /24
-        i = list(i.split('.'))
-        i = '{}.{}.{}.0'.format(i[0], i[1], i[2])
-
-        indicator.indicator = i
+        if indicator.itype == 'ipv4':
+            i = indicator.indicator
+            i = list(i.split('.'))
+            i = '{}.{}.{}.0'.format(i[0], i[1], i[2])
+            indicator.indicator = i
 
         try:
             self._resolve(indicator)
