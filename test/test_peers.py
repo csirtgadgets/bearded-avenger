@@ -26,7 +26,7 @@ def test_gatherer_peers():
         for pp in x.peers:
             mypeers.add(pp['asn'])
 
-        assert '23352' in mypeers
+        assert '2381' in mypeers
     else:
         warnings.warn('TC Not Responding...', UserWarning)
 

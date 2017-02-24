@@ -20,6 +20,6 @@ def test_gatherer_peer():
     x = a.process(Indicator(indicator='216.90.108.0'))
 
     if x.peers:
-        assert x.peers[0]['asn'] == '23352'
+        assert x.peers[0]['asn'] == '174'
     else:
         warnings.warn('TC Not Responding...', UserWarning)
