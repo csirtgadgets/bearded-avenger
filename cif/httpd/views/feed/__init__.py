@@ -53,6 +53,9 @@ class FeedAPI(MethodView):
         if len(filters) == 0:
             return jsonify_unknown('invalid search, missing an itype filter (ipv4, fqdn, url, sha1...)', 400)
 
+        if 'itype' not in filters:
+            return jsonify_unknown('missing itype filter (ipv4, fqdn, url, etc...)', 400)
+
         # test to make sure feed type exists
         feed_type = feed_factory(filters['itype'])
         if feed_type is None:
