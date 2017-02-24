@@ -1,0 +1,51 @@
+# http://docs.ansible.com/ansible/playbooks_environment.html
+# environment:
+#   http_proxy: http://proxy.example.com:8080
+---
+- name: configure platform
+  hosts: all
+  gather_facts: False
+  become: True
+
+  vars_files:
+    - "../global_vars.yml"
+
+  vars:
+    CIF_ES: "{{ lookup('env', 'ANSIBLE_CIF_ES') }}"
+    GH_TOKEN: "{{ lookup('env', 'GH_TOKEN' }}"
+
+  pre_tasks:
+
+    - name: configure repos
+      raw: rpm -iUvh http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+      ignore_errors: True
+
+    - name: update yum
+      raw: yum -y update
+
+    - name: configure basics
+      raw: yum install -y gcc python-pip python-devel git libffi-devel openssl-devel
+
+    - setup:
+       filter: ansible_*
+
+    - name: set store fact
+      set_fact:
+        cif_store_store: 'elasticsearch'
+      when: CIF_ES == "1"
+
+    - debug: msg="Configuring with ElasticSearch"
+      when: CIF_ES == "1"
+
+  roles:
+    - { role: centos7, tags: role-centos7 }
+    - { role: bearded-avenger, tags: role-bearded-avenger }
+
+  post_tasks:
+
+    - name: enable services at boot
+      service: name={{ item }} enabled=yes state=started
+      with_items:
+        - cif-router
+        - cif-httpd
+        - csirtg-smrt

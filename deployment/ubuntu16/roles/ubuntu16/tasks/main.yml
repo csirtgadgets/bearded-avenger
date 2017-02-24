@@ -1,0 +1,25 @@
+---
+
+- include: check.yml
+  tags: configuration
+
+- include: firewall.yml
+  tags: firewall
+
+- include: deps.yml
+  tags: deps
+
+- include: geoip.yml
+  tags: geoip
+
+- include: bind.yml
+  tags: bind
+
+- include: user.yml
+  tags: user
+
+- include: services.yml
+  tags: services
+
+- include: nginx.yml
+  tags: nginx

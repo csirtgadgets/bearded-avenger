@@ -1,0 +1,43 @@
+server {
+        listen 443 ssl;
+
+        gzip on;
+        gzip_comp_level 2;
+        gzip_http_version 1.0;
+        gzip_proxied any;
+        gzip_min_length 1100;
+
+        gzip_buffers 16 8k;
+        gzip_types text/plain;
+
+        ssl_session_timeout  5m;
+
+        ssl_protocols  TLSv1.2 TLSv1;
+        ssl_ciphers  ALL:!ADH:!EXPORT56:RC4+RSA:+HIGH:+MEDIUM:+LOW:+SSLv2:+EXP;
+        ssl_prefer_server_ciphers   on;
+
+        root /usr/share/nginx/html;
+        index index.html index.htm;
+
+        location / {
+            gzip off;
+            proxy_redirect off;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_pass http://localhost:5000;
+        }
+
+        server_name {{ nginx_server_name }};
+        ssl_certificate {{ nginx_cert_file }};
+        ssl_certificate_key {{ nginx_key_file }};
+
+        error_page  404              /404.html;
+        location = /404.html {
+            root   /usr/share/nginx/html;
+        }
+
+        error_page   500 502 503 504  /50x.html;
+        location = /50x.html {
+            root   /usr/share/nginx/html;
+        }
+}

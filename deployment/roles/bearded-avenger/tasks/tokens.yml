@@ -1,0 +1,33 @@
+---
+- name: 'create cif sqlite db'
+  file: path={{ cif_runtime_path }}/cif.sqlite owner={{ app_user }} group={{ app_group }} mode=0660 state=touch
+
+- stat: path={{ cif_admin_config_path }}
+  register: f
+
+- name: 'generate cif admin token'
+  shell: CIF_RUNTIME_PATH={{ cif_runtime_path }} cif-store --runtime-path {{ cif_runtime_path }} --store {{ cif_store_store }} --token-create-admin {{ cif_admin_config_path }} -d
+  when: not f.stat.exists
+
+- name: 'update permissions'
+  file: path={{ cif_admin_config_path }} owner={{ app_user }} group={{ app_group }} mode=0660
+
+- stat: path={{ csirtg_smrt_config_path }}
+  register: f
+
+- name: 'generate csirtg-smrt token'
+  shell: CIF_RUNTIME_PATH={{ cif_runtime_path }} cif-store --store {{ cif_store_store }} --runtime-path {{ cif_runtime_path }} --token-create-smrt {{ csirtg_smrt_config_path }} -d
+  when: not f.stat.exists
+
+- name: 'update permissions'
+  file: path={{ csirtg_smrt_config_path }} owner={{ app_user }} group={{ app_group }} mode=0660
+
+- stat: path={{ cif_router_config_path }}
+  register: f
+
+- name: 'generate cif hunter token'
+  shell: CIF_RUNTIME_PATH={{ cif_runtime_path }} cif-store --store {{ cif_store_store }} --runtime-path {{ cif_runtime_path }} --token-create-hunter {{ cif_router_config_path }} -d
+  when: not f.stat.exists
+
+- name: 'update permissions'
+  file: path={{ cif_router_config_path }} owner={{ app_user }} group={{ app_group }} mode=0660

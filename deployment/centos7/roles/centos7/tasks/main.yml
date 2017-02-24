@@ -1,0 +1,26 @@
+---
+# tasks file for centos71-check
+
+- include: check.yml
+  tags: check
+
+- include: firewall.yml
+  tags: firewall
+
+- include: deps.yml
+  tags: configuration
+
+- include: bind.yml
+  tags: bind
+
+- include: geoip.yml
+  tags: geoip
+
+- include: user.yml
+  tags: user
+
+- include: services.yml
+  tags: services
+
+- include: nginx.yml
+  tags: nginx

@@ -1,0 +1,32 @@
+---
+- name: download geoipupdate
+  get_url:
+    url: https://github.com/maxmind/geoipupdate/releases/download/v2.2.2/geoipupdate-2.2.2.tar.gz
+    dest: /tmp/geoipupdate-2.2.2.tar.gz
+
+- name: create /etc/share/GeoIP
+  file: path=/usr/local/share/GeoIP state=directory mode=755
+
+- name: unarchive geoipupdate
+  unarchive:
+    src: /tmp/geoipupdate-2.2.2.tar.gz
+    dest: /tmp/
+
+- name: configure geoipupdate
+  command: ./configure chdir=/tmp/geoipupdate-2.2.2
+
+- name: build geoipupdate
+  command: make chdir=/tmp/geoipupdate-2.2.2
+
+- name: install geoipupdate
+  command: make install chdir=/tmp/geoipupdate-2.2.2
+
+- name: create /etc/GeoIP.conf
+  template: src=GeoIP.conf.j2 dest=/etc/GeoIP.conf owner=root group=root mode=0660
+
+- name: update geoip databases
+  command: /usr/local/bin/geoipupdate -f /etc/GeoIP.conf
+
+- name: create geoip update cron
+  cron: name="geoip update" user="root" job="/usr/local/bin/geoipupdate -f /etc/GeoIP.conf"
+        cron_file=geoipupdate day=01

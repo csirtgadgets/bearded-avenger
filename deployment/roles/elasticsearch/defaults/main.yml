@@ -1,0 +1,5 @@
+---
+# defaults file for elasticsearch
+elasticsearch_vm_max_map_count: 262144
+elasticsearch_nodes: 'localhost:9200'
+elasticsearch_version: 2

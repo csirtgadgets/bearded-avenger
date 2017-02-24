@@ -1,0 +1,8 @@
+---
+- name: test for setup.py
+  find: paths=../../ patterns=setup.py
+  register: p
+
+- name: set CIF_SDIST
+  set_fact:
+    CIF_SDIST: '1'

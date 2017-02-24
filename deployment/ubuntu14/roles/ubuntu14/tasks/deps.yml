@@ -1,0 +1,49 @@
+---
+- name: Add apt HTTPS support
+  apt: name=apt-transport-https state=present
+
+- name: Add apt HTTPS support
+  apt: name=ca-certificates state=present
+
+- name: Add python repo
+  apt_repository: repo='ppa:maxmind/ppa'
+
+- name: Update apt cache if needed.
+  apt: update_cache=yes cache_valid_time=3600 upgrade=yes
+
+- name: install deps
+  apt:
+    state: latest
+    pkg: "{{ item }}"
+  with_items:
+    - build-essential
+    - htop
+    - git
+    - python2.7
+    - python-support
+    - python-pytest
+    - python-pip
+    - python-dev
+    - virtualenvwrapper
+    - python-virtualenv
+    - geoipupdate
+    - libgeoip-dev
+    - geoip-bin
+
+- name: update pip
+  command: pip install pip --upgrade
+  become: yes
+
+- name: install pyopenssl for python 2.7.6
+  pip: name='pyopenssl==16.2.0'
+
+- name: update openssl deps
+  pip: name="{{ item }}" extra_args="--upgrade"
+  with_items: [ pyasn1 ndg-httpsclient ]
+
+- name: update vex and requests
+  pip: name="{{ item }}" extra_args="--upgrade"
+  with_items: [ requests vex ] # requests first, old version conflicts with new pip
+
+- name: install supervisord
+  pip: name='supervisor==3.2.1'
