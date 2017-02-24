@@ -1,5 +1,4 @@
 ---
-
 - name: pull release from github
   get_url:
     url: https://github.com/csirtgadgets/bearded-avenger/archive/{{ cif_release }}.tar.gz
@@ -17,7 +16,7 @@
   tags: test
 
 - name: unarchive
-  unarchive: src=/tmp/bearded-avenger-{{ cif_release }}.tar.gz dest=/tmp/
+  unarchive: src=/tmp/bearded-avenger-{{ cif_release }}.tar.gz dest=/tmp/ remote_src=true
 
 - name: install requirements
   command: pip install -r dev_requirements.txt chdir=/tmp/bearded-avenger-{{ cif_release }}
