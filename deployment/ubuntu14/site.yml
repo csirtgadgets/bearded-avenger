@@ -13,6 +13,7 @@
   vars:
     CIF_ES: "{{ lookup('env', 'ANSIBLE_CIF_ES') }}"
     GH_TOKEN: "{{ lookup('env', 'GH_TOKEN' }}"
+    CIF_SDIST: "{{ lookup('env', 'CIF_ANSIBLE_SDIST') }}"
 
   pre_tasks:
 
