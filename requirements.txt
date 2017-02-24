@@ -17,6 +17,6 @@ setuptools>=18.5
 ujson>=1.35
 html5lib==1.0b8 # bug in csirtg-smrt upstream
 msgpack-python>=0.4.8,<0.5.0
-csirtg_smrt==0.0.0a29
+csirtg_smrt==0.0.0a30
 csirtg_dnsdb>=0.0.0a3,<1.0
 tornado>=4.4.1,<5.0
