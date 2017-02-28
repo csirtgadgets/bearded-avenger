@@ -1,12 +1,5 @@
 # https://semaphoreci.com/community/tutorials/testing-ansible-roles-on-multiple-operating-systems-with-docker-and-semaphore
 ---
-- name: copy supervisord configs
-  copy: src="{{ item }}" dest=/etc/cif/ mode=0660 owner="{{ app_user }}" group="{{ app_user }}"
-  with_items:
-    - cif-router.conf
-    - cif-httpd.conf
-    - csirtg-smrt.conf
-
 - name: systemd env file
   template: src=cif.env.j2 dest=/etc/cif.env mode=0660 owner="{{ app_user }}" group="{{ app_user }}" 
   tags: configuration

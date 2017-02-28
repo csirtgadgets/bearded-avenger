@@ -5,7 +5,7 @@ defaults:
   altid_tlp: white
   tags:
     - scanner
-  altid: http://www.blocklist.de/en/view.html?ip=<indicator>
+  altid: 'http://www.blocklist.de/en/view.html?ip={indicator}'
   pattern: '^(\S+)$'
   values:
     - indicator
