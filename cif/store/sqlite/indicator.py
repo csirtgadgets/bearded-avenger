@@ -36,11 +36,11 @@ class Indicator(Base):
     __tablename__ = "indicators"
 
     id = Column(Integer, primary_key=True)
-    indicator = Column(UnicodeText)
+    indicator = Column(UnicodeText, index=True)
     group = Column(String)
-    itype = Column(String)
+    itype = Column(String, index=True)
     tlp = Column(String)
-    provider = Column(String)
+    provider = Column(String, index=True)
     portlist = Column(String)
     asn_desc = Column(UnicodeText)
     asn = Column(Float)
@@ -48,7 +48,7 @@ class Indicator(Base):
     protocol = Column(Integer)
     reporttime = Column(DateTime, index=True)
     firsttime = Column(DateTime)
-    lasttime = Column(DateTime)
+    lasttime = Column(DateTime, index=True)
     confidence = Column(Float)
     timezone = Column(String)
     city = Column(String)
@@ -155,7 +155,7 @@ class Tag(Base):
     __tablename__ = "tags"
 
     id = Column(Integer, primary_key=True)
-    tag = Column(String)
+    tag = Column(String, index=True)
 
     indicator_id = Column(Integer, ForeignKey('indicators.id', ondelete='CASCADE'))
     indicator = relationship(

@@ -20,6 +20,9 @@ DB_FILE = os.path.join(RUNTIME_PATH, 'cif.sqlite')
 logger = logging.getLogger(__name__)
 TRACE = os.environ.get('CIF_STORE_SQLITE_TRACE')
 
+# http://stackoverflow.com/q/9671490/7205341
+SYNC = os.environ.get('CIF_STORE_SQLITE_SYNC', 'NORMAL')
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
@@ -36,6 +39,10 @@ if PYVERSION > 2:
 def set_sqlite_pragma(dbapi_connection, connection_record):
     cursor = dbapi_connection.cursor()
     cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.execute("PRAGMA journal_mode = MEMORY")
+    cursor.execute("PRAGMA synchronous = {}".format(SYNC))
+    cursor.execute("PRAGMA temp_store = MEMORY")
+    cursor.execute("PRAGMA cache_size = 500000")
     cursor.close()
 
 
