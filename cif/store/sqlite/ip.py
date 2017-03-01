@@ -10,6 +10,7 @@ class Ip(UserDefinedType):
     # http://docs.sqlalchemy.org/en/latest/_modules/examples/postgis/postgis.html
     # http://docs.sqlalchemy.org/en/latest/core/custom_types.html#creating-new-types
     # http://sqlalchemy-utils.readthedocs.io/en/latest/_modules/sqlalchemy_utils/types/uuid.html
+    # https://github.com/zzzeek/sqlalchemy/blob/master/lib/sqlalchemy/sql/sqltypes.py#L852
 
     impl = types.BINARY(16)
 
