@@ -1,9 +1,6 @@
 from sqlalchemy.types import UserDefinedType
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import types
-from cifsdk.constants import PYVERSION
-from pprint import pprint
-import binascii
 import socket
 
 Base = declarative_base()
