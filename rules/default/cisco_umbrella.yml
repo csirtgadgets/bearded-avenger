@@ -19,6 +19,7 @@ defaults:
     10)))
 
 feeds:
-  top1m:
+  top-1000:
     remote: http://s3-us-west-1.amazonaws.com/umbrella-static/top-1m.csv.zip
     pattern: '^(\d+),(\S{4,})$'
+    limit: 1000
