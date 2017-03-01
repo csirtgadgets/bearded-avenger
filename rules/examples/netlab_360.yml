@@ -113,10 +113,10 @@ feeds:
     defaults:
       description: madmax
 
-  mirai:
-    remote: http://data.netlab.360.com/feeds/dga/mirai.txt
-    defaults:
-      description: mirai
+#  mirai:
+#    remote: http://data.netlab.360.com/feeds/dga/mirai.txt
+#    defaults:
+#      description: mirai
 
   murofet:
     remote: http://data.netlab.360.com/feeds/dga/murofet.txt
