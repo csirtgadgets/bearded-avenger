@@ -17,6 +17,7 @@ from pprint import pprint
 from sqlalchemy.ext.declarative import declarative_base
 import re
 import logging
+import time
 
 logger = logging.getLogger('cif.store.sqlite')
 
@@ -129,7 +130,7 @@ class Ipv4(Base):
     __tablename__ = 'indicators_ipv4'
 
     id = Column(Integer, primary_key=True)
-    ipv4 = Column(Ip, index=True)
+    ipv4 = Column(Ip)
     mask = Column(Integer, default=32)
 
     indicator_id = Column(Integer, ForeignKey('indicators.id', ondelete='CASCADE'))
@@ -469,5 +470,7 @@ class IndicatorManager(IndicatorManagerPlugin):
             d['tags'] = ','.join(tags)
 
         logger.debug('committing')
+        start = time.time()
         s.commit()
+        logger.debug('done: %0.2f' % (time.time() - start))
         return n

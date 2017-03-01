@@ -12,33 +12,34 @@ Base = declarative_base()
 class Ip(UserDefinedType):
     # http://docs.sqlalchemy.org/en/latest/_modules/examples/postgis/postgis.html
     # http://docs.sqlalchemy.org/en/latest/core/custom_types.html#creating-new-types
+    # http://sqlalchemy-utils.readthedocs.io/en/latest/_modules/sqlalchemy_utils/types/uuid.html
 
-    impl = types.Unicode(255)
+    impl = types.BINARY(16)
 
-    def __init__(self, max_length=255, version=4):
+    def __init__(self, version=4):
         self.version = version
-        self.impl = types.Unicode(max_length)
 
     def get_col_spec(self, **kw):
         return "IP"
 
     def bind_processor(self, dialect):
+
+        DBAPIBinary = dialect.dbapi.Binary
+
         def process(value):
             if self.version == 6:
                 value = socket.inet_pton(socket.AF_INET6, value)
             else:
                 value = socket.inet_pton(socket.AF_INET, value)
 
-            if PYVERSION < 3:
-                value = binascii.b2a_uu(value)
-            return value
+            return DBAPIBinary(value)
 
         return process
 
     def result_processor(self, dialect, coltype):
         def process(value):
             value = socket.inet_ntop(value)
-            return socket.inet_ntop(binascii.a2b_uu(value))
+            return value
 
         return process
 
