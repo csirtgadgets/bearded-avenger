@@ -134,7 +134,7 @@ class Ipv4(Base):
     __tablename__ = 'indicators_ipv4'
 
     id = Column(Integer, primary_key=True)
-    ipv4 = Column(Ip)
+    ipv4 = Column(Ip, index=True)
     mask = Column(Integer, default=32)
 
     indicator_id = Column(Integer, ForeignKey('indicators.id', ondelete='CASCADE'))
