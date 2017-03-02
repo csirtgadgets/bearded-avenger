@@ -36,8 +36,7 @@ class Ip(UserDefinedType):
 
     def result_processor(self, dialect, coltype):
         def process(value):
-            value = socket.inet_ntop(value)
-            return value
+            return socket.inet_ntop(value)
 
         return process
 

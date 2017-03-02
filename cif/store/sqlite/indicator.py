@@ -438,10 +438,18 @@ class IndicatorManager(IndicatorManagerPlugin):
                 i = i.filter_by(rdata=d['rdata'])
 
             if d['itype'] == 'ipv4':
-                i = i.join(Ipv4).filter(Ipv4.ipv4 == d['indicator'])
+                match = re.search('^(\S+)\/(\d+)$', d['indicator'])  # TODO -- use ipaddress
+                if match:
+                    i = i.join(Ipv4).filter(Ipv4.ipv4 == match.group(1), Ipv4.mask == match.group(2))
+                else:
+                    i = i.join(Ipv4).filter(Ipv4.ipv4 == d['indicator'])
 
             if d['itype'] == 'ipv6':
-                i = i.join(Ipv6).filter(Ipv6.ipv6 == d['indicator'])
+                match = re.search('^(\S+)\/(\d+)$', d['indicator'])  # TODO -- use ipaddress
+                if match:
+                    i = i.join(Ipv6).filter(Ipv6.ip == match.group(1), Ipv6.mask == match.group(2))
+                else:
+                    i = i.join(Ipv6).filter(Ipv6.ip == d['indicator'])
 
             if d['itype'] == 'fqdn':
                 i = i.join(Fqdn).filter(Fqdn.fqdn == d['indicator'])
@@ -456,6 +464,7 @@ class IndicatorManager(IndicatorManagerPlugin):
                 i = i.join(Tag).filter(Tag.tag == tags[0])
 
             r = i.first()
+
             if r:
                 if d.get('lasttime') and arrow.get(d['lasttime']).datetime > arrow.get(r.lasttime).datetime:
                     logger.debug('{} {}'.format(arrow.get(r.lasttime).datetime, arrow.get(d['lasttime']).datetime))
@@ -505,6 +514,7 @@ class IndicatorManager(IndicatorManagerPlugin):
                 s.add(ii)
 
                 itype = resolve_itype(d['indicator'])
+
                 if itype is 'ipv4':
                     match = re.search('^(\S+)\/(\d+)$', d['indicator'])  # TODO -- use ipaddress
                     if match:

@@ -254,7 +254,7 @@ class Store(multiprocessing.Process):
             lasttime=ts,
             reporttime=ts,
             group=t['groups'][0],
-            count=1
+            count=1,
         )
         self.store.indicators.upsert(t, s.__dict__())
 
