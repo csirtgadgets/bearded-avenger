@@ -30,24 +30,3 @@ feeds:
     pattern: ^(\S+)\,IP used by (suppobox C&C)\,([^,]+)\,(\S+)$
     defaults:
       confidence: 6.5
-
-  cryptolocker_fqdn:
-    remote: http://osint.bambenekconsulting.com/feeds/dga-feed.txt
-    cache: dga-feed.txt
-    pattern: '^([^,]+)\,Domain used by (Cryptolocker[^,]+)\,([^,]+)\,([^\r\n]+)'
-    defaults:
-      tags: 'botnet,dga'
-
-  zeus_fqdn:
-    remote: http://osint.bambenekconsulting.com/feeds/dga-feed.txt
-    cache: dga-feed.txt
-    pattern: '^([^,]+)\,Domain used by (P2P Gameover Zeus[^,]+)\,([^,]+)\,([^\r\n]+)'
-    defaults:
-      tags: 'botnet,dga'
-
-  tinba_fqdn:
-    remote: http://osint.bambenekconsulting.com/feeds/dga-feed.txt
-    cache: dga-feed.txt
-    pattern: '^([^,]+)\,Domain used by (tinba[^,]+)\,([^,]+)\,([^\r\n]+)'
-    defaults:
-      tags: 'botnet,dga'

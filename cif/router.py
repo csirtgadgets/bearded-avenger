@@ -29,6 +29,7 @@ ZMQ_HWM = 1000000
 ZMQ_SNDTIMEO = 5000
 ZMQ_RCVTIMEO = 5000
 FRONTEND_TIMEOUT = os.environ.get('CIF_FRONTEND_TIMEOUT', 100)
+BACKEND_TIMEOUT = os.environ.get('CIF_BACKEND_TIMEOUT', 10)
 
 HUNTER_TOKEN = os.environ.get('CIF_HUNTER_TOKEN', None)
 
@@ -92,6 +93,7 @@ class Router(object):
         self.count_start = time.time()
 
         self.poller = zmq.Poller()
+        self.poller_backend = zmq.Poller()
 
         self.terminate = False
 
@@ -133,8 +135,8 @@ class Router(object):
     def start(self):
         self.logger.debug('starting loop')
 
-        self.poller.register(self.hunter_sink_s, zmq.POLLIN)
-        self.poller.register(self.gatherer_sink_s, zmq.POLLIN)
+        self.poller_backend.register(self.hunter_sink_s, zmq.POLLIN)
+        self.poller_backend.register(self.gatherer_sink_s, zmq.POLLIN)
         self.poller.register(self.store_s, zmq.POLLIN)
         self.poller.register(self.frontend_s, zmq.POLLIN)
 
@@ -149,6 +151,8 @@ class Router(object):
 
             if self.store_s in items and items[self.store_s] == zmq.POLLIN:
                 self.handle_message_store(self.store_s)
+
+            items = dict(self.poller_backend.poll(BACKEND_TIMEOUT))
 
             if self.gatherer_sink_s in items and items[self.gatherer_sink_s] == zmq.POLLIN:
                 self.handle_message_gatherer(self.gatherer_sink_s)

@@ -56,7 +56,7 @@ class Geo(object):
                 indicator.timezone = g.location.time_zone
 
     def process(self, indicator):
-        if indicator.itype != 'ipv4' and indicator.itype != 'ipv6':
+        if indicator.itype not in ['ipv4', 'ipv6']:
             return indicator
 
         if indicator.is_private():

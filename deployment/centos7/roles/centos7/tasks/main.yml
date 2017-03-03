@@ -18,12 +18,9 @@
 
 - include: user.yml
   tags: user
-  when: not development
 
 - include: services.yml
   tags: services
-  when: not development
 
 - include: nginx.yml
   tags: nginx
-  when: not development

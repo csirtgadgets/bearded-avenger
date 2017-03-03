@@ -5,4 +5,3 @@
     - 443
     - 5000
   tags: ufw
-  when: not development

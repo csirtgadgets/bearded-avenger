@@ -1,9 +1,24 @@
 ---
+- include: github.yml
+  tags: github
+  when: GH_TOKEN != ""
 
-- include: production.yml
-  tags: production
-  when: not development
+- include: paths.yml
+  tags: paths
 
-- include: development.yml
-  tags: development
-  when: development
+- include: check_sdist.yml
+  when: (CIF_SDIST is undefined or CIF_SDIST == "")
+
+- include: dist.yml
+  when: (CIF_SDIST is undefined or CIF_SDIST == "")
+  tags: dist
+
+- include: sdist.yml
+  when: (CIF_SDIST is defined and CIF_SDIST == "1")
+  tags: sdist
+
+- include: rules.yml
+  tags: rules
+
+- include: tokens.yml
+  tags: tokens

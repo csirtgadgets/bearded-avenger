@@ -1,7 +1,4 @@
 ---
-development: false
-ci: false
-
 app_user: cif
 app_group: cif
 app_user_home: "/home/{{ app_user }}"
@@ -17,10 +14,6 @@ csirtg_smrt_cache_path: "{{ cif_runtime_path }}/smrt"
 csirtg_smrt_config_path: '/etc/cif/csirtg-smrt.yml'
 csirtg_smrt_rules_path: '/etc/cif/rules'
 
-venv: cif
-venv_user: vagrant
-venv_source_path: '/vagrant'
-venv_home: "/home/{{ venv_user }}"
-venv_path: "{{ venv_home }}/.virtualenvs/{{ venv }}"
-
 pyversion: 2
+
+cif_release: 3.0.0a16

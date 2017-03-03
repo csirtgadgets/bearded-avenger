@@ -1,7 +1,0 @@
-machine:
-  python:
-    version: 3.5.1
-
-test:
-  override:
-    - py.test test

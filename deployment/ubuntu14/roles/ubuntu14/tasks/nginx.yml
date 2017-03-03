@@ -20,8 +20,5 @@
 - name: enable configuration
   file: dest=/etc/nginx/sites-enabled/default src={{ nginx_conf_file }} state=link
 
-- name: restart nginx
-  service: name=nginx state=restarted
-
 - name: enable services at boot
-  service: name=nginx enabled=yes state=started
+  service: name=nginx enabled=yes state=restarted

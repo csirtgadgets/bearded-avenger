@@ -1,30 +1,28 @@
 ---
+- name: pull release from github
+  get_url:
+    url: https://github.com/csirtgadgets/bearded-avenger/archive/{{ cif_release }}.tar.gz
+    dest: /tmp/bearded-avenger-{{ cif_release }}.tar.gz
+  when: GH_TOKEN == ""
+  tags: test
 
-- name: cleaning up dist
-  local_action: file path=../../dist state=absent
+# github likes to throttle when
+- name: pull release from github
+  get_url:
+    url: https://github.com/csirtgadgets/bearded-avenger/archive/{{ cif_release }}.tar.gz
+    dest: /tmp/bearded-avenger-{{ cif_release }}.tar.gz
+    headers: "Authorization: Token {{ GH_TOKEN }}"
+  when: GH_TOKEN is defined and GH_TOKEN != ""
+  tags: test
 
-- name: build dist
-  local_action: shell python setup.py sdist chdir=../../
-
-- name: find dist name
-  local_action: find paths=../../dist patterns="^(cif\-.*\.tar.gz)$" use_regex=True
-  register: p
-
-- name: upload dist and uarchive
-  unarchive: src={{ p.files[0].path }} dest=/tmp
-
-- name: find dist name
-  find: paths=/tmp patterns="^(cif-.*)$" use_regex=True file_type=directory
-  register: p
+- name: unarchive
+  unarchive: src=/tmp/bearded-avenger-{{ cif_release }}.tar.gz dest=/tmp/ remote_src=true
 
 - name: install requirements
-  command: pip install -r dev_requirements.txt chdir="{{ p.files[0].path }}"
-  become: yes
+  command: pip install -r dev_requirements.txt chdir=/tmp/bearded-avenger-{{ cif_release }}
 
 - name: run tests
-  command: python setup.py test chdir="{{ p.files[0].path }}"
-  become: yes
+  command: python setup.py test chdir=/tmp/bearded-avenger-{{ cif_release }}
 
 - name: install cif
-  command: python setup.py install chdir="{{ p.files[0].path }}"
-  become: yes
+  command: python setup.py install chdir=/tmp/bearded-avenger-{{ cif_release }}

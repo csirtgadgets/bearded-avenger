@@ -78,11 +78,15 @@ class SpamhausFqdn(object):
                     r = None
 
                 if r:
+                    confidence = CONFIDENCE
+                    if ' legit ' in r['description']:
+                        confidence = 6
+
                     f = Indicator(**i.__dict__())
 
                     f.tags = [r['tags']]
                     f.description = r['description']
-                    f.confidence = CONFIDENCE
+                    f.confidence = confidence
                     f.provider = PROVIDER
                     f.reference_tlp = 'white'
                     f.reference = 'http://www.spamhaus.org/query/dbl?domain={}'.format(f.indicator)

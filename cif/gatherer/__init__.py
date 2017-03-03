@@ -11,7 +11,7 @@ import cif.gatherer
 from cif.constants import GATHERER_ADDR, GATHERER_SINK_ADDR
 from csirtg_indicator import Indicator
 
-SNDTIMEO = 15000
+SNDTIMEO = 30000
 LINGER = 0
 
 logger = logging.getLogger(__name__)

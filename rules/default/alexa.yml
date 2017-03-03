@@ -23,7 +23,6 @@ defaults:
     10)))
 
 feeds:
-  top-100000:
+  top-1000:
     remote: http://s3.amazonaws.com/alexa-static/top-1m.csv.zip
-    limit: 100
-
+    limit: 5

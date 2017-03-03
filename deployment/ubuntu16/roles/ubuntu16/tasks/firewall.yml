@@ -6,4 +6,3 @@
     - 5000
     - 8080
   tags: ufw
-  when: not development

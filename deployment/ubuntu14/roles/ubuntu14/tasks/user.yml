@@ -5,6 +5,7 @@
   file: path={{ app_user_home }} owner={{ app_user }} group={{ app_group }} mode=0750
 
 - user: name="{{ ansible_env.SUDO_USER }}" groups={{ app_group }} append=yes
+  when: (ansible_env.SUDO_USER is defined and ansible_env.SUDO_USER != "")
 
 - name: Ensure app user has a .profile
   file: path="{{ app_user_home }}/.profile" state=touch owner={{ app_user }} group={{ app_group }} mode=0660

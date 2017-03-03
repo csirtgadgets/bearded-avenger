@@ -1,7 +1,7 @@
 FROM ubuntu:14.04
 MAINTAINER Wes Young <wes@csirtgadgets.org>
 
-ENV CIF_VERSION master
+ENV CIF_VERSION 3.0.0a16
 
 RUN apt-get update
 RUN apt-get install -qq software-properties-common python-software-properties

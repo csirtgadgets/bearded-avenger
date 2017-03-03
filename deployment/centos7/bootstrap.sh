@@ -1,19 +1,15 @@
 #!/bin/bash
 
-sudo rpm -iUvh http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+export CIF_ELASTICSEARCH=$CIF_ELASTICSEARCH
+export CIF_ANSIBLE_SDIST=$CIF_ANSIBLE_SDIST
 
 set -e
 
 yum -y update
 
 echo 'updating apt-get tree and installing python-pip'
-sudo yum install -y gcc python-pip python-devel git libffi-devel openssl-devel python-virtualenv \
-    python-virtualenvwrapper libselinux-python
+sudo yum install -y gcc python-pip python-devel git libffi-devel openssl-devel
 
-echo 'installing ansible...'
-sudo pip install 'setuptools>=18.3,<34.0' 'ansible>=2.1,<3.0' versioneer markupsafe
-
-echo 'running ansible...'
-ansible-playbook -i "localhost," -c local localhost.yml -vv
+bash ../ansible.sh
 
 bash ../test.sh

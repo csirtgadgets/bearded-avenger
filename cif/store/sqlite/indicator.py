@@ -13,15 +13,20 @@ from cif.store.indicator_plugin import IndicatorManagerPlugin
 from cifsdk.exceptions import InvalidSearch
 import ipaddress
 from .ip import Ip
+from .fqdn import Fqdn
+from .url import Url
+from .hash import Hash
 from pprint import pprint
 from sqlalchemy.ext.declarative import declarative_base
 import re
 import logging
+import time
 
 logger = logging.getLogger('cif.store.sqlite')
 
 DB_FILE = os.path.join(RUNTIME_PATH, 'cif.sqlite')
 REQUIRED_FIELDS = ['provider', 'indicator', 'tags', 'group', 'itype']
+HASH_TYPES = ['sha1', 'sha256', 'sha512', 'md5']
 
 from cif.httpd.common import VALID_FILTERS
 
@@ -36,11 +41,11 @@ class Indicator(Base):
     __tablename__ = "indicators"
 
     id = Column(Integer, primary_key=True)
-    indicator = Column(UnicodeText)
+    indicator = Column(UnicodeText, index=True)
     group = Column(String)
-    itype = Column(String)
+    itype = Column(String, index=True)
     tlp = Column(String)
-    provider = Column(String)
+    provider = Column(String, index=True)
     portlist = Column(String)
     asn_desc = Column(UnicodeText)
     asn = Column(Float)
@@ -48,7 +53,7 @@ class Indicator(Base):
     protocol = Column(Integer)
     reporttime = Column(DateTime, index=True)
     firsttime = Column(DateTime)
-    lasttime = Column(DateTime)
+    lasttime = Column(DateTime, index=True)
     confidence = Column(Float)
     timezone = Column(String)
     city = Column(String)
@@ -151,11 +156,47 @@ class Ipv6(Base):
     )
 
 
+class Fqdn(Base):
+    __tablename__ = 'indicators_fqdn'
+
+    id = Column(Integer, primary_key=True)
+    fqdn = Column(Fqdn, index=True)
+
+    indicator_id = Column(Integer, ForeignKey('indicators.id', ondelete='CASCADE'))
+    indicator = relationship(
+        Indicator,
+    )
+
+
+class Url(Base):
+    __tablename__ = 'indicators_url'
+
+    id = Column(Integer, primary_key=True)
+    url = Column(Url, index=True)
+
+    indicator_id = Column(Integer, ForeignKey('indicators.id', ondelete='CASCADE'))
+    indicator = relationship(
+        Indicator,
+    )
+
+
+class Hash(Base):
+    __tablename__ = 'indicators_hash'
+
+    id = Column(Integer, primary_key=True)
+    hash = Column(Hash, index=True)
+
+    indicator_id = Column(Integer, ForeignKey('indicators.id', ondelete='CASCADE'))
+    indicator = relationship(
+        Indicator,
+    )
+
+
 class Tag(Base):
     __tablename__ = "tags"
 
     id = Column(Integer, primary_key=True)
-    tag = Column(String)
+    tag = Column(String, index=True)
 
     indicator_id = Column(Integer, ForeignKey('indicators.id', ondelete='CASCADE'))
     indicator = relationship(
@@ -234,7 +275,7 @@ class IndicatorManager(IndicatorManagerPlugin):
             s = s.join(Message).filter(Indicator.Message.like('%{}%'.format(i)))
             return s
 
-        if itype in ['fqdn', 'email', 'url']:
+        if itype in ['email']:
             s = s.filter(Indicator.indicator == i)
             return s
 
@@ -268,6 +309,21 @@ class IndicatorManager(IndicatorManagerPlugin):
 
             s = s.join(Ipv6).filter(Ipv6.ip >= start)
             s = s.filter(Ipv6.ip <= end)
+            return s
+
+        if itype == 'fqdn':
+            s = s.join(Fqdn).filter(or_(
+                    Fqdn.fqdn.like('%.{}'.format(i)),
+                    Fqdn.fqdn == i)
+            )
+            return s
+
+        if itype == 'url':
+            s = s.join(Url).filter(Url.url == i)
+            return s
+
+        if itype in HASH_TYPES:
+            s = s.join(Hash).filter(Hash.hash == i)
             return s
 
         raise InvalidIndicator
@@ -338,8 +394,11 @@ class IndicatorManager(IndicatorManagerPlugin):
 
         rv = s.order_by(desc(Indicator.reporttime)).limit(limit)
 
+        start = time.time()
         for i in rv:
             yield self.to_dict(i)
+
+        logger.debug('done: %0.4f' % (time.time() - start))
 
     def upsert(self, token, data):
         if type(data) == dict:
@@ -370,17 +429,42 @@ class IndicatorManager(IndicatorManagerPlugin):
                 del d['tags']
 
             i = s.query(Indicator).options(lazyload('*')).filter_by(
-                indicator=d['indicator'],
                 provider=d['provider'],
+                itype=d['itype'],
+                indicator=d['indicator'],
             ).order_by(Indicator.lasttime.desc())
 
             if d.get('rdata'):
                 i = i.filter_by(rdata=d['rdata'])
 
+            if d['itype'] == 'ipv4':
+                match = re.search('^(\S+)\/(\d+)$', d['indicator'])  # TODO -- use ipaddress
+                if match:
+                    i = i.join(Ipv4).filter(Ipv4.ipv4 == match.group(1), Ipv4.mask == match.group(2))
+                else:
+                    i = i.join(Ipv4).filter(Ipv4.ipv4 == d['indicator'])
+
+            if d['itype'] == 'ipv6':
+                match = re.search('^(\S+)\/(\d+)$', d['indicator'])  # TODO -- use ipaddress
+                if match:
+                    i = i.join(Ipv6).filter(Ipv6.ip == match.group(1), Ipv6.mask == match.group(2))
+                else:
+                    i = i.join(Ipv6).filter(Ipv6.ip == d['indicator'])
+
+            if d['itype'] == 'fqdn':
+                i = i.join(Fqdn).filter(Fqdn.fqdn == d['indicator'])
+
+            if d['itype'] == 'url':
+                i = i.join(Url).filter(Url.url == d['indicator'])
+
+            if d['itype'] in HASH_TYPES:
+                i = i.join(Hash).filter(Hash.hash == d['indicator'])
+
             if len(tags):
                 i = i.join(Tag).filter(Tag.tag == tags[0])
 
             r = i.first()
+
             if r:
                 if d.get('lasttime') and arrow.get(d['lasttime']).datetime > arrow.get(r.lasttime).datetime:
                     logger.debug('{} {}'.format(arrow.get(r.lasttime).datetime, arrow.get(d['lasttime']).datetime))
@@ -430,6 +514,7 @@ class IndicatorManager(IndicatorManagerPlugin):
                 s.add(ii)
 
                 itype = resolve_itype(d['indicator'])
+
                 if itype is 'ipv4':
                     match = re.search('^(\S+)\/(\d+)$', d['indicator'])  # TODO -- use ipaddress
                     if match:
@@ -447,6 +532,22 @@ class IndicatorManager(IndicatorManagerPlugin):
                         ip = Ipv6(ip=d['indicator'], indicator=ii)
 
                     s.add(ip)
+
+                if itype is 'fqdn':
+                    fqdn = Fqdn(fqdn=d['indicator'], indicator=ii)
+                    s.add(fqdn)
+
+                if itype is 'url':
+                    url = Url(url=d['indicator'], indicator=ii)
+                    s.add(url)
+
+                if itype is 'url':
+                    url = Url(url=d['indicator'], indicator=ii)
+                    s.add(url)
+
+                if itype is HASH_TYPES:
+                    hash = Hash(hash=d['indicator'], indicator=ii)
+                    s.add(hash)
 
                 for t in tags:
                     t = Tag(tag=t, indicator=ii)
@@ -469,5 +570,7 @@ class IndicatorManager(IndicatorManagerPlugin):
             d['tags'] = ','.join(tags)
 
         logger.debug('committing')
+        start = time.time()
         s.commit()
+        logger.debug('done: %0.2f' % (time.time() - start))
         return n

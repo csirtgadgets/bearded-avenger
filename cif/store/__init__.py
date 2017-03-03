@@ -215,7 +215,9 @@ class Store(multiprocessing.Process):
             r = self.store.indicators.upsert(t, data)
 
             if len(data) > 1:
-                logger.info('Upserting %d indicators.. took %0.2f seconds', len(data), time.time() - start_time)
+                n = len(data)
+                t = time.time() - start_time
+                logger.info('Upserting %d indicators.. took %0.2f seconds (%0.2f/sec)', n, t, (n/t))
 
             return r
 
@@ -252,7 +254,7 @@ class Store(multiprocessing.Process):
             lasttime=ts,
             reporttime=ts,
             group=t['groups'][0],
-            count=1
+            count=1,
         )
         self.store.indicators.upsert(t, s.__dict__())
 
