@@ -36,22 +36,6 @@ If you've never worked on a GitHub project, [this is a good piece](https://guide
 * [Mailing List](https://groups.google.com/forum/#!forum/ci-framework)  
 * [Project Page](http://csirtgadgets.org/collective-intelligence-framework/)
 
-# Development
-## Some of the tools we use:
-
-* [PyCharm](https://www.jetbrains.com/pycharm/)
-* [VirtualenvWrapper](https://virtualenvwrapper.readthedocs.org/en/latest/)
-* [Ansible](http://ansible.com)
-* [Vagrant](https://www.vagrantup.com/)
-* [Docker](https://docker.io)
-
-## Some useful books:
-
-* [Ansible Up & Running](http://www.amazon.com/Ansible-Up-Running-Lorin-Hochstein/dp/1491915323/ref=sr_1_1?ie=UTF8&qid=1450109562&sr=8-1&keywords=ansible+up+and+running)
-* [Vagrant Up & Running](http://www.amazon.com/Vagrant-Up-Running-Mitchell-Hashimoto/dp/1449335837/ref=sr_1_3?ie=UTF8&qid=1450109562&sr=8-3&keywords=ansible+up+and+running)
-* [Docker Up & Running](http://www.amazon.com/Docker-Up-Running-Karl-Matthias/dp/1491917571/ref=sr_1_2?ie=UTF8&qid=1450109562&sr=8-2&keywords=ansible+up+and+running)
-
-
 # COPYRIGHT AND LICENSE
 
 Copyright (C) 2017 [the CSIRT Gadgets Foundation](http://csirtgadgets.org)
