@@ -52,8 +52,8 @@ If you've never worked on a GitHub project, [this is a good piece](https://guide
 * [Docker Up & Running](http://www.amazon.com/Docker-Up-Running-Karl-Matthias/dp/1491917571/ref=sr_1_2?ie=UTF8&qid=1450109562&sr=8-2&keywords=ansible+up+and+running)
 
 
-# COPYRIGHT AND LICENCE
+# COPYRIGHT AND LICENSE
 
-Copyright (C) 2016 [the CSIRT Gadgets Foundation](http://csirtgadgets.org)
+Copyright (C) 2017 [the CSIRT Gadgets Foundation](http://csirtgadgets.org)
 
-Free use of this software is granted under the terms of the GNU Lesser General Public License (LGPLv3). For details see the files `COPYING` included with the distribution.
+Free use of this software is granted under the terms of the [Mozilla Public License (MPLv2)](https://www.mozilla.org/en-US/MPL/2.0/).
