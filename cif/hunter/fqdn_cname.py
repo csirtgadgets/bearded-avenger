@@ -38,7 +38,7 @@ class FqdnCname(object):
                 return
 
             fqdn.itype = 'fqdn'
-            fqdn.confidence = (int(fqdn.confidence) / 2)
+            fqdn.confidence = (fqdn.confidence - 1)
             router.indicators_create(fqdn)
 
 Plugin = FqdnCname

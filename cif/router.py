@@ -19,7 +19,7 @@ import time
 import multiprocessing as mp
 from cifsdk.msg import Msg
 
-HUNTER_MIN_CONFIDENCE = 2
+HUNTER_MIN_CONFIDENCE = 5
 HUNTER_THREADS = os.getenv('CIF_HUNTER_THREADS', 2)
 GATHERER_THREADS = os.getenv('CIF_GATHERER_THREADS', 2)
 STORE_DEFAULT = 'sqlite'
