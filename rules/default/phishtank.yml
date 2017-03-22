@@ -1,5 +1,8 @@
+# https://www.phishtank.com/developer_info.php
+# remote: http://data.phishtank.com/data/<api-token>/online-valid.json.gz
 parser: json
-remote: http://data.phishtank.com/data/online-valid.json.gz
+token:
+remote: http://data.phishtank.com/data/{token}/online-valid.json.gz
 defaults:
   provider: phishtank.com
   tlp: green

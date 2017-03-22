@@ -4,7 +4,7 @@ defaults:
   protocol: tcp
   tlp: green
   altid_tlp: white
-  confidence: 9
+  confidence: 8
   application: irc
   remote: http://www.mirc.com/servers.ini
   altid: http://www.mirc.com/servers.ini

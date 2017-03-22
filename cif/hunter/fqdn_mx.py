@@ -7,6 +7,7 @@ from dns.resolver import Timeout
 import re
 from pprint import pprint
 
+
 class FqdnMx(object):
 
     def __init__(self):
@@ -43,7 +44,7 @@ class FqdnMx(object):
             else:
                 fqdn.itype = 'fqdn'
                 fqdn.rdata = i.indicator
-                fqdn.confidence = (int(fqdn.confidence) / 6)
+                fqdn.confidence = (int(fqdn.confidence) - 5)
                 router.indicators_create(fqdn)
 
 Plugin = FqdnMx
