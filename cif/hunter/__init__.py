@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 SNDTIMEO = 15000
 ZMQ_HWM = 1000000
 EXCLUDE = os.environ.get('CIF_HUNTER_EXCLUDE', None)
+HUNTER_ADVANCED = os.getenv('CIF_HUNTER_ADVANCED', 0)
 
 TRACE = os.environ.get('CIF_ROUTER_TRACE') or os.environ.get('CIF_HUNTER_TRACE')
 
@@ -123,6 +124,9 @@ class Hunter(multiprocessing.Process):
                             logger.debug('skipping: {}'.format(d.indicator))
 
                 for p in plugins:
+                    if p.is_advanced:
+                        if not HUNTER_ADVANCED:
+                            continue
                     try:
                         p.process(d, router)
                     except Exception as e:

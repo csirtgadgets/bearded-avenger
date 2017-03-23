@@ -8,6 +8,7 @@ class FqdnSubdomain(object):
 
     def __init__(self):
         self.logger = logging.getLogger(__name__)
+        self.is_advanced = False
 
     def process(self, i, router):
         if i.itype != 'fqdn':

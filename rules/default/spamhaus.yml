@@ -4,7 +4,6 @@ defaults:
   tlp: green
   reference_tlp: white
   tags:
-    - suspicious
     - hijacked
   reference: http://www.spamhaus.org/sbl/sbl.lasso?query=<reference>
   pattern: '(.+)\s;\s(.+)'

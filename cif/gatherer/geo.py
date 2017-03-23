@@ -69,38 +69,58 @@ class Geo(object):
 
         return host
 
+    def _ip_to_prefix(self, i):
+        i = list(i.split('.'))
+        i = '{}.{}.{}.0'.format(i[0], i[1], i[2])
+        return str(i)
+
     def _resolve(self, indicator):
-        if self.db:
-            g = self.db.city(str(indicator.indicator))
+        if not self.db:
+            return
 
-            if g.country.iso_code:
-                indicator.cc = g.country.iso_code
+        i = indicator.indicator
+        if indicator.itype in ['url', 'fqdn']:
+            if indicator.itype == 'url':
+                u = urlparse(i)
+                i = u.hostname
 
-            if g.city.name:
-                indicator.city = g.city.name
+            i = self._lookup_ip(i)
+            if not i:
+                return
 
-            if g.location.longitude:
-                indicator.longitude = g.location.longitude
+            if not indicator.rdata:
+                indicator.rdata = i
 
-            if g.location.latitude:
-                indicator.latitude = g.location.latitude
+        i = self._ip_to_prefix(i)
 
-            if g.location.time_zone:
-                indicator.timezone = g.location.time_zone
+        g = self.db.city(i)
 
-        if self.city_db:
-            g = self.city_db.record_by_addr(indicator.indicator)
+        if g.country.iso_code:
+            indicator.cc = g.country.iso_code
 
-            if g.get('region_code'):
-                indicator.region = g['region_code']
+        if g.city.name:
+            indicator.city = g.city.name
 
-        if self.asn_db:
-            g = self.asn_db.asn_by_addr(indicator.indicator)
-            if g:
-                m = re.match('^AS(\d+)\s([^.]+)', g)
-                if m:
-                    indicator.asn = m.group(1)
-                    indicator.asn_desc = m.group(2)
+        if g.location.longitude:
+            indicator.longitude = g.location.longitude
+
+        if g.location.latitude:
+            indicator.latitude = g.location.latitude
+
+        if g.location.time_zone:
+            indicator.timezone = g.location.time_zone
+
+        g = self.city_db.record_by_addr(i)
+
+        if g.get('region_code'):
+            indicator.region = g['region_code']
+
+        g = self.asn_db.asn_by_addr(i)
+        if g:
+            m = re.match('^AS(\d+)\s([^.]+)', g)
+            if m:
+                indicator.asn = m.group(1)
+                indicator.asn_desc = m.group(2)
 
     def process(self, indicator):
         if indicator.itype not in ['ipv4', 'ipv6', 'fqdn', 'url']:
@@ -117,24 +137,6 @@ class Geo(object):
             match = re.search('^(\S+)\/\d+$', i)
             if match:
                 indicator.indicator = match.group(1)
-
-        # cache it to the /24
-        if indicator.itype == 'ipv4':
-            i = indicator.indicator
-            i = list(i.split('.'))
-            i = '{}.{}.{}.0'.format(i[0], i[1], i[2])
-            indicator.indicator = i
-
-        if indicator.itype == 'fqdn':
-            indicator.indicator = self._lookup_ip(indicator.indicator)
-            if not indicator.rdata:
-                indicator.rdata = indicator.indicator
-
-        if indicator.itype == 'url':
-            u = urlparse(indicator.indicator)
-            indicator.indicator = self._lookup_ip(u.hostname)
-            if not indicator.rdata:
-                indicator.rdata = indicator.indicator
 
         try:
             if indicator.indicator:
