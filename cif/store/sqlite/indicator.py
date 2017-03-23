@@ -342,10 +342,10 @@ class IndicatorManager(IndicatorManagerPlugin):
             if k == 'reporttime':
                 if ',' in filters[k]:
                     start, end = filters[k].split(',')
-                    s = s.filter(Indicator.reporttime >= start)
-                    s = s.filter(Indicator.reporttime <= end)
+                    s = s.filter(Indicator.reporttime >= arrow.get(start).datetime)
+                    s = s.filter(Indicator.reporttime <= arrow.get(end).datettime)
                 else:
-                    s = s.filter(Indicator.reporttime >= filters[k])
+                    s = s.filter(Indicator.reporttime >= arrow.get(filters[k]).datetime)
 
             elif k == 'reporttimeend':
                 s = s.filter(Indicator.reporttime <= filters[k])
@@ -395,7 +395,7 @@ class IndicatorManager(IndicatorManagerPlugin):
         s = s.filter(or_(Indicator.group == g for g in groups))
         return s
 
-    def search(self, token, filters, limit=500):
+    def _search(self, filters, token):
         logger.debug('running search')
 
         myfilters = dict(filters.items())
@@ -407,6 +407,10 @@ class IndicatorManager(IndicatorManagerPlugin):
         s = self._filter_indicator(myfilters, s)
         s = self._filter_terms(myfilters, s)
         s = self._filter_groups(token, s)
+        return s
+
+    def search(self, token, filters, limit=500):
+        s = self._search(filters, token)
 
         limit = filters.pop('limit', limit)
 
@@ -417,6 +421,31 @@ class IndicatorManager(IndicatorManagerPlugin):
             yield self.to_dict(i)
 
         logger.debug('done: %0.4f' % (time.time() - start))
+
+    def delete(self, token, data=None, id=None):
+        if type(data) is not list:
+            data = [data]
+
+        ids = []
+        for d in data:
+            if d.get('id'):
+                ids.append(Indicator.id == d['id'])
+                logger.debug('removing: %s' % d['id'])
+            else:
+                ss = self._search(d, token)
+                for i in ss:
+                    ids.append(Indicator.id == i.id)
+                    logger.debug('removing: %s' % i.indicator)
+
+        if len(ids) == 0:
+            return 0
+
+        s = self.handle().query(Indicator)
+        s = s.filter(or_(*ids))
+        rv = s.delete()
+        self.handle().commit()
+
+        return rv
 
     def upsert(self, token, data):
         if type(data) == dict:

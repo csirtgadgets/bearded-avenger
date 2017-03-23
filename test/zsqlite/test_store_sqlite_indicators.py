@@ -157,3 +157,24 @@ def test_store_sqlite_indicators(store, indicator):
 
     assert x is None
 
+    r = store.handle_indicators_delete(t, data=[{
+        'indicator': 'example.com',
+    }])
+    assert r == 2
+
+    x = store.handle_indicators_search(t, {
+        'indicator': 'example.com',
+        'nolog': 1
+    })
+    assert len(x) == 0
+
+    x = store.handle_indicators_search(t, {
+        'indicator': 'example2.com',
+        'nolog': 1
+    })
+
+    for xx in x:
+        r = store.handle_indicators_delete(t, data=[{
+            'id': xx['id']
+        }])
+        assert r == 1

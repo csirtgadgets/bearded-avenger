@@ -24,7 +24,7 @@ HUNTER_THREADS = os.getenv('CIF_HUNTER_THREADS', 2)
 HUNTER_ADVANCED = os.getenv('CIF_HUNTER_ADVANCED', 0)
 GATHERER_THREADS = os.getenv('CIF_GATHERER_THREADS', 2)
 STORE_DEFAULT = 'sqlite'
-STORE_PLUGINS = ['cif.store.dummy', 'cif.store.sqlite', 'cif.store.elasticsearch', 'cif.store.rdflib']
+STORE_PLUGINS = ['cif.store.dummy', 'cif.store.sqlite', 'cif.store.elasticsearch']
 
 ZMQ_HWM = 1000000
 ZMQ_SNDTIMEO = 5000
