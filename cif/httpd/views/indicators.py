@@ -92,3 +92,26 @@ class IndicatorsAPI(MethodView):
 
         return jsonify_success(r, code=201)
 
+    def delete(self):
+
+        try:
+            data = request.data.decode('utf-8')
+            logger.debug(data)
+            r = Client(remote, pull_token()).indicators_delete(data)
+
+        except RuntimeError as e:
+            logger.error(e)
+            return jsonify_unknown(msg='submission failed, check logs for more information', code=422)
+
+        except TimeoutError as e:
+            logger.error(e)
+            return jsonify_unknown('submission failed, check logs for more information', 408)
+
+        except Exception as e:
+            logger.error(e)
+            return jsonify_unknown('submission failed, check logs for more information', 422)
+
+        except AuthError:
+            return jsonify_unauth()
+
+        return jsonify_success(r)

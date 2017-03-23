@@ -202,7 +202,7 @@ class Store(multiprocessing.Process):
             if rv['status'] == 'success':
                 self.store.tokens.update_last_activity_at(t, arrow.utcnow().datetime)
 
-    def handle_indicators_delete(self, token, data=None, id=None):
+    def handle_indicators_delete(self, token, data=None, id=None, client_id=None):
         t = self.store.tokens.admin(token)
         return self.store.indicators.delete(t, data=data, id=id)
 

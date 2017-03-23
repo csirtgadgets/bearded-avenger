@@ -342,10 +342,10 @@ class IndicatorManager(IndicatorManagerPlugin):
             if k == 'reporttime':
                 if ',' in filters[k]:
                     start, end = filters[k].split(',')
-                    s = s.filter(Indicator.reporttime >= start)
-                    s = s.filter(Indicator.reporttime <= end)
+                    s = s.filter(Indicator.reporttime >= arrow.get(start).datetime)
+                    s = s.filter(Indicator.reporttime <= arrow.get(end).datettime)
                 else:
-                    s = s.filter(Indicator.reporttime >= filters[k])
+                    s = s.filter(Indicator.reporttime >= arrow.get(filters[k]).datetime)
 
             elif k == 'reporttimeend':
                 s = s.filter(Indicator.reporttime <= filters[k])
@@ -430,13 +430,20 @@ class IndicatorManager(IndicatorManagerPlugin):
         for d in data:
             if d.get('id'):
                 ids.append(Indicator.id == d['id'])
+                logger.debug('removing: %s' % d['id'])
             else:
                 ss = self._search(d, token)
-                ids = [Indicator.id == i.id for i in ss]
+                for i in ss:
+                    ids.append(Indicator.id == i.id)
+                    logger.debug('removing: %s' % i.indicator)
+
+        if len(ids) == 0:
+            return 0
 
         s = self.handle().query(Indicator)
         s = s.filter(or_(*ids))
-        rv = s.delete(synchronize_session=False)
+        rv = s.delete()
+        self.handle().commit()
 
         return rv
 
