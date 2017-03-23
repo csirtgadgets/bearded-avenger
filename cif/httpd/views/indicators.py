@@ -5,7 +5,7 @@ from flask import request, current_app
 from cifsdk.client.zeromq import ZMQ as Client
 from cifsdk.client.dummy import Dummy as DummyClient
 from cif.constants import ROUTER_ADDR, PYVERSION
-from cifsdk.exceptions import AuthError, TimeoutError, InvalidSearch
+from cifsdk.exceptions import AuthError, TimeoutError, InvalidSearch, SubmissionFailed
 import logging
 remote = ROUTER_ADDR
 
@@ -71,17 +71,21 @@ class IndicatorsAPI(MethodView):
             if nowait:
                 r = 'pending'
 
+        except SubmissionFailed as e:
+            logger.error(e)
+            return jsonify_unknown(msg='submission failed: %s' % e, code=422)
+
         except RuntimeError as e:
             logger.error(e)
-            return jsonify_unknown(msg='submission failed', code=422)
+            return jsonify_unknown(msg='submission failed, check logs for more information', code=422)
 
         except TimeoutError as e:
             logger.error(e)
-            return jsonify_unknown('submission failed', 408)
+            return jsonify_unknown('submission failed, check logs for more information', 408)
 
         except Exception as e:
             logger.error(e)
-            return jsonify_unknown('submission failed', 422)
+            return jsonify_unknown('submission failed, check logs for more information', 422)
 
         except AuthError:
             return jsonify_unauth()
