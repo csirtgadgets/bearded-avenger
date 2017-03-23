@@ -3,6 +3,8 @@ from setuptools import setup, find_packages
 import versioneer
 import sys
 
+ENABLE_INSTALL = os.getenv('CIF_ENABLE_INSTALL')
+
 # vagrant doesn't appreciate hard-linking
 if os.environ.get('USER') == 'vagrant' or os.path.isdir('/vagrant'):
     del os.link
@@ -25,6 +27,17 @@ if sys.argv[-1] == 'test':
         sys.exit()
     else:
         raise RuntimeError('tests failed')
+
+if sys.argv[-1] == 'install':
+    if not ENABLE_INSTALL:
+        print('')
+        print('CIFv3 Should NOT be installed using traditional install methods')
+        print('Please see the DeploymentKit Wiki and use the EasyButton')
+        print('the EasyButton uses Ansible to customize the underlying OS and all the moving parts..')
+        print('')
+        print('https://github.com/csirtgadgets/bearded-avenger-deploymentkit/wiki')
+        print('')
+        raise SystemExit
 
 setup(
     name="cif",
