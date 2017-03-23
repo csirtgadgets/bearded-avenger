@@ -395,7 +395,7 @@ class IndicatorManager(IndicatorManagerPlugin):
         s = s.filter(or_(Indicator.group == g for g in groups))
         return s
 
-    def search(self, token, filters, limit=500):
+    def _search(self, filters, token):
         logger.debug('running search')
 
         myfilters = dict(filters.items())
@@ -407,6 +407,10 @@ class IndicatorManager(IndicatorManagerPlugin):
         s = self._filter_indicator(myfilters, s)
         s = self._filter_terms(myfilters, s)
         s = self._filter_groups(token, s)
+        return s
+
+    def search(self, token, filters, limit=500):
+        s = self._search(filters, token)
 
         limit = filters.pop('limit', limit)
 
@@ -417,6 +421,24 @@ class IndicatorManager(IndicatorManagerPlugin):
             yield self.to_dict(i)
 
         logger.debug('done: %0.4f' % (time.time() - start))
+
+    def delete(self, token, data=None, id=None):
+        if type(data) is not list:
+            data = [data]
+
+        ids = []
+        for d in data:
+            if d.get('id'):
+                ids.append(Indicator.id == d['id'])
+            else:
+                ss = self._search(d, token)
+                ids = [Indicator.id == i.id for i in ss]
+
+        s = self.handle().query(Indicator)
+        s = s.filter(or_(*ids))
+        rv = s.delete(synchronize_session=False)
+
+        return rv
 
     def upsert(self, token, data):
         if type(data) == dict:
