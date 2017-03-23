@@ -10,6 +10,7 @@ import os
 import cif.gatherer
 from cif.constants import GATHERER_ADDR, GATHERER_SINK_ADDR
 from csirtg_indicator import Indicator
+import time
 
 SNDTIMEO = 30000
 LINGER = 0
@@ -81,6 +82,7 @@ class Gatherer(multiprocessing.Process):
                     data = [data]
 
                 rv = []
+                start = time.time()
                 for d in data:
                     i = Indicator(**d)
 
@@ -98,7 +100,7 @@ class Gatherer(multiprocessing.Process):
                     rv.append(i.__dict__())
 
                 data = json.dumps(rv)
-                logger.debug('sending back to router...')
+                logger.debug('sending back to router: %f' % (time.time() - start))
                 Msg(id=id, mtype=mtype, token=token, data=data).send(push_s)
 
         logger.info('shutting down gatherer..')

@@ -19,7 +19,7 @@ import time
 import multiprocessing as mp
 from cifsdk.msg import Msg
 
-HUNTER_MIN_CONFIDENCE = 5
+HUNTER_MIN_CONFIDENCE = 4
 HUNTER_THREADS = os.getenv('CIF_HUNTER_THREADS', 2)
 GATHERER_THREADS = os.getenv('CIF_GATHERER_THREADS', 2)
 STORE_DEFAULT = 'sqlite'
@@ -216,7 +216,6 @@ class Router(object):
 
     def handle_indicators_create(self, id, mtype, token, data):
         Msg(id=id, mtype=mtype, token=token, data=data).send(self.gatherer_s)
-
 
 def main():
     p = get_argument_parser()

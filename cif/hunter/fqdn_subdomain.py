@@ -28,7 +28,7 @@ class FqdnSubdomain(object):
             self.logger.error(fqdn)
             self.logger.error(e)
         else:
-            fqdn.confidence = (int(fqdn.confidence) - 3)
+            fqdn.confidence = (fqdn.confidence - 3) if fqdn.confidence >= 3 else 0
             router.indicators_create(fqdn)
 
 Plugin = FqdnSubdomain

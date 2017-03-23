@@ -3,17 +3,29 @@
 import logging
 import os
 import geoip2.database
+import pygeoip
 from geoip2.errors import AddressNotFoundError
 import re
+from csirtg_indicator import Indicator
+from cif.constants import PYVERSION
 from pprint import pprint
+if PYVERSION > 2:
+    from urllib.parse import urlparse
+else:
+    from urlparse import urlparse
+import socket
 
 DB_SEARCH_PATHS = [
     './',
+    '/usr/share/GeoIP',
     '/usr/local/share/GeoIP'
 ]
 
 DB_FILE = 'GeoLite2-City.mmdb'
 DB_PATH = os.environ.get('CIF_GEO_PATH')
+
+ASN_DB_PATH = 'GeoIPASNum.dat'
+CITY_DB_PATH = 'GeoLiteCity.dat'
 
 
 class Geo(object):
@@ -28,6 +40,9 @@ class Geo(object):
         self.logger = logging.getLogger(__name__)
 
         self.db = None
+        self.asn_db = None
+        self.city_db = None
+
         if DB_PATH:
             self.db = geoip2.database.Reader(os.path.join(DB_PATH, db))
         else:
@@ -35,6 +50,24 @@ class Geo(object):
                 if os.path.isfile(os.path.join(p, db)):
                     self.db = geoip2.database.Reader(os.path.join(p, db))
                     break
+
+        for p in DB_SEARCH_PATHS:
+            if os.path.isfile(os.path.join(p, ASN_DB_PATH)):
+                self.asn_db = pygeoip.GeoIP(os.path.join(p, ASN_DB_PATH), pygeoip.MMAP_CACHE)
+                break
+
+        for p in DB_SEARCH_PATHS:
+            if os.path.isfile(os.path.join(p, CITY_DB_PATH)):
+                self.city_db = pygeoip.GeoIP(os.path.join(p, CITY_DB_PATH), pygeoip.MMAP_CACHE)
+                break
+
+    def _lookup_ip(self, host):
+        try:
+            host = socket.gethostbyname(host)
+        except:
+            host = None
+
+        return host
 
     def _resolve(self, indicator):
         if self.db:
@@ -55,8 +88,22 @@ class Geo(object):
             if g.location.time_zone:
                 indicator.timezone = g.location.time_zone
 
+        if self.city_db:
+            g = self.city_db.record_by_addr(indicator.indicator)
+
+            if g.get('region_code'):
+                indicator.region = g['region_code']
+
+        if self.asn_db:
+            g = self.asn_db.asn_by_addr(indicator.indicator)
+            if g:
+                m = re.match('^AS(\d+)\s([^.]+)', g)
+                if m:
+                    indicator.asn = m.group(1)
+                    indicator.asn_desc = m.group(2)
+
     def process(self, indicator):
-        if indicator.itype not in ['ipv4', 'ipv6']:
+        if indicator.itype not in ['ipv4', 'ipv6', 'fqdn', 'url']:
             return indicator
 
         if indicator.is_private():
@@ -64,11 +111,12 @@ class Geo(object):
 
         # https://geoip2.readthedocs.org/en/latest/
         i = str(indicator.indicator)
-        match = re.search('^(\S+)\/\d+$', i)
         tmp = indicator.indicator
-        if match:
-            self.logger.info(match.group(1))
-            indicator.indicator = match.group(1)
+
+        if indicator.itype in ['ipv4', 'ipv6']:
+            match = re.search('^(\S+)\/\d+$', i)
+            if match:
+                indicator.indicator = match.group(1)
 
         # cache it to the /24
         if indicator.itype == 'ipv4':
@@ -77,12 +125,41 @@ class Geo(object):
             i = '{}.{}.{}.0'.format(i[0], i[1], i[2])
             indicator.indicator = i
 
+        if indicator.itype == 'fqdn':
+            indicator.indicator = self._lookup_ip(indicator.indicator)
+            if not indicator.rdata:
+                indicator.rdata = indicator.indicator
+
+        if indicator.itype == 'url':
+            u = urlparse(indicator.indicator)
+            indicator.indicator = self._lookup_ip(u.hostname)
+            if not indicator.rdata:
+                indicator.rdata = indicator.indicator
+
         try:
-            self._resolve(indicator)
+            if indicator.indicator:
+                self._resolve(indicator)
             indicator.indicator = tmp
-            return indicator
         except AddressNotFoundError as e:
             self.logger.warn(e)
+            indicator.indicator = tmp
 
+        return indicator
 
 Plugin = Geo
+
+import sys
+
+
+def main():
+    g = Geo()
+    i = sys.argv[1]
+
+    i = Indicator(i)
+    i = g.process(i)
+
+    pprint(i)
+
+
+if __name__ == "__main__":
+    main()

@@ -24,7 +24,7 @@ class Ipv4ResolvePrefixWhitelist(object):
 
         ii.indicator = prefix
         ii.tags = ['whitelist']
-        ii.confidence = (i.confidence - 2)
+        ii.confidence = (ii.confidence - 2) if ii.confidence >= 2 else 0
         router.indicators_create(ii)
 
 

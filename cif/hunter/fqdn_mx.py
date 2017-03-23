@@ -44,7 +44,7 @@ class FqdnMx(object):
             else:
                 fqdn.itype = 'fqdn'
                 fqdn.rdata = i.indicator
-                fqdn.confidence = (int(fqdn.confidence) - 5)
+                fqdn.confidence = (fqdn.confidence - 5) if fqdn.confidence >= 5 else 0
                 router.indicators_create(fqdn)
 
 Plugin = FqdnMx

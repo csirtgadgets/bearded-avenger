@@ -51,6 +51,7 @@ setup(
         'limits',
         'maxminddb',
         'geoip2',
+        'pygeoip',
         'dnspython',
         'Flask',
         'PyYAML',

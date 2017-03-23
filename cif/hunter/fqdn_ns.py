@@ -38,7 +38,7 @@ class FqdnNs(object):
             else:
                 ip.itype = 'ipv4'
                 ip.rdata = i.indicator
-                ip.confidence = (int(ip.confidence) - 4)
+                ip.confidence = (ip.confidence - 4) if ip.confidence >= 4 else 0
                 router.indicators_create(ip)
 
 Plugin = FqdnNs

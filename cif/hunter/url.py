@@ -34,7 +34,5 @@ class Url(object):
 
                     self.logger.debug('sending to router: {}'.format(fqdn))
                     router.indicators_create(fqdn)
-                    #return fqdn
-
 
 Plugin = Url
