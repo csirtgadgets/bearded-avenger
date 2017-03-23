@@ -13,31 +13,43 @@ defaults:
 feeds:
   ssh:
     remote: http://lists.blocklist.de/lists/ssh.txt
-    application: ssh
+    tags:
+      - scanner
+      - ssh
     portlist: 22
 
   mail:
     remote: http://lists.blocklist.de/lists/mail.txt
-    application: smtp
+    tags:
+      - scanner
+      - smtp
     portlist: 25
 
   apache:
     remote: http://lists.blocklist.de/lists/apache.txt
-    application: http
+    tags:
+      - scanner
+      - http
     portlist: 80,443
 
   imap:
     remote: http://lists.blocklist.de/lists/imap.txt
-    application: imap
+    tags:
+      - scanner
+      - imap
 
   ftp:
     remote: http://lists.blocklist.de/lists/ftp.txt
-    application: ftp
+    tags:
+      - scanner
+      - ftp
     portlist: 20-21
 
   sip:
     remote: http://lists.blocklist.de/lists/sip.txt
-    application: sip
+    tags:
+      - scanner
+      - sip
 
   bots:
     remote: http://lists.blocklist.de/lists/bots.txt
@@ -46,6 +58,10 @@ feeds:
 
   bruteforcelogin:
     remote: http://lists.blocklist.de/lists/bruteforcelogin.txt
+    tags:
+      - scanner
+      - http
+    description: 'IPs which attacks Joomlas, Wordpress and other Web-Logins with Brute-Force Logins'
 
   ircbot:
     remote: http://lists.blocklist.de/lists/ircbot.txt

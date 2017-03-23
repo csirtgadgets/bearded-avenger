@@ -6,6 +6,7 @@ from cif.utils import resolve_ns
 from cif.utils.asn_client import ASNClient
 
 ASN_FAST = os.environ.get('CIF_GATHERER_ASN_FAST')
+ENABLE_PEERS = os.environ.get('CIF_GATHERERS_PEERS_ENABLED')
 
 
 class Asn(object):
@@ -16,6 +17,8 @@ class Asn(object):
         if self.asn_fast:
             self.asn_fast = ASNClient(self.asn_fast)
 
+        self.enabled = kwargs.get('enabled', os.environ.get('CIF_GATHERERS_PEERS_ENABLED'))
+
     def _resolve(self, data):
         return resolve_ns('{}.{}'.format(data, 'origin.asn.cymru.com'), t='TXT')
 
@@ -23,6 +26,9 @@ class Asn(object):
         return self.asn_fast.lookup(data)
 
     def process(self, indicator):
+        if not self.enabled:
+            return
+
         if indicator.is_private():
             return
 

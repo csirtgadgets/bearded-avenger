@@ -19,6 +19,7 @@ class Fqdn(object):
 
     def __init__(self):
         self.logger = logging.getLogger(__name__)
+        self.is_advanced = True
 
     def process(self, i, router):
         if i.itype != 'fqdn':
@@ -48,7 +49,7 @@ class Fqdn(object):
             else:
                 ip.itype = 'ipv4'
                 ip.rdata = i.indicator
-                ip.confidence = (ip.confidence - 2)
+                ip.confidence = (ip.confidence - 2) if ip.confidence >= 2 else 0
                 router.indicators_create(ip)
 
                 # also create a passive dns tag

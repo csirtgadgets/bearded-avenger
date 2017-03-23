@@ -13,8 +13,8 @@ else:
 class Url(object):
 
     def __init__(self):
-
         self.logger = logging.getLogger(__name__)
+        self.is_advanced = False
 
     def process(self, i, router):
         if i.itype == 'url':
@@ -34,7 +34,5 @@ class Url(object):
 
                     self.logger.debug('sending to router: {}'.format(fqdn))
                     router.indicators_create(fqdn)
-                    #return fqdn
-
 
 Plugin = Url

@@ -8,6 +8,7 @@ class FqdnSubdomain(object):
 
     def __init__(self):
         self.logger = logging.getLogger(__name__)
+        self.is_advanced = False
 
     def process(self, i, router):
         if i.itype != 'fqdn':
@@ -28,7 +29,7 @@ class FqdnSubdomain(object):
             self.logger.error(fqdn)
             self.logger.error(e)
         else:
-            fqdn.confidence = (int(fqdn.confidence) - 3)
+            fqdn.confidence = (fqdn.confidence - 3) if fqdn.confidence >= 3 else 0
             router.indicators_create(fqdn)
 
 Plugin = FqdnSubdomain

@@ -43,6 +43,7 @@ class SpamhausIp(object):
 
     def __init__(self):
         self.logger = logging.getLogger(__name__)
+        self.is_advanced = True
 
     def _resolve(self, data):
         data = reversed(data.split('.'))

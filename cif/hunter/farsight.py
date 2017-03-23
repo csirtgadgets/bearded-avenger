@@ -20,6 +20,7 @@ class Farsight(object):
         self.logger = logging.getLogger(__name__)
         self.client = Client()
         self.token = kwargs.get('token', TOKEN)
+        self.is_advanced = True
 
     def process(self, i, router):
         if not self.token:

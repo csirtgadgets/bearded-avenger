@@ -47,14 +47,14 @@ class Indicator(Base):
     tlp = Column(String)
     provider = Column(String, index=True)
     portlist = Column(String)
-    asn_desc = Column(UnicodeText)
+    asn_desc = Column(UnicodeText, index=True)
     asn = Column(Float)
-    cc = Column(String)
+    cc = Column(String, index=True)
     protocol = Column(Integer)
     reporttime = Column(DateTime, index=True)
     firsttime = Column(DateTime)
     lasttime = Column(DateTime, index=True)
-    confidence = Column(Float)
+    confidence = Column(Float, index=True)
     timezone = Column(String)
     city = Column(String)
     longitude = Column(String)
@@ -62,8 +62,9 @@ class Indicator(Base):
     peers = Column(UnicodeText)
     description = Column(UnicodeText)
     additional_data = Column(UnicodeText)
-    rdata = Column(UnicodeText)
+    rdata = Column(UnicodeText, index=True)
     count = Column(Integer)
+    region = Column(String, index=True)
 
     tags = relationship(
         'Tag',
@@ -86,7 +87,7 @@ class Indicator(Base):
                  reporttime=None, group="everyone", confidence=None,
                  reference=None, reference_tlp=None, application=None, timezone=None, city=None, longitude=None,
                  latitude=None, peers=None, description=None, additional_data=None, rdata=None, msg=None, count=1,
-                 version=None, **kwargs):
+                 region=None, version=None, **kwargs):
 
         self.indicator = indicator
         self.group = group
@@ -113,6 +114,7 @@ class Indicator(Base):
         self.additional_data = additional_data
         self.rdata = rdata
         self.count = count
+        self.region = region
 
         if self.reporttime and isinstance(self.reporttime, basestring):
             self.reporttime = arrow.get(self.reporttime).datetime
@@ -293,6 +295,7 @@ class IndicatorManager(IndicatorManagerPlugin):
 
             s = s.join(Ipv4).filter(Ipv4.ipv4 >= start)
             s = s.filter(Ipv4.ipv4 <= end)
+
             return s
 
         if itype == 'ipv6':
@@ -363,6 +366,21 @@ class IndicatorManager(IndicatorManagerPlugin):
 
             elif k == 'provider':
                 s = s.filter(Indicator.provider == filters[k])
+
+            elif k == 'asn':
+                s = s.filter(Indicator.asn == filters[k])
+
+            elif k == 'asn_desc':
+                s = s.filter(Indicator.asn_desc.like('%{}%'.format(filters[k])))
+
+            elif k == 'cc':
+                s = s.filter(Indicator.cc == filters[k])
+
+            elif k == 'rdata':
+                s = s.filter(Indicator.rdata == filters[k])
+
+            elif k == 'region':
+                s = s.filter(Indicator.region == filters[k])
 
             else:
                 raise InvalidSearch('invalid filter: %s' % k)

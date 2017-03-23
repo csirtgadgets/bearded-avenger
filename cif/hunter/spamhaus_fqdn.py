@@ -58,6 +58,7 @@ class SpamhausFqdn(object):
 
     def __init__(self):
         self.logger = logging.getLogger(__name__)
+        self.is_advanced = True
 
     def _resolve(self, data):
         data = '{}.dbl.spamhaus.org'.format(data)

@@ -21,6 +21,8 @@ class Hash(UserDefinedType):
         DBAPIBinary = dialect.dbapi.Binary
 
         def process(value):
+            if type(value) == str:
+                value = value.encode('utf-8')
             return DBAPIBinary(value)
 
         return process

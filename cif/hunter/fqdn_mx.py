@@ -12,6 +12,7 @@ class FqdnMx(object):
 
     def __init__(self):
         self.logger = logging.getLogger(__name__)
+        self.is_advanced = True
 
     def process(self, i, router):
         if i.itype != 'fqdn':
@@ -44,7 +45,7 @@ class FqdnMx(object):
             else:
                 fqdn.itype = 'fqdn'
                 fqdn.rdata = i.indicator
-                fqdn.confidence = (int(fqdn.confidence) - 5)
+                fqdn.confidence = (fqdn.confidence - 5) if fqdn.confidence >= 5 else 0
                 router.indicators_create(fqdn)
 
 Plugin = FqdnMx
