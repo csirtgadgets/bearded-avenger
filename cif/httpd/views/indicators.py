@@ -93,10 +93,8 @@ class IndicatorsAPI(MethodView):
         return jsonify_success(r, code=201)
 
     def delete(self):
-
         try:
             data = request.data.decode('utf-8')
-            logger.debug(data)
             r = Client(remote, pull_token()).indicators_delete(data)
 
         except RuntimeError as e:

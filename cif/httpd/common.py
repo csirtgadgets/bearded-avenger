@@ -11,7 +11,9 @@ TOKEN_FILTERS = ['username', 'token']
 def pull_token():
     t = None
     if request.headers.get("Authorization"):
-        t = re.match("^Token token=(\S+)$", request.headers.get("Authorization")).group(1)
+        t = re.match("^Token token=(\S+)$", request.headers.get("Authorization"))
+        if t:
+            t = t.group(1)
     return t
 
 
