@@ -21,3 +21,4 @@ msgpack-python>=0.4.8,<0.5.0
 csirtg_smrt==0.0.0a36
 csirtg_dnsdb==0.0.0a4
 tornado>=4.4.1,<5.0
+libselinux-python # Required where selinux is enabled
