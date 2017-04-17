@@ -7,15 +7,21 @@ VAGRANTFILE_LOCAL = 'Vagrantfile.local'
 
 sdist=ENV['CIF_ANSIBLE_SDIST']
 es=ENV['CIF_ANSIBLE_ES']
-test=ENV['CIF_BOOTSTRAP_TEST']
+
+unless File.directory?('deploymentkit')
+    puts "Please unzip the latest release of the deploymentkit before continuing..."
+    puts ""
+    puts "https://github.com/csirtgadgets/bearded-avenger-deploymentkit/wiki"
+    puts ""
+    exit
+end
 
 $script = <<SCRIPT
 export CIF_ANSIBLE_SDIST=#{sdist}
 export CIF_ANSIBLE_ES=#{es}
-export CIF_BOOTSTRAP_TEST=#{test}
 
 cd /vagrant/deploymentkit
-bash easybutton.sh
+CIF_BOOTSTRAP_TEST=1 bash easybutton.sh
 SCRIPT
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|

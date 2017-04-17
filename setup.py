@@ -37,7 +37,7 @@ if sys.argv[-1] == 'install':
         print('')
         print('https://github.com/csirtgadgets/bearded-avenger-deploymentkit/wiki')
         print('')
-        raise SystemExit
+        raise SystemError
 
 setup(
     name="cif",

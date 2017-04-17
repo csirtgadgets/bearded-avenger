@@ -21,6 +21,7 @@ DB_SEARCH_PATHS = [
     '/usr/local/share/GeoIP'
 ]
 
+ENABLE_FQDN = os.getenv('CIF_GEO_FQDN')
 DB_FILE = 'GeoLite2-City.mmdb'
 DB_PATH = os.environ.get('CIF_GEO_PATH')
 
@@ -85,6 +86,9 @@ class Geo(object):
 
         i = indicator.indicator
         if indicator.itype in ['url', 'fqdn']:
+            if not ENABLE_FQDN:
+                return
+
             if indicator.itype == 'url':
                 u = urlparse(i)
                 i = u.hostname
