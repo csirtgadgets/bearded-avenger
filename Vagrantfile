@@ -7,12 +7,14 @@ VAGRANTFILE_LOCAL = 'Vagrantfile.local'
 
 sdist=ENV['CIF_ANSIBLE_SDIST']
 es=ENV['CIF_ANSIBLE_ES']
+test=ENV['CIF_BOOTSTRAP_TEST']
 
 $script = <<SCRIPT
 export CIF_ANSIBLE_SDIST=#{sdist}
 export CIF_ANSIBLE_ES=#{es}
+export CIF_BOOTSTRAP_TEST=#{test}
 
-cd /vagrant/deployment
+cd /vagrant/deploymentkit
 bash easybutton.sh
 SCRIPT
 
@@ -20,7 +22,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.provision "shell", inline: $script
   config.vm.box = 'ubuntu/xenial64'
 
-  #config.vm.network :forwarded_port, guest: 5000, host: 5000
   config.vm.network :forwarded_port, guest: 443, host: 8443
   
   config.vm.provider :virtualbox do |vb|

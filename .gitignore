@@ -1,4 +1,5 @@
 .DS_Store
+deploymentkit/*
 Vagrantfile_*
 Vagrantfile\.*
 Dockerfile\.*
