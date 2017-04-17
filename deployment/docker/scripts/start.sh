@@ -1,1 +1,0 @@
-supervisord -c /cif.conf

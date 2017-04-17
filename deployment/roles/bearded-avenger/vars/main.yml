@@ -1,3 +1,0 @@
----
-# vars file for bearded-avenger
-GH_TOKEN: "{{ lookup('env', 'GH_TOKEN') }}"
