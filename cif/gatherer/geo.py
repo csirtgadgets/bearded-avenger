@@ -25,6 +25,7 @@ DB_FILE = 'GeoLite2-City.mmdb'
 DB_PATH = os.environ.get('CIF_GEO_PATH')
 
 ASN_DB_PATH = 'GeoIPASNum.dat'
+ASN_DB_PATH2 = 'GeoLiteASNum.dat'
 CITY_DB_PATH = 'GeoLiteCity.dat'
 
 
@@ -54,6 +55,10 @@ class Geo(object):
         for p in DB_SEARCH_PATHS:
             if os.path.isfile(os.path.join(p, ASN_DB_PATH)):
                 self.asn_db = pygeoip.GeoIP(os.path.join(p, ASN_DB_PATH), pygeoip.MMAP_CACHE)
+                break
+
+            if os.path.isfile(os.path.join(p, ASN_DB_PATH2)):
+                self.asn_db = pygeoip.GeoIP(os.path.join(p, ASN_DB_PATH2), pygeoip.MMAP_CACHE)
                 break
 
         for p in DB_SEARCH_PATHS:

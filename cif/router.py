@@ -20,7 +20,7 @@ import multiprocessing as mp
 from cifsdk.msg import Msg
 
 HUNTER_MIN_CONFIDENCE = 4
-HUNTER_THREADS = os.getenv('CIF_HUNTER_THREADS', 2)
+HUNTER_THREADS = os.getenv('CIF_HUNTER_THREADS', 0)
 HUNTER_ADVANCED = os.getenv('CIF_HUNTER_ADVANCED', 0)
 GATHERER_THREADS = os.getenv('CIF_GATHERER_THREADS', 2)
 STORE_DEFAULT = 'sqlite'

@@ -459,6 +459,12 @@ class IndicatorManager(IndicatorManagerPlugin):
         for d in data:
             logger.debug(d)
 
+            if not d.get('group'):
+                raise InvalidIndicator('missing group')
+
+            if isinstance(d['group'], list):
+                d['group'] = d['group'][0]
+
             # raises AuthError if invalid group
             self._check_token_groups(token, d)
 
