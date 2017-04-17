@@ -121,7 +121,7 @@ class Geo(object):
 
         g = self.city_db.record_by_addr(i)
 
-        if g.get('region_code'):
+        if g and g.get('region_code'):
             indicator.region = g['region_code']
 
         g = self.asn_db.asn_by_addr(i)
