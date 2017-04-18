@@ -6,9 +6,9 @@ For installation instructions and various unix distribution guides, use the **De
 https://github.com/csirtgadgets/bearded-avenger-deploymentkit/wiki
 
 ## Getting Help
- * [the Wiki](https://github.com/csirtgadgets/bearded-avenger/wiki)
+ * [the Wiki](https://github.com/csirtgadgets/bearded-avenger-deploymentkit/wiki)
  * [Known Issues](https://github.com/csirtgadgets/bearded-avenger/issues?labels=bug&state=open) 
- * [FAQ](https://github.com/csirtgadgets/bearded-avenger/issues?labels=faq)
+ * [FAQ](https://github.com/csirtgadgets/bearded-avenger-deploymentkit/wiki/FAQ)
 
 # Getting Involved
 There are many ways to get involved with the project. If you have a new and exciting feature, or even a simple bugfix, simply [fork the repo](https://help.github.com/articles/fork-a-repo), create some simple test cases, [generate a pull-request](https://help.github.com/articles/using-pull-requests) and give yourself credit!
