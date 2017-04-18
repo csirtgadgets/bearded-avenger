@@ -7,6 +7,8 @@ VAGRANTFILE_LOCAL = 'Vagrantfile.local'
 
 sdist=ENV['CIF_ANSIBLE_SDIST']
 es=ENV['CIF_ANSIBLE_ES']
+hunter_threads=ENV['CIF_HUNTER_THREADS']
+geo_fqdn=ENV['CIF_GATHERER_GEO_FQDN']
 
 unless File.directory?('deploymentkit')
     puts "Please unzip the latest release of the deploymentkit before continuing..."
@@ -19,9 +21,12 @@ end
 $script = <<SCRIPT
 export CIF_ANSIBLE_SDIST=#{sdist}
 export CIF_ANSIBLE_ES=#{es}
+export CIF_HUNTER_THREADS=#{hunter_threads}
+export CIF_GATHERER_GEO_FQDN=#{geo_fqdn}
+export CIF_BOOTSTRAP_TEST=1
 
 cd /vagrant/deploymentkit
-CIF_BOOTSTRAP_TEST=1 bash easybutton.sh
+bash easybutton.sh
 SCRIPT
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|

@@ -21,7 +21,7 @@ DB_SEARCH_PATHS = [
     '/usr/local/share/GeoIP'
 ]
 
-ENABLE_FQDN = os.getenv('CIF_GEO_FQDN')
+ENABLE_FQDN = os.getenv('CIF_GATHERER_GEO_FQDN')
 DB_FILE = 'GeoLite2-City.mmdb'
 DB_PATH = os.environ.get('CIF_GEO_PATH')
 

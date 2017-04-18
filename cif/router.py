@@ -79,7 +79,7 @@ class Router(object):
 
         self.hunters = []
         self.hunters_s = None
-        if int(hunter_threads):
+        if hunter_threads and int(hunter_threads):
             self.hunters_s = self.context.socket(zmq.PUSH)
             self.logger.debug('binding hunter: {}'.format(hunter))
             self.hunters_s.bind(hunter)
