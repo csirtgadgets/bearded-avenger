@@ -100,7 +100,11 @@ class Geo(object):
             if not indicator.rdata:
                 indicator.rdata = i
 
-        i = self._ip_to_prefix(i)
+        try:
+            i = self._ip_to_prefix(i)
+        except IndexError:
+            self.logger.error('unable to determine geo for %s' % indicator.indicator)
+            return
 
         g = self.db.city(i)
 
