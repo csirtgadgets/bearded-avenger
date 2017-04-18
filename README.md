@@ -5,7 +5,7 @@ For installation instructions and various unix distribution guides, use the **De
 
 https://github.com/csirtgadgets/bearded-avenger-deploymentkit/wiki
 
-## Getting Help
+# Getting Help
  * [the Wiki](https://github.com/csirtgadgets/bearded-avenger-deploymentkit/wiki)
  * [Known Issues](https://github.com/csirtgadgets/bearded-avenger/issues?labels=bug&state=open) 
  * [FAQ](https://github.com/csirtgadgets/bearded-avenger-deploymentkit/wiki/FAQ)
