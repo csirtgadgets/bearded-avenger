@@ -20,7 +20,7 @@ import multiprocessing as mp
 from cifsdk.msg import Msg
 
 HUNTER_MIN_CONFIDENCE = 4
-HUNTER_THREADS = os.getenv('CIF_HUNTER_THREADS', 2)
+HUNTER_THREADS = os.getenv('CIF_HUNTER_THREADS', 0)
 HUNTER_ADVANCED = os.getenv('CIF_HUNTER_ADVANCED', 0)
 GATHERER_THREADS = os.getenv('CIF_GATHERER_THREADS', 2)
 STORE_DEFAULT = 'sqlite'
@@ -79,7 +79,7 @@ class Router(object):
 
         self.hunters = []
         self.hunters_s = None
-        if int(hunter_threads):
+        if hunter_threads and int(hunter_threads):
             self.hunters_s = self.context.socket(zmq.PUSH)
             self.logger.debug('binding hunter: {}'.format(hunter))
             self.hunters_s.bind(hunter)

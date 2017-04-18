@@ -21,10 +21,12 @@ DB_SEARCH_PATHS = [
     '/usr/local/share/GeoIP'
 ]
 
+ENABLE_FQDN = os.getenv('CIF_GATHERER_GEO_FQDN')
 DB_FILE = 'GeoLite2-City.mmdb'
 DB_PATH = os.environ.get('CIF_GEO_PATH')
 
 ASN_DB_PATH = 'GeoIPASNum.dat'
+ASN_DB_PATH2 = 'GeoLiteASNum.dat'
 CITY_DB_PATH = 'GeoLiteCity.dat'
 
 
@@ -56,6 +58,10 @@ class Geo(object):
                 self.asn_db = pygeoip.GeoIP(os.path.join(p, ASN_DB_PATH), pygeoip.MMAP_CACHE)
                 break
 
+            if os.path.isfile(os.path.join(p, ASN_DB_PATH2)):
+                self.asn_db = pygeoip.GeoIP(os.path.join(p, ASN_DB_PATH2), pygeoip.MMAP_CACHE)
+                break
+
         for p in DB_SEARCH_PATHS:
             if os.path.isfile(os.path.join(p, CITY_DB_PATH)):
                 self.city_db = pygeoip.GeoIP(os.path.join(p, CITY_DB_PATH), pygeoip.MMAP_CACHE)
@@ -80,6 +86,9 @@ class Geo(object):
 
         i = indicator.indicator
         if indicator.itype in ['url', 'fqdn']:
+            if not ENABLE_FQDN:
+                return
+
             if indicator.itype == 'url':
                 u = urlparse(i)
                 i = u.hostname
@@ -91,7 +100,11 @@ class Geo(object):
             if not indicator.rdata:
                 indicator.rdata = i
 
-        i = self._ip_to_prefix(i)
+        try:
+            i = self._ip_to_prefix(i)
+        except IndexError:
+            self.logger.error('unable to determine geo for %s' % indicator.indicator)
+            return
 
         g = self.db.city(i)
 
@@ -112,7 +125,7 @@ class Geo(object):
 
         g = self.city_db.record_by_addr(i)
 
-        if g.get('region_code'):
+        if g and g.get('region_code'):
             indicator.region = g['region_code']
 
         g = self.asn_db.asn_by_addr(i)

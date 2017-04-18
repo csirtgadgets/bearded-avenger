@@ -37,7 +37,7 @@ if sys.argv[-1] == 'install':
         print('')
         print('https://github.com/csirtgadgets/bearded-avenger-deploymentkit/wiki')
         print('')
-        raise SystemExit
+        raise SystemError
 
 setup(
     name="cif",
@@ -75,7 +75,7 @@ setup(
         'ujson',
         'pyzmq>=16.0',
         'csirtg_indicator',
-        'cifsdk',
+        'cifsdk>=3.0.0a24,<4.0',
         'csirtg_smrt',
         'csirtg_dnsdb'
     ],
