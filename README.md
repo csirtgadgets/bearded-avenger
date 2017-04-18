@@ -1,26 +1,9 @@
 # Getting Started
-### MAKE SURE YOU'RE USING ONE OF THE [RELEASES](https://github.com/csirtgadgets/bearded-avenger/releases).
-Releases are usually a little more stable than the master branch, in that *some* basic deployment testing for Ubuntu and CentOS has been performed using an SQLite backend.
+**Do NOT try to install from the master repo.**
 
-## QuickStart
-This assumes you have a proper Python dev already environment properly configured. If you need help getting started with this, checkout one of our [installation guides](https://github.com/csirtgadgets/bearded-avenger/wiki/Ubuntu14LTS).
+For installation instructions and various unix distribution guides, use the **DeploymentKit**.
 
-```
-$ git clone https://github.com/csirtgadgets/bearded-avenger.git
-$ cd bearded-avenger
-$ pip install -r requirements.txt
-$ python setup.py develop
-$ mkdir -p log && cp hacking/develop.conf hacking/local.conf
-$ cif-store -d --token-create-admin cif.yml
-$ cif-store -d --token-create-hunter cif-router.yml
-$ cif-store -d --token-create-smrt csirtg-smrt.yml
-$ supervisord -c hacking/local.conf
-
-# new window
-$ cif --config cif.yml -p
-$ csirtg-smrt --config csirtg-smrt.yml --test -r rules/default/csirtg.yml -d
-$ cif --config cif.yml --itype ipv4
-```
+https://github.com/csirtgadgets/bearded-avenger-deploymentkit/wiki
 
 ## Getting Help
  * [the Wiki](https://github.com/csirtgadgets/bearded-avenger/wiki)
@@ -35,6 +18,10 @@ If you've never worked on a GitHub project, [this is a good piece](https://guide
 * [How To Contribute](contributing.md)  
 * [Mailing List](https://groups.google.com/forum/#!forum/ci-framework)  
 * [Project Page](http://csirtgadgets.org/collective-intelligence-framework/)
+
+# Getting Started with Development
+
+https://github.com/csirtgadgets/bearded-avenger/wiki
 
 # COPYRIGHT AND LICENSE
 
