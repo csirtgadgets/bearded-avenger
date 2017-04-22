@@ -2,7 +2,7 @@ import os
 
 import arrow
 from sqlalchemy import Column, Integer, String, Float, DateTime, UnicodeText, desc, ForeignKey, or_
-from sqlalchemy.orm import relationship, backref, class_mapper, lazyload
+from sqlalchemy.orm import relationship, backref, class_mapper, lazyload, joinedload, subqueryload
 
 from cifsdk.constants import RUNTIME_PATH, PYVERSION
 import json
@@ -351,7 +351,7 @@ class IndicatorManager(IndicatorManagerPlugin):
                 s = s.filter(Indicator.reporttime <= filters[k])
 
             elif k == 'tags':
-                s = s.join(Tag).filter(Tag.tag == filters[k])
+                s = s.outerjoin(Tag).filter(Tag.tag == filters[k])
 
             elif k == 'confidence':
                 if ',' in str(filters[k]):
@@ -359,7 +359,7 @@ class IndicatorManager(IndicatorManagerPlugin):
                     s = s.filter(Indicator.confidence >= float(start))
                     s = s.filter(Indicator.confidence <= float(end))
                 else:
-                    s = s.filter(Indicator.confidence >= filters[k])
+                    s = s.filter(Indicator.confidence >= float(filters[k]))
 
             elif k == 'itype':
                 s = s.filter(Indicator.itype == filters[k])

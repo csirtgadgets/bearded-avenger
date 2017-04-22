@@ -5,7 +5,7 @@ from flask.views import MethodView
 from flask import request, current_app, jsonify
 from cifsdk.client.zeromq import ZMQ as Client
 from cifsdk.client.dummy import Dummy as DummyClient
-from cif.constants import ROUTER_ADDR, FEEDS_DAYS, FEEDS_LIMIT, FEEDS_WHITELIST_LIMIT
+from cif.constants import ROUTER_ADDR, FEEDS_DAYS, FEEDS_LIMIT, FEEDS_WHITELIST_LIMIT, HTTPD_FEED_WHITELIST_CONFIDENCE
 from cifsdk.exceptions import InvalidSearch, AuthError
 import logging
 import copy
@@ -89,7 +89,7 @@ class FeedAPI(MethodView):
 
         wl_filters = copy.deepcopy(filters)
         wl_filters['tags'] = 'whitelist'
-        wl_filters['confidence'] = 25
+        wl_filters['confidence'] = HTTPD_FEED_WHITELIST_CONFIDENCE
 
         wl_filters['nolog'] = True
         wl_filters['limit'] = FEEDS_WHITELIST_LIMIT
