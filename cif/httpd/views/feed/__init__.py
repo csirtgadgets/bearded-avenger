@@ -85,6 +85,10 @@ class FeedAPI(MethodView):
             logger.error(e)
             return jsonify_unknown('invalid search', 400)
 
+        except Exception as e:
+            logger.error(e)
+            return jsonify_unknown(msg='search failed')
+
         r = aggregate(r)
 
         wl_filters = copy.deepcopy(filters)
@@ -98,7 +102,7 @@ class FeedAPI(MethodView):
             wl = Client(remote, pull_token()).indicators_search(wl_filters)
         except Exception as e:
             logger.error(e)
-            return jsonify_unknown('feed failed', 503)
+            return jsonify_unknown('feed query failed', 503)
 
         wl = aggregate(wl)
 

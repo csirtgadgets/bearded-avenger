@@ -36,13 +36,17 @@ class IndicatorsAPI(MethodView):
 
         except RuntimeError as e:
             logger.error(e)
-            return jsonify_unknown(msg='search failed', code=403)
+            return jsonify_unknown(msg='search failed')
 
         except InvalidSearch as e:
             return jsonify_unknown(msg='invalid search', code=400)
 
         except AuthError:
             return jsonify_unauth()
+
+        except Exception as e:
+            logger.error(e)
+            return jsonify_unknown(msg='search failed')
 
         response = current_app.response_class(r, mimetype='application/json')
 
