@@ -46,7 +46,7 @@ class IndicatorsAPI(MethodView):
 
         except Exception as e:
             logger.error(e)
-            return jsonify_unknown(msg='search failed')
+            return jsonify_unknown(msg='search failed, system may be too busy, check back later')
 
         response = current_app.response_class(r, mimetype='application/json')
 

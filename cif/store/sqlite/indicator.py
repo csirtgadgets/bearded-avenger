@@ -1,7 +1,7 @@
 import os
 
 import arrow
-from sqlalchemy import Column, Integer, String, Float, DateTime, UnicodeText, desc, ForeignKey, or_
+from sqlalchemy import Column, Integer, String, Float, DateTime, UnicodeText, desc, ForeignKey, or_, Index
 from sqlalchemy.orm import relationship, backref, class_mapper, lazyload, joinedload, subqueryload
 
 from cifsdk.constants import RUNTIME_PATH, PYVERSION
@@ -204,6 +204,8 @@ class Tag(Base):
     indicator = relationship(
         Indicator,
     )
+
+    __table_args__ = (Index('ix_tags_indicator', "tag", "indicator_id"),)
 
 
 class Message(Base):
