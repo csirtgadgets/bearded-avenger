@@ -1,3 +1,4 @@
+parser: pattern
 defaults:
   provider: 'danger.rulez.sk'
   confidence: 9

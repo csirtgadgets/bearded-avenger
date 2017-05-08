@@ -24,13 +24,15 @@ TRACE = os.environ.get('CIF_STORE_SQLITE_TRACE')
 SYNC = os.environ.get('CIF_STORE_SQLITE_SYNC', 'NORMAL')
 
 # https://www.sqlite.org/pragma.html#pragma_cache_size
-CACHE_SIZE = os.environ.get('CIF_STORE_SQLITE_CACHE_SIZE', 256000000)  # 256MB
+CACHE_SIZE = os.environ.get('CIF_STORE_SQLITE_CACHE_SIZE', 512000000)  # 256MB
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
 if not TRACE:
     logger.setLevel(logging.ERROR)
+    logging.getLogger('sqlalchemy.engine').setLevel(logging.ERROR)
 
 VALID_FILTERS = ['indicator', 'confidence', 'provider', 'itype', 'group', 'tags']
 
@@ -63,7 +65,7 @@ class SQLite(Store):
 
         echo = False
         if TRACE:
-            echo = True
+            echo = False
 
         # http://docs.sqlalchemy.org/en/latest/orm/contextual.html
         self.engine = create_engine(self.path, echo=echo)

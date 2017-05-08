@@ -51,10 +51,10 @@ MORE_DATA_NEEDED = -2
 TRACE = os.environ.get('CIF_ROUTER_TRACE') or os.environ.get('CIF_STORE_TRACE')
     
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
+#logger.setLevel(logging.ERROR)
 
-if TRACE:
-    logger.setLevel(logging.DEBUG)
+#if TRACE:
+#    logger.setLevel(logging.DEBUG)
 
 
 class Store(multiprocessing.Process):
