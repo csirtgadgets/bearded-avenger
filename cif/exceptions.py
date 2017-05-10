@@ -11,3 +11,7 @@ class InvalidSearch(CIFException):
 
 class StoreLockError(CIFException):
     pass
+
+
+class CIFBusy(CIFException):
+    pass
