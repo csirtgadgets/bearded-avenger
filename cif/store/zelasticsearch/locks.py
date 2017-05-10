@@ -1,5 +1,6 @@
 from datetime import datetime
 import elasticsearch
+from elasticsearch_dsl.connections import connections
 from time import sleep
 from cif.exceptions import StoreLockError
 import os
@@ -8,6 +9,7 @@ import socket
 LOCK_RETRIES = 45
 LOCK_RETRIES = os.getenv('CIF_ES_LOCK_RETRIES', LOCK_RETRIES)
 TEST_MODE = os.getenv('CIF_ELASTICCSEARCH_TEST', 0)
+LOCKS_FORCE = os.getenv('CIF_ES_LOCK_FORCE', 0)
 
 
 class LockManager(object):
@@ -16,9 +18,17 @@ class LockManager(object):
         self.handle = handle
         self.logger = logger
         self.name = socket.gethostname()
+        self.nodes = self._nodes()
+
+    def _nodes(self):
+        info = elasticsearch.client.NodesClient(self.handle).info()
+        return int(info['_nodes']['total'])
 
     def lock_aquire(self):
         if TEST_MODE:
+            return
+
+        if self.nodes == 1 and not LOCKS_FORCE:
             return
 
         es = self.handle
@@ -41,6 +51,9 @@ class LockManager(object):
 
     def lock_release(self):
         if TEST_MODE:
+            return
+
+        if self.nodes == 1 and not LOCKS_FORCE:
             return
 
         self.handle.delete(index='fs', doc_type='lock', id='global')

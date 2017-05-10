@@ -27,9 +27,11 @@ class IndicatorManager(IndicatorManagerPlugin):
 
         self.indicators_prefix = kwargs.get('indicators_prefix', 'indicators')
         self.idx = self._current_index()
-        self.last_index_check = datetime.utcnow()
+        self.last_index_check = datetime.now() - timedelta(minutes=5)
         self.handle = connections.get_connection()
         self.lockm = LockManager(self.handle, logger)
+
+        self._create_index()
 
     def flush(self):
         self.handle.indices.flush(index=self._current_index())
@@ -103,7 +105,6 @@ class IndicatorManager(IndicatorManagerPlugin):
         if bulk:
             d = {
                 '_index': index,
-                '_timestamp': ts,
                 '_type': 'indicator',
                 '_source': data
             }
@@ -111,7 +112,6 @@ class IndicatorManager(IndicatorManagerPlugin):
 
         data['meta'] = {}
         data['meta']['index'] = index
-        data['meta']['timestamp'] = ts
         data['meta']['id'] = id
         i = Indicator(**data)
 
@@ -149,7 +149,7 @@ class IndicatorManager(IndicatorManagerPlugin):
         for d in indicators:
             if was_added.get(d['indicator']):
                 for first in was_added[d['indicator']]: break
-                if d['lasttime'] < first:
+                if d.get('reporttime') and d['reporttime'] < first:
                     continue
 
             filters = {
@@ -185,7 +185,6 @@ class IndicatorManager(IndicatorManagerPlugin):
 
                 actions.append({
                     '_index': self._current_index(),
-                    '_timestamp': d.get('reporttime', d['lasttime']),
                     '_type': 'indicator',
                     '_source': d,
                 })

@@ -11,8 +11,8 @@ dnspython>=1.15.0,<1.16
 Flask>=0.10.1,<0.11
 PyYAML>=3.11,<4.0
 SQLAlchemy>=1.0.14,<1.1
-elasticsearch<3.0.0,>=2.0.0
-elasticsearch_dsl<3.0.0,>=2.0.0
+elasticsearch>=5.3.0,<5.4
+elasticsearch-dsl>=5.2.0,<5.3
 setuptools>=18.5
 ujson>=1.35
 html5lib==1.0b8 # bug in csirtg-smrt upstream

@@ -15,6 +15,10 @@ from .ipv4 import Ipv4
 from .ipv6 import Ipv6
 from .url import Url
 from .email import Email
+from .md5 import Md5
+from .sha1 import Sha1
+from .sha256 import Sha256
+from .sha512 import Sha512
 
 FEED_PLUGINS = {
     'ipv4': Ipv4,
@@ -22,6 +26,10 @@ FEED_PLUGINS = {
     'fqdn': Fqdn,
     'url': Url,
     'email': Email,
+    'md5': Md5,
+    'sha1': Sha1,
+    'sha256': Sha256,
+    'sha512': Sha512
 }
 
 
