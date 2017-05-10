@@ -40,6 +40,20 @@ def _filter_ipv6(s, i):
     return s
 
 
+def filter_confidence(s, filter):
+    if not filter.get('confidence'):
+        return s
+
+    c = filter.pop('confidence')
+
+    low, high = c, 10.0
+    if type(c) == str and ',' in c:
+        low, high = c.split(',')
+
+    s = s.filter('range', confidence={'gte': float(low), 'lte': float(high)})
+    return s
+
+
 def filter_indicator(s, q_filters):
     if not q_filters.get('indicator'):
         return s
@@ -96,6 +110,8 @@ def filter_build(s, filters, token=None):
 
     # treat indicator as special, transform into Search
     s = filter_indicator(s, q_filters)
+
+    s = filter_confidence(s, q_filters)
 
     # transform all other filters into term=
     s = filter_terms(s, q_filters)
