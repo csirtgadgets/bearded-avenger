@@ -149,7 +149,7 @@ class IndicatorManager(IndicatorManagerPlugin):
         for d in indicators:
             if was_added.get(d['indicator']):
                 for first in was_added[d['indicator']]: break
-                if d['lasttime'] < first:
+                if d.get('reporttime') and d['reporttime'] < first:
                     continue
 
             filters = {

@@ -66,7 +66,7 @@ def filter_indicator(s, q_filters):
         s = s.query("match", message=i)
         return s
 
-    if itype in ('email', 'url', 'fqdn'):
+    if itype in ('email', 'url', 'fqdn', 'md5', 'sha1', 'sha256', 'sha512'):
         s = s.filter('term', indicator=i)
         return s
 
@@ -75,6 +75,8 @@ def filter_indicator(s, q_filters):
 
     if itype is 'ipv6':
         return _filter_ipv6(s, i)
+
+    return s
 
 
 def filter_terms(s, q_filters):
