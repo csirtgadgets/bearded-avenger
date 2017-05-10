@@ -7,3 +7,11 @@ class StoreSubmissionFailed(CIFException):
 
 class InvalidSearch(CIFException):
     pass
+
+
+class StoreLockError(CIFException):
+    pass
+
+
+class CIFBusy(CIFException):
+    pass

@@ -67,7 +67,7 @@ def indicator_ipv6():
 
 @pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
 def test_store_elasticsearch_indicators(store, token, indicator):
-    x = store.handle_indicators_create(token, indicator.__dict__())
+    x = store.handle_indicators_create(token, indicator.__dict__(), flush=True)
     assert x > 0
 
     x = store.handle_indicators_search(token, {
@@ -79,17 +79,19 @@ def test_store_elasticsearch_indicators(store, token, indicator):
 
 @pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
 def test_store_elasticsearch_indicators_ipv6(store, token, indicator_ipv6):
-    x = store.handle_indicators_create(token, indicator_ipv6.__dict__())
+    x = store.handle_indicators_create(token, indicator_ipv6.__dict__(), flush=True)
+
     assert x > 0
 
     x = store.handle_indicators_search(token, {
         'indicator': '2001:4860:4860::8888'
     })
 
-    assert len(list(x)) > 0
+    assert len(x) > 0
+
 
     x = store.handle_indicators_search(token, {
         'indicator': '2001:4860::/32'
     })
 
-    assert len(list(x)) > 0
+    assert len(x) > 0

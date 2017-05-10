@@ -1,4 +1,6 @@
 sudo: required
+services:
+  - docker
 dist: trusty
 language: python
 cache:
@@ -8,6 +10,14 @@ cache:
 python:
     - 2.7
     - 3.5
+
+env:
+    - CIF_ELASTICSEARCH_TEST=1
+
+before_install:
+    - docker pull elasticsearch:2
+    - docker run -d -p 9200:9200 -p 9300:9300 elasticsearch:2
+    - docker ps -a
 
 install:
   - pip install -r dev_requirements.txt

@@ -45,6 +45,14 @@ def test_httpd_ping(client):
     assert rv.status_code == 200
 
 
+def test_httpd_confidence(client):
+    rv = client.get('/help/confidence')
+    assert rv.status_code == 200
+
+    rv = client.get('/help/confidence', headers={'Authorization': 'Token token=1234'})
+    assert rv.status_code == 200
+
+
 def test_httpd_search(client):
     rv = client.get('/search?q=example.com', headers={'Authorization': 'Token token=1234'})
     assert rv.status_code == 200

@@ -11,6 +11,7 @@ from cif.constants import PYVERSION
 
 ES_NODES = os.getenv('CIF_ES_NODES', '127.0.0.1:9200')
 TRACE = os.environ.get('CIF_STORE_ES_TRACE')
+TRACE_HTTP = os.getenv('CIF_STORE_ES_HTTP_TRACE')
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -26,6 +27,15 @@ if not TRACE:
         urllib_logger = logging.getLogger('urllib2')
     else:
         urllib_logger = logging.getLogger('urllib3')
+
+    urllib_logger.setLevel(logging.ERROR)
+
+if not TRACE_HTTP:
+    if PYVERSION == 2:
+        urllib_logger = logging.getLogger('urllib2')
+    else:
+        urllib_logger = logging.getLogger('urllib3')
+
     urllib_logger.setLevel(logging.ERROR)
 
 
