@@ -23,10 +23,13 @@ import cif.store
 from cif.constants import STORE_ADDR, PYVERSION
 from cifsdk.constants import REMOTE_ADDR, CONFIG_PATH
 from cifsdk.exceptions import AuthError, InvalidSearch
+from cif.exceptions import StoreLockError
 from csirtg_indicator import InvalidIndicator
 from cifsdk.utils import setup_logging, get_argument_parser, setup_signals
 from types import GeneratorType
 import traceback
+import binascii
+from base64 import b64decode
 
 if PYVERSION > 2:
     basestring = (str, bytes)
@@ -51,10 +54,10 @@ MORE_DATA_NEEDED = -2
 TRACE = os.environ.get('CIF_ROUTER_TRACE') or os.environ.get('CIF_STORE_TRACE')
     
 logger = logging.getLogger(__name__)
-#logger.setLevel(logging.ERROR)
+logger.setLevel(logging.ERROR)
 
-#if TRACE:
-#    logger.setLevel(logging.DEBUG)
+if TRACE:
+   logger.setLevel(logging.DEBUG)
 
 
 class Store(multiprocessing.Process):
@@ -169,6 +172,11 @@ class Store(multiprocessing.Process):
             traceback.print_exc()
             err = 'invalid indicator {}'.format(e)
 
+        except StoreLockError as e:
+            logger.error(e)
+            traceback.print_exc()
+            err = 'busy'
+
         except Exception as e:
             logger.error(e)
             traceback.print_exc()
@@ -193,8 +201,12 @@ class Store(multiprocessing.Process):
             try:
                 rv = self.store.indicators.upsert(t, data)
                 rv = {"status": "success", "data": rv}
+
             except AuthError as e:
                 rv = {'status': 'failed', 'message': 'unauthorized'}
+
+            except StoreLockError:
+                rv = {'status': 'failed', 'message': 'busy'}
 
             for id, client_id, _ in self.create_queue[t]['messages']:
                 Msg(id=id, client_id=client_id, mtype=Msg.INDICATORS_CREATE, data=rv)
@@ -206,7 +218,7 @@ class Store(multiprocessing.Process):
         t = self.store.tokens.admin(token)
         return self.store.indicators.delete(t, data=data, id=id)
 
-    def handle_indicators_create(self, token, data, id=None, client_id=None):
+    def handle_indicators_create(self, token, data, id=None, client_id=None, flush=False):
         # this will raise AuthError if false
         t = self.store.tokens.write(token)
 
@@ -216,7 +228,23 @@ class Store(multiprocessing.Process):
                 logger.info('Upserting %d indicators..', len(data))
 
             # this will raise AuthError if the groups don't match
-            r = self.store.indicators.upsert(t, data)
+            if isinstance(data, dict):
+                data = [data]
+
+            for i in data:
+                if not i.get('group'):
+                    raise InvalidIndicator('missing group')
+
+                if i['group'] not in t['groups']:
+                    raise AuthError('unable to write to %s' % i['group'])
+
+                if i.get('message'):
+                    try:
+                        i['message'] = str(b64decode(data['message']))
+                    except (TypeError, binascii.Error) as e:
+                        pass
+
+            r = self.store.indicators.upsert(t, data, flush=flush)
 
             if len(data) > 1:
                 n = len(data)
@@ -227,6 +255,12 @@ class Store(multiprocessing.Process):
 
         if data['group'] not in t['groups']:
             raise AuthError('unauthorized to write to group: %s' % g)
+
+        if data.get('message'):
+            try:
+                data['message'] = str(b64decode(data['message']))
+            except (TypeError, binascii.Error) as e:
+                pass
 
         if not self.create_queue.get(token):
             self.create_queue[token] = {'count': 0, "messages": []}
@@ -260,7 +294,7 @@ class Store(multiprocessing.Process):
             group=t['groups'][0],
             count=1,
         )
-        self.store.indicators.upsert(t, s.__dict__())
+        self.store.indicators.upsert(t, [s.__dict__()])
 
     def handle_indicators_search(self, token, data, **kwargs):
         t = self.store.tokens.read(token)

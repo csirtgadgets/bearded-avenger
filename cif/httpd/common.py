@@ -41,6 +41,15 @@ def jsonify_unknown(msg='failed', code=503):
     return response
 
 
+def jsonify_busy(msg='system is busy, try again later', code=503):
+    response = jsonify({
+        'message': msg,
+        'data': [],
+    })
+    response.status_code = code
+    return response
+
+
 def jsonify_success(data=[], code=200):
     response = jsonify({
         'message': 'success',

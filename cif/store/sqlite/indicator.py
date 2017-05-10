@@ -449,7 +449,7 @@ class IndicatorManager(IndicatorManagerPlugin):
 
         return rv
 
-    def upsert(self, token, data):
+    def upsert(self, token, data, **kwargs):
         if type(data) == dict:
             data = [data]
 

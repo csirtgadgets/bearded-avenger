@@ -1,11 +1,11 @@
 from ..common import pull_token, jsonify_success, jsonify_unauth, jsonify_unknown, compress, response_compress, \
-    VALID_FILTERS
+    VALID_FILTERS, jsonify_busy
 from flask.views import MethodView
 from flask import request, current_app
 from cifsdk.client.zeromq import ZMQ as Client
 from cifsdk.client.dummy import Dummy as DummyClient
 from cif.constants import ROUTER_ADDR, PYVERSION
-from cifsdk.exceptions import AuthError, TimeoutError, InvalidSearch, SubmissionFailed
+from cifsdk.exceptions import AuthError, TimeoutError, InvalidSearch, SubmissionFailed, CIFBusy
 import logging
 remote = ROUTER_ADDR
 
@@ -86,6 +86,9 @@ class IndicatorsAPI(MethodView):
         except TimeoutError as e:
             logger.error(e)
             return jsonify_unknown('submission failed, check logs for more information', 408)
+
+        except CIFBusy:
+            return jsonify_busy()
 
         except Exception as e:
             logger.error(e)
