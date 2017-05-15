@@ -2,6 +2,7 @@
 
 import logging
 import os
+import traceback
 import textwrap
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
@@ -9,7 +10,7 @@ from argparse import RawDescriptionHelpFormatter
 from flask import Flask, request
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from cif.constants import ROUTER_ADDR
+from cif.constants import ROUTER_ADDR, RUNTIME_PATH
 from cifsdk.utils import get_argument_parser, setup_logging, setup_signals, setup_runtime_path
 from .common import pull_token
 from .views.ping import PingAPI
@@ -25,8 +26,9 @@ HTTP_LISTEN = os.environ.get('CIF_HTTPD_LISTEN', HTTP_LISTEN)
 HTTP_LISTEN_PORT = 5000
 HTTP_LISTEN_PORT = os.environ.get('CIF_HTTPD_LISTEN_PORT', HTTP_LISTEN_PORT)
 
-LIMIT_DAY = os.environ.get('CIF_HTTPD_LIMIT_DAY', 250000)
-LIMIT_HOUR = os.environ.get('CIF_HTTPD_LIMIT_HOUR', 100000)
+LIMIT_MIN = os.getenv('CIF_HTTPD_LIMIT_MINUTE', 120)
+
+PIDFILE = os.getenv('CIF_HTTPD_PIDFILE', '{}/cif_httpd.pid'.format(RUNTIME_PATH))
 
 app = Flask(__name__)
 remote = ROUTER_ADDR
@@ -35,8 +37,7 @@ limiter = Limiter(
     app,
     key_func=get_remote_address,
     global_limits=[
-        '{} per day'.format(LIMIT_DAY),
-        '{} per hour'.format(LIMIT_HOUR)
+        '{} per minute'.format(LIMIT_MIN)
     ]
 )
 
@@ -80,6 +81,7 @@ def main():
     p.add_argument('--listen', help='specify the interface to listen on [default %(default)s]', default=HTTP_LISTEN)
     p.add_argument('--listen-port', help='specify the port to listen on [default %(default)s]',
                    default=HTTP_LISTEN_PORT)
+    p.add_argument('--pidfile', help='specify pidfile location [default: %(default)s]', default=PIDFILE)
 
     p.add_argument('--fdebug', action='store_true')
 
@@ -92,6 +94,21 @@ def main():
 
     setup_runtime_path(args.runtime_path)
 
+    # http://stackoverflow.com/a/789383/7205341
+    pid = str(os.getpid())
+    logger.debug("pid: %s" % pid)
+
+    if os.path.isfile(args.pidfile):
+        logger.critical("%s already exists, exiting" % args.pidfile)
+        raise SystemExit
+
+    try:
+        pidfile = open(args.pidfile, 'w')
+        pidfile.write(pid)
+        pidfile.close()
+    except PermissionError as e:
+        logger.error('unable to create pid %s' % args.pidfile)
+
     try:
         logger.info('pinging router...')
         app.config["SECRET_KEY"] = os.urandom(1024)
@@ -100,7 +117,13 @@ def main():
 
     except KeyboardInterrupt:
         logger.info('shutting down...')
-        raise SystemExit
+
+    except Exception as e:
+        logger.critical(e)
+        traceback.print_exc()
+
+    if os.path.isfile(args.pidfile):
+        os.unlink(args.pidfile)
 
 if __name__ == "__main__":
     main()

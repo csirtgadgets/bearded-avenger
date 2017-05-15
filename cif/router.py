@@ -9,7 +9,8 @@ from argparse import RawDescriptionHelpFormatter
 from time import sleep
 import zmq
 import os
-from cif.constants import ROUTER_ADDR, STORE_ADDR, HUNTER_ADDR, GATHERER_ADDR, GATHERER_SINK_ADDR, HUNTER_SINK_ADDR
+import sys
+from cif.constants import ROUTER_ADDR, STORE_ADDR, HUNTER_ADDR, GATHERER_ADDR, GATHERER_SINK_ADDR, HUNTER_SINK_ADDR, RUNTIME_PATH
 from cifsdk.constants import CONFIG_PATH
 from cifsdk.utils import setup_logging, get_argument_parser, setup_signals, setup_runtime_path, read_config
 from cif.hunter import Hunter
@@ -18,6 +19,7 @@ from cif.gatherer import Gatherer
 import time
 import multiprocessing as mp
 from cifsdk.msg import Msg
+
 
 HUNTER_MIN_CONFIDENCE = 4
 HUNTER_THREADS = os.getenv('CIF_HUNTER_THREADS', 0)
@@ -40,6 +42,9 @@ if not os.path.isfile(CONFIG_PATH):
 
 STORE_DEFAULT = os.getenv('CIF_STORE_STORE', STORE_DEFAULT)
 STORE_NODES = os.getenv('CIF_STORE_NODES')
+
+
+PIDFILE = os.getenv('CIF_ROUTER_PIDFILE', '{}/cif_router.pid'.format(RUNTIME_PATH))
 
 
 class Router(object):
@@ -263,6 +268,8 @@ def main():
 
     p.add_argument('--logging-ignore', help='set logging to WARNING for specific modules')
 
+    p.add_argument('--pidfile', help='specify pidfile location [default: %(default)s]', default=PIDFILE)
+
     args = p.parse_args()
     setup_logging(args)
     logger = logging.getLogger(__name__)
@@ -283,17 +290,35 @@ def main():
     setup_runtime_path(args.runtime_path)
     setup_signals(__name__)
 
+    # http://stackoverflow.com/a/789383/7205341
+    pid = str(os.getpid())
+    logger.debug("pid: %s" % pid)
+
+    if os.path.isfile(args.pidfile):
+        logger.critical("%s already exists, exiting" % args.pidfile)
+        raise SystemExit
+
+    try:
+        pidfile = open(args.pidfile, 'w')
+        pidfile.write(pid)
+        pidfile.close()
+    except PermissionError as e:
+        logger.error('unable to create pid %s' % args.pidfile)
+
     with Router(listen=args.listen, hunter=args.hunter, store_type=args.store, store_address=args.store_address,
                 store_nodes=args.store_nodes, hunter_token=args.hunter_token, hunter_threads=args.hunter_threads,
                 gatherer_threads=args.gatherer_threads) as r:
         try:
             logger.info('starting router..')
             r.start()
+
         except KeyboardInterrupt:
             # todo - signal to threads to shut down and wait for them to finish
             logger.info('shutting down via SIGINT...')
+
         except SystemExit:
             logger.info('shutting down via SystemExit...')
+
         except Exception as e:
             logger.critical(e)
             traceback.print_exc()
@@ -301,6 +326,8 @@ def main():
         r.stop()
 
     logger.info('Shutting down')
+    if os.path.isfile(args.pidfile):
+        os.unlink(args.pidfile)
 
 if __name__ == "__main__":
     main()

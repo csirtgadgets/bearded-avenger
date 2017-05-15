@@ -23,19 +23,8 @@ if not TRACE:
     es_logger.propagate = False
     es_logger.setLevel(logging.ERROR)
 
-    if PYVERSION == 2:
-        urllib_logger = logging.getLogger('urllib2')
-    else:
-        urllib_logger = logging.getLogger('urllib3')
-
-    urllib_logger.setLevel(logging.ERROR)
-
 if not TRACE_HTTP:
-    if PYVERSION == 2:
-        urllib_logger = logging.getLogger('urllib2')
-    else:
-        urllib_logger = logging.getLogger('urllib3')
-
+    urllib_logger = logging.getLogger('urllib3')
     urllib_logger.setLevel(logging.ERROR)
 
 
