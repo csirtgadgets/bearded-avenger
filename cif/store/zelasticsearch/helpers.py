@@ -3,6 +3,7 @@ import re
 import binascii
 import socket
 import uuid
+from hashlib import sha256
 
 
 def expand_ip_idx(data):
@@ -31,9 +32,22 @@ def expand_ip_idx(data):
             'utf-8')
 
 
-def i_to_id(i):
-    from hashlib import sha256
-    #id = ','.join([i['group'][0], i['provider'], i['indicator'], i['tags'], i['confidence']])
+def _id_random(i):
     id = str(uuid.uuid4())
     id = sha256(id.encode('utf-8')).hexdigest()
     return id
+
+
+def _id_deterministic(i):
+    tags = ','.join(sorted(i['tags']))
+    groups = ','.join(sorted(i['groups']))
+
+    id = ','.join([groups, i['provider'], i['indicator'], tags, i['lasttime']])
+
+    return id
+
+
+def i_to_id(i):
+    #id = _id_random(i)
+    id = _id_deterministic(i)
+    return sha256(id.encode('utf-8')).hexdigest()
