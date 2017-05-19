@@ -56,7 +56,9 @@ class IndicatorsAPI(MethodView):
                 return response
 
         if response_compress():
-           response.data = compress(response.data)
+            response.headers['Content-Encoding'] = 'gzip'
+            response.data = compress(response.data)
+            response.headers['Content-Length'] = len(response.data)
 
         return response
 
