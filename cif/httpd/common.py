@@ -1,6 +1,7 @@
 from flask import request, jsonify
 import re
 import zlib
+import gzip
 from base64 import b64encode
 
 VALID_FILTERS = ['indicator', 'itype', 'confidence', 'provider', 'limit', 'application', 'nolog', 'tags', 'days',
@@ -60,23 +61,25 @@ def jsonify_success(data=[], code=200):
 
 
 def response_compress():
+    if request.args.get('nocompress'):
+        return False
+
     if request.args.get('gzip'):
-        return True
+        return 'gzip'
 
-    if request.args.get('zip'):
-        return True
+    if request.headers.get('Accept-Encoding'):
+        if request.headers['Accept-Encoding'] == 'gzip':
+            return 'gzip'
 
-    if request.args.get('compress'):
-        return True
-
-    if request.headers.get('Accept-Encoding') and 'gzip' in request.headers['Accept-Encoding']:
-        return True
+        if request.headers['Accept-Encoding'] == 'deflate':
+            return 'deflate'
 
 
-def compress(data):
-    data = zlib.compress(data)
-    data = b64encode(data)
-    return data
+def compress(data, ctype='deflate'):
+    if ctype == 'deflate':
+        return zlib.compress(data)
+
+    return gzip.compress(data)
 
 
 def aggregate(data, field='indicator', sort='confidence', sort_secondary='reporttime'):

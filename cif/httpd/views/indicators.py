@@ -55,10 +55,17 @@ class IndicatorsAPI(MethodView):
                 response.status_code = 401
                 return response
 
-        if response_compress():
-            response.headers['Content-Encoding'] = 'gzip'
-            response.data = compress(response.data)
-            response.headers['Content-Length'] = len(response.data)
+        c = response_compress()
+        if not c:
+            return response
+
+        response.headers['Content-Encoding'] = c
+
+        response.data = compress(response.data, ctype=c)
+        size = len(response.data)
+        response.headers['Content-Length'] = size
+        logger.debug('compression: %s' % c)
+        logger.debug('content-length %s' % size)
 
         return response
 
