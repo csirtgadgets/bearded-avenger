@@ -1,0 +1,10 @@
+
+<h2>Login</h2>
+  {% if error %}<p class=error><strong>Error:</strong> {{ error }}{% endif %}
+  <form action="{{ url_for('login') }}" method=post>
+    <dl>
+      <dt>Token:
+      <dd><input type=password name=token>
+      <dd><input type=submit value=Login>
+    </dl>
+  </form>

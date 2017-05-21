@@ -1,0 +1,27 @@
+{%- extends "layout.html" %}
+
+{% block body %}
+
+<table class="table table-striped" id="results">
+    <thead>
+        <th>Group</th>
+        <th>Indicator</th>
+        <th>LastTime</th>
+        <th>ReportTime</th>
+        <th>Count</th>
+    </thead>
+    <tbody>
+     {% for r in records: %}
+      <tr>
+        <td>{{ r['group'] }}</td>
+        <td>{{ r['indicator'] }}</td>
+        <td>{{ r['lasttime'] }}</td>
+        <td>{{ r['reporttime'] }}</td>
+        <td>{{ r['count'] }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+
+</table>
+
+{% endblock %}

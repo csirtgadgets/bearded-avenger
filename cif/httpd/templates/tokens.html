@@ -1,0 +1,29 @@
+{%- extends "layout.html" %}
+
+{% block body %}
+  <table class="table" id="results">
+    <thead>
+        <th></th>
+        <th>Username</th>
+        <th>Token</th>
+        <th>Group</th>
+        <th>Write</th>
+    </thead>
+  {% for r in records: %}
+      <tr id="{{ r['token'] }}">
+        <td>
+            <form action="/u/tokens/{{ r['token'] }}" method="POST">
+                <input type="hidden" name="_method" value="DELETE" />
+                <input type="submit" value="Delete" />
+            </form>
+</a>      </td>
+        <td>{{ r['username'] }}</td>
+        <td><a href="/u/tokens/{{ r['token']}}">{{ r['token'] }}</a></td>
+        <td>{{ ','.join(r['groups']) }}</td>
+        <td>{{ r['write'] }}</td>
+      </tr>
+
+  {% endfor %}
+</table>
+
+{%- endblock %}
