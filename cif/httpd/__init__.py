@@ -38,6 +38,9 @@ LIMIT_HOUR = os.environ.get('CIF_HTTPD_LIMIT_HOUR', 100000)
 SECRET_KEY = os.getenv('CIF_HTTPD_SECRET_KEY', os.urandom(24))
 HTTPD_TOKEN = os.getenv('CIF_HTTPD_TOKEN')
 
+HTTPD_UI_HOSTS = os.getenv('CIF_HTTPD_UI_HOSTS', '127.0.0.1')
+HTTPD_UI_HOSTS = HTTPD_UI_HOSTS.split(',')
+
 extra_dirs = ['cif/httpd/templates', ]
 extra_files = extra_dirs[:]
 for extra_dir in extra_dirs:
@@ -101,8 +104,9 @@ def before_request():
         return
 
     if '/u' in request.path:
-        if request.remote_addr != '127.0.0.1':
-            return 'unauthorized, must connect from 127.0.0.1', 401
+
+        if request.remote_addr not in HTTPD_UI_HOSTS:
+            return 'unauthorized, must connect from {}'.format(','.join(HTTPD_UI_HOSTS)), 401
 
         if 'token' not in session:
             return render_template('login.html', code=401)
