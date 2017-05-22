@@ -95,8 +95,6 @@ def before_request():
         ctx.url_adapter.default_method = method
         assert request.method == method
 
-    print(request.method)
-
     if request.path == '/u/logout':
         return
 

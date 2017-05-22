@@ -20,14 +20,13 @@ logger = logging.getLogger('cif-httpd')
 
 class TokensUI(MethodView):
     def get(self, token_id):
-
-        if not session['admin']:
-            return redirect('/u/login', code=401)
-
         filters = {}
 
-        if request.args.get('q'):
-            filters['username'] = request.args['q']
+        if not session['admin']:
+            filters['username'] = session['username']
+        else:
+            if request.args.get('q'):
+                filters['username'] = request.args['q']
 
         if token_id and token_id != 'new':
             filters['token'] = token_id
@@ -35,17 +34,17 @@ class TokensUI(MethodView):
         logger.debug(filters)
 
         try:
-            r = Client(remote, session['token']).tokens_search(filters)
+            r = Client(remote, HTTPD_TOKEN).tokens_search(filters)
 
         except Exception as e:
             logger.error(e)
-            response = render_template('tokens.html')
+            response = render_template('tokens/index.html')
 
         else:
             if token_id and token_id != 'new':
-               response = render_template('tokens/edit.html', token=r[0])
+                response = render_template('tokens/show.html', records=r)
             else:
-                response = render_template('tokens.html', records=r)
+                response = render_template('tokens/index.html', records=r)
 
         return response
 
@@ -103,6 +102,8 @@ class TokensUI(MethodView):
         return response
 
     def put(self, token_id):
+        if not session['admin']:
+            return redirect('/u/login', code=401)
 
         if request.form.get('username') == '':
             flash('missing username', 'error')
