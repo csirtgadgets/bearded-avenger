@@ -1,0 +1,58 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<form action="/u/tokens/{{ token['token'] }}" method="POST">
+
+    <p>
+    <div class="input-group input-group-lg">
+        <h4><span class="label label-default">Username</span></h4>
+        <input size="25%" placeholder="user1@example.com" value="{{ token['username'] }}" class="form-control" type="text" name="username">
+    </div>
+    </p>
+
+    <p>
+    <div class="input-group input-group-lg">
+        <h4><span class="label label-default">Groups</span></h4>
+        <input size="25%" value="everyone" class="form-control" value="{{ token['groups'] }}" type="text" name="groups">
+    </div>
+    </p>
+
+    <p>
+    <div class="input-group input-group-lg">
+        <h4><span class="label label-default">Read Enabled?</span></h4>
+        {% set checked = 'checked=""' %}
+        {% if not token['read'] %}
+        {% set checked = '' %}
+        {% endif %}
+        <input class="form-control" type="checkbox" name="read" {{ checked }}>
+    </div>
+    </p>
+
+    <p>
+    <div class="input-group input-group-lg">
+        <h4><span class="label label-default">Write Enabled?</span></h4>
+        {% set checked = 'checked=""' %}
+        {% if not token['write'] %}
+        {% set checked = '' %}
+        {% endif %}
+        <input class="form-control" type="checkbox" name="write" {{ checked }}>
+    </div>
+    </p>
+
+    <p>
+    <div class="input-group input-group-lg">
+        <h4><span class="label label-default">Admin?</span></h4>
+        {% set checked = 'checked=""' %}
+        {% if not token['admin'] %}
+        {% set checked = '' %}
+        {% endif %}
+        <input class="form-control" type="checkbox" name="admin" {{ checked }}>
+    </div>
+    </p>
+
+    <input type="hidden" name="_method" value="POST" />
+    <input type="submit" value="Update" />
+</form>
+
+{% endblock %}
