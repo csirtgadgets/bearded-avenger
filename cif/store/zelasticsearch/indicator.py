@@ -97,7 +97,6 @@ class IndicatorManager(IndicatorManagerPlugin):
 
         expand_ip_idx(data)
         id = i_to_id(data)
-        ts = data.get('reporttime', data['lasttime'])
 
         if data.get('group') and type(data['group']) != list:
             data['group'] = [data['group']]

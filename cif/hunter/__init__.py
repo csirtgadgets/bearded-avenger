@@ -17,7 +17,7 @@ ZMQ_HWM = 1000000
 EXCLUDE = os.environ.get('CIF_HUNTER_EXCLUDE', None)
 HUNTER_ADVANCED = os.getenv('CIF_HUNTER_ADVANCED', 0)
 
-TRACE = os.environ.get('CIF_ROUTER_TRACE') or os.environ.get('CIF_HUNTER_TRACE')
+TRACE = os.environ.get('CIF_HUNTER_TRACE')
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

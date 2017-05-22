@@ -16,7 +16,7 @@ SNDTIMEO = 30000
 LINGER = 0
 
 logger = logging.getLogger(__name__)
-TRACE = os.environ.get('CIF_ROUTER_TRACE') or os.environ.get('CIF_GATHERER_TRACE')
+TRACE = os.environ.get('CIF_GATHERER_TRACE')
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
