@@ -11,6 +11,7 @@ from flask.sessions import SecureCookieSessionInterface
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_bootstrap import Bootstrap
+from os import path
 
 from cif.constants import ROUTER_ADDR
 from cifsdk.utils import get_argument_parser, setup_logging, setup_signals, setup_runtime_path
@@ -38,6 +39,15 @@ LIMIT_HOUR = os.environ.get('CIF_HTTPD_LIMIT_HOUR', 100000)
 SECRET_KEY = os.getenv('CIF_HTTPD_SECRET_KEY', os.urandom(24))
 HTTPD_TOKEN = os.getenv('CIF_HTTPD_TOKEN')
 
+extra_dirs = ['cif/httpd/templates', ]
+extra_files = extra_dirs[:]
+for extra_dir in extra_dirs:
+    for dirname, dirs, files in os.walk(extra_dir):
+        for filename in files:
+            filename = path.join(dirname, filename)
+            if path.isfile(filename):
+                extra_files.append(filename)
+
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
 Bootstrap(app)
@@ -57,6 +67,7 @@ app.add_url_rule('/u/search', view_func=IndicatorsUI.as_view('/u/search'))
 
 tokens_view = TokensUI.as_view('/u/tokens')
 app.add_url_rule('/u/tokens/<string:token_id>', view_func=tokens_view, methods=['GET', 'POST', 'DELETE'])
+app.add_url_rule('/u/tokens/new', view_func=tokens_view, methods=['PUT'])
 app.add_url_rule('/u/tokens/', view_func=tokens_view, defaults={'token_id': None}, methods=['GET', ])
 
 
@@ -173,7 +184,7 @@ def main():
         logger.info('pinging router...')
         #app.config["SECRET_KEY"] = SECRET_KEY
         logger.info('starting up...')
-        app.run(host=args.listen, port=args.listen_port, debug=args.fdebug, threaded=True)
+        app.run(host=args.listen, port=args.listen_port, debug=args.fdebug, threaded=True, extra_files=extra_files)
 
     except KeyboardInterrupt:
         logger.info('shutting down...')

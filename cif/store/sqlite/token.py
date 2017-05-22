@@ -144,13 +144,14 @@ class TokenManager(TokenManagerPlugin):
             return 'token required for updating'
 
         s = self.handle()
-        rv = s.query(Token).filter_by(token=data['token']).update(data)
+        rv = s.query(Token).filter_by(token=data['token'])
+        rv.update(dict(write=data['write'], admin=data['admin'], username=data['username']))
 
         if not rv:
             return 'token not found'
 
-        if data.get('groups'):
-            rv.groups = ','.join(data['groups'])
+        #if data.get('groups'):
+        #    rv.first().groups = data['groups'].split(',')
 
         s.commit()
 

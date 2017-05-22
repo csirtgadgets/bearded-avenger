@@ -8,7 +8,7 @@
 
    http://jinja.pocoo.org/docs/templates/#template-inheritance
 #}
-{%- extends "bootstrap/base.html" %}
+{%- extends "application.html" %}
 
 {# We also set a default title, usually because we might forget to set one.
    In our sample app, we will most likely just opt not to change it #}
@@ -26,4 +26,5 @@
 {#- Docs: http://pythonhosted.org/Flask-Bootstrap/macros.html#fixes
    The sample application already contains the required static files. #}
 {{fixes.ie8()}}
+
 {%- endblock %}

@@ -1,7 +1,7 @@
 from cif.httpd.common import pull_token
 from flask.views import MethodView
 from flask import redirect, flash
-from flask import request, current_app, render_template, session, url_for
+from flask import request, current_app, render_template, session, url_for, flash
 from cifsdk.client.zeromq import ZMQ as Client
 from cifsdk.client.dummy import Dummy as DummyClient
 from cif.constants import ROUTER_ADDR, PYVERSION
@@ -24,29 +24,134 @@ class TokensUI(MethodView):
         if not session['admin']:
             return redirect('/u/login', code=401)
 
-        logger.debug(token_id)
         filters = {}
 
         if request.args.get('q'):
             filters['username'] = request.args['q']
 
-        if token_id:
+        if token_id and token_id != 'new':
             filters['token'] = token_id
+
+        logger.debug(filters)
 
         try:
             r = Client(remote, session['token']).tokens_search(filters)
 
         except Exception as e:
             logger.error(e)
-            response = render_template('tokens.html', error='search failed')
+            response = render_template('tokens.html')
 
         else:
-            response = render_template('tokens.html', records=r)
+            if token_id and token_id != 'new':
+               response = render_template('tokens/edit.html', token=r[0])
+            else:
+                response = render_template('tokens.html', records=r)
 
         return response
 
     def post(self, token_id):
-        pass
+        if not session['admin']:
+            return redirect('/u/login', code=401)
+
+        filters = {}
+        if token_id:
+            filters['token'] = token_id
+
+        # TODO- need to search for default token values first, update those
+        write = False
+        if request.form.get('write') == 'on':
+            write = True
+
+        admin = False
+        if request.form.get('admin') == 'on':
+            admin = True
+
+        t = {
+            'token': token_id,
+            'username': request.form['username'],
+            'admin': admin,
+            'write': write,
+            'groups': request.form['groups'],
+        }
+
+        t = json.dumps(t)
+
+        logger.debug(t)
+
+        try:
+            Client(remote, session['token']).tokens_edit(t)
+        except Exception as e:
+            logger.error(e)
+            return render_template('tokens.html', error='search failed')
+
+        filters = {}
+        filters['username'] = request.args.get('username')
+
+        try:
+            r = Client(remote, session['token']).tokens_search(filters)
+
+        except Exception as e:
+            logger.error(e)
+            flash(e, 'error')
+            response = render_template('tokens.html')
+
+        else:
+            flash('success!')
+            #response = render_template('tokens.html', records=r)
+            return redirect(url_for('/u/tokens'))
+
+        return response
+
+    def put(self, token_id):
+
+        if request.form.get('username') == '':
+            flash('missing username', 'error')
+            return redirect('/u/tokens')
+
+        write = False
+        if request.form.get('write') == 'on':
+            write = True
+
+        admin = False
+        if request.form.get('admin') == 'on':
+            admin = True
+
+        read = False
+        if request.form.get('read') == 'on':
+            read = True
+
+        t = {
+            'username': request.form['username'],
+            'groups': request.form['groups'].split(','),
+            'admin': admin,
+            'write': write,
+            'read': read
+        }
+
+        t = json.dumps(t)
+
+        try:
+            Client(remote, session['token']).tokens_create(t)
+        except Exception as e:
+            logger.error(e)
+            flash(e, 'error')
+            return redirect(url_for('/u/tokens'))
+
+        filters = {}
+        filters['username'] = request.args.get('username')
+
+        try:
+            r = Client(remote, session['token']).tokens_search(filters)
+
+        except Exception as e:
+            logger.error(e)
+            flash(e, 'error')
+            return redirect(url_for('/u/tokens'))
+
+        flash('success', 'success')
+        return redirect(url_for('/u/tokens'))
+
+
 
     def delete(self, token_id):
         if not session['admin']:
@@ -65,6 +170,6 @@ class TokensUI(MethodView):
             logger.error(e)
             flash(e, 'error')
         else:
-            flash('success')
-        
+            flash('success', 'success')
+
         return redirect(url_for('/u/tokens'))
