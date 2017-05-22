@@ -6,8 +6,7 @@ import textwrap
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 
-from flask import Flask, request, session, redirect, url_for, flash, render_template, _request_ctx_stack
-from flask.sessions import SecureCookieSessionInterface
+from flask import Flask, request, session, redirect, url_for, render_template, _request_ctx_stack
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_bootstrap import Bootstrap

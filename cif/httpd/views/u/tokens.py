@@ -1,14 +1,9 @@
-from cif.httpd.common import pull_token
 from flask.views import MethodView
-from flask import redirect, flash
-from flask import request, current_app, render_template, session, url_for, flash
+from flask import redirect
+from flask import request, render_template, session, url_for, flash
 from cifsdk.client.zeromq import ZMQ as Client
-from cifsdk.client.dummy import Dummy as DummyClient
-from cif.constants import ROUTER_ADDR, PYVERSION
-from cifsdk.exceptions import AuthError, TimeoutError, InvalidSearch, SubmissionFailed, CIFBusy
+from cif.constants import ROUTER_ADDR
 import logging
-from cif.httpd.views.indicators import IndicatorsAPI
-from pprint import pprint
 import os
 import json
 
@@ -96,7 +91,6 @@ class TokensUI(MethodView):
 
         else:
             flash('success!')
-            #response = render_template('tokens.html', records=r)
             return redirect(url_for('/u/tokens'))
 
         return response
