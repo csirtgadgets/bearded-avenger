@@ -23,5 +23,3 @@ csirtg_dnsdb==0.0.0a4
 tornado>=4.4.1,<5.0
 faker==0.7.11
 Flask-Bootstrap==3.3.6.0
-humanize==0.5.1
-flask-babel-0.11.2

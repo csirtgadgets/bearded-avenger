@@ -145,7 +145,7 @@ class TokenManager(TokenManagerPlugin):
 
         s = self.handle()
         rv = s.query(Token).filter_by(token=data['token'])
-        rv.update(dict(write=data['write'], admin=data['admin'], username=data['username']))
+        rv.update(dict(write=data.get('write'), admin=data.get('admin'), username=data.get('username')))
 
         if not rv:
             return 'token not found'
