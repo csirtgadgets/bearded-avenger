@@ -182,20 +182,21 @@ def main():
 
     setup_runtime_path(args.runtime_path)
 
-    # http://stackoverflow.com/a/789383/7205341
-    pid = str(os.getpid())
-    logger.debug("pid: %s" % pid)
+    if not args.fdebug:
+        # http://stackoverflow.com/a/789383/7205341
+        pid = str(os.getpid())
+        logger.debug("pid: %s" % pid)
 
-    if os.path.isfile(args.pidfile):
-        logger.critical("%s already exists, exiting" % args.pidfile)
-        raise SystemExit
+        if os.path.isfile(args.pidfile):
+            logger.critical("%s already exists, exiting" % args.pidfile)
+            raise SystemExit
 
-    try:
-        pidfile = open(args.pidfile, 'w')
-        pidfile.write(pid)
-        pidfile.close()
-    except PermissionError as e:
-        logger.error('unable to create pid %s' % args.pidfile)
+        try:
+            pidfile = open(args.pidfile, 'w')
+            pidfile.write(pid)
+            pidfile.close()
+        except PermissionError as e:
+            logger.error('unable to create pid %s' % args.pidfile)
 
     try:
         logger.info('pinging router...')
