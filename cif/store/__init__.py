@@ -156,8 +156,11 @@ class Store(multiprocessing.Process):
 
         try:
             rv = handler(token, data, id=id, client_id=client_id)
-            if rv != MORE_DATA_NEEDED:
+            if rv == MORE_DATA_NEEDED:
+                rv = {"status": "success", "data": '1'}
+            else:
                 rv = {"status": "success", "data": rv}
+
 
         except AuthError as e:
             logger.error(e)
@@ -185,8 +188,7 @@ class Store(multiprocessing.Process):
         if err:
             rv = {'status': 'failed', 'message': err}
 
-        if rv != MORE_DATA_NEEDED:
-            Msg(id=id, client_id=client_id, mtype=mtype, data=json.dumps(rv)).send(self.router)
+        Msg(id=id, client_id=client_id, mtype=mtype, data=json.dumps(rv)).send(self.router)
 
         if not err:
             self.store.tokens.update_last_activity_at(token, arrow.utcnow().datetime)
@@ -278,8 +280,7 @@ class Store(multiprocessing.Process):
         self.create_queue_count += 1
         self.create_queue[token]['last_activity'] = time.time()
 
-        if self.create_queue[token]['count'] > self.create_queue_limit:
-            self.create_queue[token]['messages'].append((id, client_id, [data]))
+        self.create_queue[token]['messages'].append((id, client_id, [data]))
 
         return MORE_DATA_NEEDED
 
