@@ -2,6 +2,7 @@
 
 import logging
 import os
+import gc
 import traceback
 import textwrap
 from argparse import ArgumentParser
@@ -17,6 +18,7 @@ from cifsdk.utils import get_argument_parser, setup_logging, setup_signals, setu
 from .common import pull_token
 from .views.ping import PingAPI
 from .views.help import HelpAPI
+from .views.health import HealthAPI
 from .views.tokens import TokensAPI
 from .views.indicators import IndicatorsAPI
 from .views.feed import FeedAPI
@@ -42,6 +44,8 @@ HTTPD_TOKEN = os.getenv('CIF_HTTPD_TOKEN')
 HTTPD_UI_HOSTS = os.getenv('CIF_HTTPD_UI_HOSTS', '127.0.0.1')
 HTTPD_UI_HOSTS = HTTPD_UI_HOSTS.split(',')
 
+HTTPD_PROXY = os.getenv('CIF_HTTPD_PROXY')
+
 extra_dirs = ['cif/httpd/templates', ]
 extra_files = extra_dirs[:]
 for extra_dir in extra_dirs:
@@ -51,6 +55,13 @@ for extra_dir in extra_dirs:
             if path.isfile(filename):
                 extra_files.append(filename)
 
+
+def proxy_get_remote_address():
+    if HTTPD_PROXY in ['1', 1]:
+        return request.access_route[-1]
+
+    return get_remote_address()
+
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
 Bootstrap(app)
@@ -58,7 +69,7 @@ remote = ROUTER_ADDR
 logger = logging.getLogger(__name__)
 limiter = Limiter(
     app,
-    key_func=get_remote_address,
+    key_func=proxy_get_remote_address,
     global_limits=[
         '{} per minute'.format(LIMIT_MIN)
     ]
@@ -75,12 +86,19 @@ app.add_url_rule('/u/tokens/', view_func=tokens_view, defaults={'token_id': None
 
 app.add_url_rule('/', view_func=HelpAPI.as_view('/'))
 app.add_url_rule('/help', view_func=HelpAPI.as_view('help'))
+app.add_url_rule('/health', view_func=HealthAPI.as_view('health'))
 app.add_url_rule('/ping', view_func=PingAPI.as_view('ping'))
 app.add_url_rule('/tokens', view_func=TokensAPI.as_view('tokens'))
 app.add_url_rule('/indicators', view_func=IndicatorsAPI.as_view('indicators'))
 app.add_url_rule('/search', view_func=IndicatorsAPI.as_view('search'))
 app.add_url_rule('/feed', view_func=FeedAPI.as_view('feed'))
 app.add_url_rule('/help/confidence', view_func=ConfidenceAPI.as_view('confidence'))
+
+
+@app.teardown_request
+def teardown_request(exception):
+    gc.collect()
+
 
 @app.before_request
 def before_request():
@@ -113,7 +131,7 @@ def before_request():
         else:
             return
 
-    if request.endpoint not in ['/', 'help', 'confidence']:
+    if request.endpoint not in ['/', 'help', 'confidence', 'health']:
 
         t = pull_token()
         if not t or t == 'None':
