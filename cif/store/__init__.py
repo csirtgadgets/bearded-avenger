@@ -51,12 +51,12 @@ CREATE_QUEUE_MAX = os.environ.get('CIF_STORE_QUEUE_MAX', 1000)
 
 MORE_DATA_NEEDED = -2
 
-TRACE = os.environ.get('CIF_ROUTER_TRACE') or os.environ.get('CIF_STORE_TRACE')
+TRACE = os.environ.get('CIF_STORE_TRACE')
     
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
 
-if TRACE:
+if TRACE in [1, '1']:
    logger.setLevel(logging.DEBUG)
 
 

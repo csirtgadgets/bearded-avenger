@@ -26,6 +26,8 @@ if not TRACE:
 if not TRACE_HTTP:
     urllib_logger = logging.getLogger('urllib3')
     urllib_logger.setLevel(logging.ERROR)
+    es_logger = logging.getLogger('elasticsearch')
+    es_logger.setLevel(logging.ERROR)
 
 
 class _ElasticSearch(Store):

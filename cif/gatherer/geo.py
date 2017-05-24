@@ -86,7 +86,7 @@ class Geo(object):
 
         i = indicator.indicator
         if indicator.itype in ['url', 'fqdn']:
-            if not ENABLE_FQDN:
+            if ENABLE_FQDN in ['0', 0, False, None]:
                 return
 
             if indicator.itype == 'url':
