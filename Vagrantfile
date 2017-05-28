@@ -40,7 +40,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.network :forwarded_port, guest: 443, host: 8443
   
   config.vm.provider :virtualbox do |vb|
-    vb.customize ["modifyvm", :id, "--cpus", "2", "--ioapic", "on", "--memory", "2048" ]
+    vb.customize ["modifyvm", :id, "--cpus", "2", "--ioapic", "on", "--memory", "4096" ]
   end
 
   if File.file?(VAGRANTFILE_LOCAL)
