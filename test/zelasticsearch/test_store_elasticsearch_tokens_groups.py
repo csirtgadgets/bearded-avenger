@@ -3,10 +3,9 @@ from csirtg_indicator import Indicator
 from cif.store import Store
 from elasticsearch_dsl.connections import connections
 import os
-from datetime import datetime
 import arrow
-from time import sleep
 from cifsdk.exceptions import AuthError
+from pprint import pprint
 
 DISABLE_TESTS = True
 if os.environ.get('CIF_ELASTICSEARCH_TEST'):
@@ -73,8 +72,6 @@ def test_store_elasticsearch_tokens_groups1(store, token, indicator):
     t = t['token']
 
     i = None
-    from pprint import pprint
-    pprint(t)
     try:
         i = store.handle_indicators_create(t, {
             'indicator': 'example.com',

@@ -122,7 +122,7 @@ class IndicatorManager(IndicatorManagerPlugin):
 
         return i.to_dict()
 
-    def create_bulk(self, token, indicators):
+    def create_bulk(self, token, indicators, flush=False):
         actions = []
         for i in indicators:
             ii = self.create(token, i, bulk=True)
@@ -130,11 +130,14 @@ class IndicatorManager(IndicatorManagerPlugin):
 
         helpers.bulk(self.handle, actions)
 
-        return [i['_source'] for i in actions]
+        if flush:
+            self.flush()
+
+        return len(actions)
 
     def upsert(self, token, indicators, flush=False):
         if not UPSERT_MODE:
-            return self.create_bulk(token, indicators)
+            return self.create_bulk(token, indicators, flush=flush)
 
         count = 0
         was_added = {}  # to deal with es flushing
