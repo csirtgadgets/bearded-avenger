@@ -8,6 +8,7 @@ VAGRANTFILE_LOCAL = 'Vagrantfile.local'
 sdist=ENV['CIF_ANSIBLE_SDIST']
 es=ENV['CIF_ANSIBLE_ES']
 hunter_threads=ENV['CIF_HUNTER_THREADS']
+hunter_advanced=ENV['CIF_HUNTER_ADVANCED']
 geo_fqdn=ENV['CIF_GATHERER_GEO_FQDN']
 csirtg_token=ENV['CSIRTG_TOKEN']
 
@@ -23,6 +24,7 @@ $script = <<SCRIPT
 export CIF_ANSIBLE_SDIST=#{sdist}
 export CIF_ANSIBLE_ES=#{es}
 export CIF_HUNTER_THREADS=#{hunter_threads}
+export CIF_HUNTER_ADVANCED=#{hunter_advanced}
 export CIF_GATHERER_GEO_FQDN=#{geo_fqdn}
 export CIF_BOOTSTRAP_TEST=1
 export CSIRTG_TOKEN=#{csirtg_token}
@@ -40,7 +42,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.network :forwarded_port, guest: 443, host: 8443
   
   config.vm.provider :virtualbox do |vb|
-    vb.customize ["modifyvm", :id, "--cpus", "2", "--ioapic", "on", "--memory", "2048" ]
+    vb.customize ["modifyvm", :id, "--cpus", "2", "--ioapic", "on", "--memory", "4096" ]
   end
 
   if File.file?(VAGRANTFILE_LOCAL)

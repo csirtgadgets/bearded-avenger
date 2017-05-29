@@ -7,6 +7,8 @@ from cifsdk.client.dummy import Dummy as DummyClient
 from cif.constants import ROUTER_ADDR, PYVERSION
 from cifsdk.exceptions import AuthError, TimeoutError, InvalidSearch, SubmissionFailed, CIFBusy
 import logging
+import zlib
+
 remote = ROUTER_ADDR
 
 logger = logging.getLogger('cif-httpd')
@@ -79,7 +81,13 @@ class IndicatorsAPI(MethodView):
                 logger.info('fireball mode')
                 fireball = True
         try:
-            data = request.data.decode('utf-8')
+
+            data = request.data
+            if request.headers.get('Content-Encoding') and request.headers['Content-Encoding'] == 'deflate':
+                data = zlib.decompress(data)
+
+            data = data.decode('utf-8')
+
             r = Client(remote, pull_token()).indicators_create(data, nowait=nowait, fireball=fireball)
             if nowait:
                 r = 'pending'

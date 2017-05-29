@@ -51,12 +51,12 @@ CREATE_QUEUE_MAX = os.environ.get('CIF_STORE_QUEUE_MAX', 1000)
 
 MORE_DATA_NEEDED = -2
 
-TRACE = os.environ.get('CIF_ROUTER_TRACE') or os.environ.get('CIF_STORE_TRACE')
+TRACE = os.environ.get('CIF_STORE_TRACE')
     
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
 
-if TRACE:
+if TRACE in [1, '1']:
    logger.setLevel(logging.DEBUG)
 
 
@@ -156,8 +156,11 @@ class Store(multiprocessing.Process):
 
         try:
             rv = handler(token, data, id=id, client_id=client_id)
-            if rv != MORE_DATA_NEEDED:
+            if rv == MORE_DATA_NEEDED:
+                rv = {"status": "success", "data": '1'}
+            else:
                 rv = {"status": "success", "data": rv}
+
 
         except AuthError as e:
             logger.error(e)
@@ -185,8 +188,7 @@ class Store(multiprocessing.Process):
         if err:
             rv = {'status': 'failed', 'message': err}
 
-        if rv != MORE_DATA_NEEDED:
-            Msg(id=id, client_id=client_id, mtype=mtype, data=json.dumps(rv)).send(self.router)
+        Msg(id=id, client_id=client_id, mtype=mtype, data=json.dumps(rv)).send(self.router)
 
         if not err:
             self.store.tokens.update_last_activity_at(token, arrow.utcnow().datetime)
@@ -198,8 +200,16 @@ class Store(multiprocessing.Process):
 
             logger.debug('flushing queue...')
             data = [msg[0] for _, _, msg in self.create_queue[t]['messages']]
+            _t = self.store.tokens.write(t)
             try:
-                rv = self.store.indicators.upsert(t, data)
+                start_time = time.time()
+                logger.info('inserting %d indicators..', len(data))
+
+                rv = self.store.indicators.upsert(_t, data)
+
+                n = len(data)
+                t_time = time.time() - start_time
+                logger.info('inserting %d indicators.. took %0.2f seconds (%0.2f/sec)', n, t_time, (n / t_time))
                 rv = {"status": "success", "data": rv}
 
             except AuthError as e:
@@ -214,6 +224,8 @@ class Store(multiprocessing.Process):
             if rv['status'] == 'success':
                 self.store.tokens.update_last_activity_at(t, arrow.utcnow().datetime)
 
+            logger.debug('queue flushed..')
+
     def handle_indicators_delete(self, token, data=None, id=None, client_id=None):
         t = self.store.tokens.admin(token)
         return self.store.indicators.delete(t, data=data, id=id)
@@ -222,10 +234,9 @@ class Store(multiprocessing.Process):
         # this will raise AuthError if false
         t = self.store.tokens.write(token)
 
-        if len(data) >= 1:
+        if len(data) > 1:
             start_time = time.time()
-            if len(data) > 1:
-                logger.info('Upserting %d indicators..', len(data))
+            logger.info('inserting %d indicators..', len(data))
 
             # this will raise AuthError if the groups don't match
             if isinstance(data, dict):
@@ -246,13 +257,13 @@ class Store(multiprocessing.Process):
 
             r = self.store.indicators.upsert(t, data, flush=flush)
 
-            if len(data) > 1:
-                n = len(data)
-                t = time.time() - start_time
-                logger.info('Upserting %d indicators.. took %0.2f seconds (%0.2f/sec)', n, t, (n/t))
+            n = len(data)
+            t = time.time() - start_time
+            logger.info('inserting %d indicators.. took %0.2f seconds (%0.2f/sec)', n, t, (n/t))
 
             return r
 
+        data = data[0]
         if data['group'] not in t['groups']:
             raise AuthError('unauthorized to write to group: %s' % g)
 
@@ -269,8 +280,7 @@ class Store(multiprocessing.Process):
         self.create_queue_count += 1
         self.create_queue[token]['last_activity'] = time.time()
 
-        if self.create_queue[token]['count'] > self.create_queue_limit:
-            self.create_queue[token]['messages'].append((id, client_id, data))
+        self.create_queue[token]['messages'].append((id, client_id, [data]))
 
         return MORE_DATA_NEEDED
 

@@ -11,7 +11,7 @@ import logging
 import json
 from .helpers import expand_ip_idx, i_to_id
 from .filters import filter_build
-from .constants import LIMIT, WINDOW_LIMIT, TIMEOUT, LOGSTASH_MODE
+from .constants import LIMIT, WINDOW_LIMIT, TIMEOUT, UPSERT_MODE
 from .locks import LockManager
 from .schema import Indicator
 
@@ -97,7 +97,6 @@ class IndicatorManager(IndicatorManagerPlugin):
 
         expand_ip_idx(data)
         id = i_to_id(data)
-        ts = data.get('reporttime', data['lasttime'])
 
         if data.get('group') and type(data['group']) != list:
             data['group'] = [data['group']]
@@ -123,7 +122,7 @@ class IndicatorManager(IndicatorManagerPlugin):
 
         return i.to_dict()
 
-    def create_bulk(self, token, indicators):
+    def create_bulk(self, token, indicators, flush=False):
         actions = []
         for i in indicators:
             ii = self.create(token, i, bulk=True)
@@ -131,11 +130,14 @@ class IndicatorManager(IndicatorManagerPlugin):
 
         helpers.bulk(self.handle, actions)
 
-        return [i['_source'] for i in actions]
+        if flush:
+            self.flush()
+
+        return len(actions)
 
     def upsert(self, token, indicators, flush=False):
-        if LOGSTASH_MODE:
-            return self.create_bulk(token, indicators)
+        if not UPSERT_MODE:
+            return self.create_bulk(token, indicators, flush=flush)
 
         count = 0
         was_added = {}  # to deal with es flushing
@@ -145,7 +147,7 @@ class IndicatorManager(IndicatorManagerPlugin):
         sorted(indicators, key=lambda k: k['reporttime'], reverse=True)
         actions = []
 
-        self.lockm.lock_aquire()
+        #self.lockm.lock_aquire()
         for d in indicators:
             if was_added.get(d['indicator']):
                 for first in was_added[d['indicator']]: break
@@ -247,11 +249,12 @@ class IndicatorManager(IndicatorManagerPlugin):
             try:
                 helpers.bulk(self.handle, actions)
             except Exception as e:
-                self.lockm.lock_release()
+                #self.lockm.lock_release()
                 raise e
 
         if flush:
             self.flush()
-        self.lockm.lock_release()
+
+        #self.lockm.lock_release()
         return count
 

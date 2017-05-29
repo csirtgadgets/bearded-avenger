@@ -45,9 +45,12 @@ def filter_confidence(s, filter):
         return s
 
     c = filter.pop('confidence')
+    if PYVERSION == 2:
+        if type(c) == unicode:
+            c = str(c)
 
     low, high = c, 10.0
-    if type(c) == str and ',' in c:
+    if isinstance(c, basestring) and ',' in c:
         low, high = c.split(',')
 
     s = s.filter('range', confidence={'gte': float(low), 'lte': float(high)})
