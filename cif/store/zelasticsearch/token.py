@@ -68,7 +68,7 @@ class TokenManager(TokenManagerPlugin):
             if data.get(v):
                 data[v] = True
 
-        if not data.get('token'):
+        if data.get('token') is None:
             data['token'] = self._generate()
 
         t = Token(**data)

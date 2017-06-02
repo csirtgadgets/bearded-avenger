@@ -384,7 +384,7 @@ class Store(multiprocessing.Process):
 
         raise AuthError('invalid token')
 
-    def token_create_admin(self):
+    def token_create_admin(self, token=None):
         logger.info('testing for tokens...')
         if not self.store.tokens.admin_exists():
             logger.info('admin token does not exist, generating..')
@@ -393,29 +393,32 @@ class Store(multiprocessing.Process):
                 'groups': [u'everyone'],
                 'read': u'1',
                 'write': u'1',
-                'admin': u'1'
+                'admin': u'1',
+                'token': token
             })
             logger.info('admin token created: {}'.format(rv['token']))
             return rv['token']
 
         logger.info('admin token exists...')
 
-    def token_create_smrt(self):
+    def token_create_smrt(self, token=None):
         logger.info('generating smrt token')
         rv = self.store.tokens.create({
             'username': u'csirtg-smrt',
             'groups': [u'everyone'],
             'write': u'1',
+            'token': token
         })
         logger.info('smrt token created: {}'.format(rv['token']))
         return rv['token']
 
-    def token_create_hunter(self):
+    def token_create_hunter(self, token=None):
         logger.info('generating hunter token')
         rv = self.store.tokens.create({
             'username': u'hunter',
             'groups': [u'everyone'],
             'write': u'1',
+            'token': token
         })
         logger.info('hunter token created: {}'.format(rv['token']))
         return rv['token']
@@ -447,10 +450,12 @@ def main():
 
     p.add_argument('--config', help='specify config path [default %(default)s]', default=CONFIG_PATH)
 
-    p.add_argument('--token-create-admin', help='generate an admin token')
-    p.add_argument('--token-create-smrt')
+    p.add_argument('--token-create-admin', help='generate an admin token', action="store_true")
+    p.add_argument('--token-create-smrt', action="store_true")
     p.add_argument('--token-create-smrt-remote', default=REMOTE_ADDR)
-    p.add_argument('--token-create-hunter')
+    p.add_argument('--token-create-hunter', action="store_true")
+    p.add_argument('--config-path', help='store the token as a config')
+    p.add_argument('--token', help='specify the token to use', default=None)
 
     p.add_argument('--remote', help='specify remote')
 
@@ -465,7 +470,8 @@ def main():
     if args.token_create_smrt:
         with Store(store_type=args.store, nodes=args.nodes) as s:
             s._load_plugin(store_type=args.store, nodes=args.nodes)
-            t = s.token_create_smrt()
+
+            t = s.token_create_smrt(token=args.token)
             if t:
                 if PYVERSION == 2:
                     t = t.encode('utf-8')
@@ -476,8 +482,9 @@ def main():
                 if args.remote:
                     data['remote'] = args.remote
 
-                with open(args.token_create_smrt, 'w') as f:
-                    f.write(yaml.dump(data, default_flow_style=False))
+                if args.config_path:
+                    with open(args.config_path, 'w') as f:
+                        f.write(yaml.dump(data, default_flow_style=False))
 
                 logger.info('token config generated: {}'.format(args.token_create_smrt))
             else:
@@ -486,7 +493,7 @@ def main():
     if args.token_create_hunter:
         with Store(store_type=args.store, nodes=args.nodes) as s:
             s._load_plugin(store_type=args.store, nodes=args.nodes)
-            t = s.token_create_hunter()
+            t = s.token_create_hunter(token=args.token)
             if t:
                 if PYVERSION == 2:
                     t = t.encode('utf-8')
@@ -494,8 +501,10 @@ def main():
                 data = {
                     'hunter_token': t,
                 }
-                with open(args.token_create_hunter, 'w') as f:
-                    f.write(yaml.dump(data, default_flow_style=False))
+
+                if args.config_path:
+                    with open(args.config_path, 'w') as f:
+                        f.write(yaml.dump(data, default_flow_style=False))
 
                 logger.info('token config generated: {}'.format(args.token_create_hunter))
             else:
@@ -504,7 +513,7 @@ def main():
     if args.token_create_admin:
         with Store(store_type=args.store, nodes=args.nodes) as s:
             s._load_plugin(store_type=args.store, nodes=args.nodes)
-            t = s.token_create_admin()
+            t = s.token_create_admin(token=args.token)
             if t:
                 if PYVERSION == 2:
                     t = t.encode('utf-8')
@@ -512,8 +521,10 @@ def main():
                 data = {
                     'token': t,
                 }
-                with open(args.token_create_admin, 'w') as f:
-                    f.write(yaml.dump(data, default_flow_style=False))
+
+                if args.config_path:
+                    with open(args.config_path, 'w') as f:
+                        f.write(yaml.dump(data, default_flow_style=False))
 
                 logger.info('token config generated: {}'.format(args.token_create_admin))
             else:
