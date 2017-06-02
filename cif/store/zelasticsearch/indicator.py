@@ -31,7 +31,7 @@ class IndicatorManager(IndicatorManagerPlugin):
         self.last_index_check = datetime.now() - timedelta(minutes=5)
         self.handle = connections.get_connection()
         self.lockm = LockManager(self.handle, logger)
-       
+
         self._create_index()
 
     def flush(self):
