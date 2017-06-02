@@ -26,12 +26,12 @@ class IndicatorManager(IndicatorManagerPlugin):
         super(IndicatorManager, self).__init__(*args, **kwargs)
 
         self.indicators_prefix = kwargs.get('indicators_prefix', 'indicators')
+        self.partition = PARTITION
         self.idx = self._current_index()
         self.last_index_check = datetime.now() - timedelta(minutes=5)
         self.handle = connections.get_connection()
         self.lockm = LockManager(self.handle, logger)
-        self.partition = PARTITION
-
+       
         self._create_index()
 
     def flush(self):
