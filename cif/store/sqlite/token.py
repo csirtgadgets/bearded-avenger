@@ -90,13 +90,16 @@ class TokenManager(TokenManagerPlugin):
     def create(self, data):
         s = self.handle()
 
+        if data.get('token') is None:
+            data['token'] = self._generate()
+
         acl = data.get('acl')
         if type(acl) == list:
             acl = ','.join(acl)
 
         t = Token(
             username=data.get('username'),
-            token=self._generate(),
+            token=data['token'],
             acl=acl,
             read=data.get('read'),
             write=data.get('write'),
