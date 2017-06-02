@@ -21,5 +21,11 @@ feeds:
   dropv6:
     remote: https://www.spamhaus.org/drop/dropv6.txt
 
+  # https://github.com/csirtgadgets/csirtg-smrt-py/issues/230
   asndrop:
     remote: https://www.spamhaus.org/drop/asndrop.txt
+    pattern: '^(\S+) ; ([\S+]{2}) \| ([^\n]+)$'
+    #values:
+    #  - indicator
+    #  - cc
+    #  - asn_desc
