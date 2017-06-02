@@ -18,3 +18,5 @@ TIMEOUT = '{}s'.format(TIMEOUT)
 UPSERT_MODE = os.getenv('CIF_STORE_ES_UPSERT_MODE', False)
 if UPSERT_MODE == '1':
     UPSERT_MODE = True
+
+PARTITION = os.getenv('CIF_STORE_ES_PARTITION', 'month')

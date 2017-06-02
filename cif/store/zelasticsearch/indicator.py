@@ -11,7 +11,7 @@ import logging
 import json
 from .helpers import expand_ip_idx, i_to_id
 from .filters import filter_build
-from .constants import LIMIT, WINDOW_LIMIT, TIMEOUT, UPSERT_MODE
+from .constants import LIMIT, WINDOW_LIMIT, TIMEOUT, UPSERT_MODE, PARTITION
 from .locks import LockManager
 from .schema import Indicator
 
@@ -26,6 +26,7 @@ class IndicatorManager(IndicatorManagerPlugin):
         super(IndicatorManager, self).__init__(*args, **kwargs)
 
         self.indicators_prefix = kwargs.get('indicators_prefix', 'indicators')
+        self.partition = PARTITION
         self.idx = self._current_index()
         self.last_index_check = datetime.now() - timedelta(minutes=5)
         self.handle = connections.get_connection()
@@ -39,6 +40,13 @@ class IndicatorManager(IndicatorManagerPlugin):
     def _current_index(self):
         dt = datetime.utcnow()
         dt = dt.strftime('%Y.%m')
+
+        if self.partition == 'day':
+            dt = dt.strftime('%Y.%m.%d')
+
+        if self.partition == 'year':
+            dt = dt.strftime('%Y')
+
         idx = '{}-{}'.format(self.indicators_prefix, dt)
         return idx
 
