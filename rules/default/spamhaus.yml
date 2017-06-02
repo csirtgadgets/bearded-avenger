@@ -23,9 +23,10 @@ feeds:
 
   # https://github.com/csirtgadgets/csirtg-smrt-py/issues/230
   asndrop:
+    parser: pattern
     remote: https://www.spamhaus.org/drop/asndrop.txt
     pattern: '^(\S+) ; ([\S+]{2}) \| ([^\n]+)$'
-    #values:
-    #  - indicator
-    #  - cc
-    #  - asn_desc
+    values:
+      - indicator
+      - cc
+      - asn_desc
