@@ -11,7 +11,7 @@ defaults:
 
 feeds:
   configs:
-    remote: https://zeustracker.abuse.ch/monitor.php?urlfeed=configs
+    remote: http://zeustracker.abuse.ch/monitor.php?urlfeed=configs
     description: zeus config urls
     pattern:
       description:
@@ -24,7 +24,7 @@ feeds:
           - lasttime
 
   configs_md5:
-    remote: https://zeustracker.abuse.ch/monitor.php?urlfeed=configs
+    remote: http://zeustracker.abuse.ch/monitor.php?urlfeed=configs
     description: zeus config hashes
     pattern:
       description:
@@ -37,7 +37,7 @@ feeds:
           - lasttime
 
   dropzones:
-    remote: https://zeustracker.abuse.ch/monitor.php?urlfeed=dropzones
+    remote: http://zeustracker.abuse.ch/monitor.php?urlfeed=dropzones
     description: dropzone
     pattern:
       description:
@@ -47,7 +47,7 @@ feeds:
 
   domains:
     parser: pattern
-    remote: https://zeustracker.abuse.ch/blocklist.php?download=domainblocklist
+    remote: http://zeustracker.abuse.ch/blocklist.php?download=domainblocklist
     confidence: 7
     pattern: ^(\S+)$
     values:
@@ -55,7 +55,7 @@ feeds:
 
   ips:
     parser: pattern
-    remote: https://zeustracker.abuse.ch/blocklist.php?download=ipblocklist
+    remote: http://zeustracker.abuse.ch/blocklist.php?download=ipblocklist
     confidence: 6
     pattern: ^(\S+)$
     values:
