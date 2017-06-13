@@ -15,6 +15,7 @@ from flask_bootstrap import Bootstrap
 from os import path
 from cif.constants import ROUTER_ADDR, RUNTIME_PATH
 from cifsdk.utils import get_argument_parser, setup_logging, setup_signals, setup_runtime_path
+import zlib
 from .common import pull_token
 from .views.ping import PingAPI
 from .views.help import HelpAPI
@@ -64,6 +65,7 @@ def proxy_get_remote_address():
 
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
+
 Bootstrap(app)
 remote = ROUTER_ADDR
 logger = logging.getLogger(__name__)
@@ -99,6 +101,28 @@ app.add_url_rule('/help/confidence', view_func=ConfidenceAPI.as_view('confidence
 def teardown_request(exception):
     gc.collect()
 
+
+@app.before_request
+def decompress():
+    data = request.data
+    if request.headers.get('Content-Encoding') and request.headers['Content-Encoding'] == 'deflate':
+        logger.info('decompressing request')
+        request.data = zlib.decompress(data)
+
+
+def process_response(response):
+    if request.headers.get('Accept-Encoding') and request.headers['Accept-Encoding'] == 'deflate':
+        logger.debug('compressing resp: %d' % len(response.data))
+        response.data = zlib.compress(response.data)
+        response.headers['Content-Encoding'] = 'deflate'
+
+        size = len(response.data)
+        response.headers['Content-Length'] = size
+        logger.debug('content-length %s' % size)
+
+    return response
+
+app.process_response = process_response
 
 @app.before_request
 def before_request():
