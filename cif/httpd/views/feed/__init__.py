@@ -123,18 +123,6 @@ class FeedAPI(MethodView):
             "data": r
         })
 
-        c = response_compress()
-        if not c:
-            return response
-
-        response.headers['Content-Encoding'] = c
-
-        response.data = compress(response.data, ctype=c)
-        size = len(response.data)
-        response.headers['Content-Length'] = size
-        logger.debug('compression: %s' % c)
-        logger.debug('content-length %s' % size)
-        
         response.status_code = 200
 
         return response

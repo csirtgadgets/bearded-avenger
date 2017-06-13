@@ -57,7 +57,7 @@ class TokensAPI(MethodView):
         if not r:
             return jsonify_unknown('create failed', 400)
 
-        return jsonify_success(r)
+        return jsonify_success(r, code=201)
 
     def patch(self):
         cli = Client(remote, pull_token())
