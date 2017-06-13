@@ -104,10 +104,10 @@ def teardown_request(exception):
 
 @app.before_request
 def decompress():
-    data = request.data
     if request.headers.get('Content-Encoding') and request.headers['Content-Encoding'] == 'deflate':
-        logger.info('decompressing request')
-        request.data = zlib.decompress(data)
+        logger.info('decompressing request: %d' % len(request.data))
+        request.data = zlib.decompress(request.data)
+        logger.debug('content-length: %d' % len(request.data))
 
 
 def process_response(response):
