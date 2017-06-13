@@ -70,7 +70,7 @@ logger = logging.getLogger(__name__)
 limiter = Limiter(
     app,
     key_func=proxy_get_remote_address,
-    global_limits=[
+    default_limits=[
         '{} per minute'.format(LIMIT_MIN)
     ]
 )
