@@ -57,18 +57,6 @@ class IndicatorsAPI(MethodView):
                 response.status_code = 401
                 return response
 
-        c = response_compress()
-        if not c:
-            return response
-
-        response.headers['Content-Encoding'] = c
-
-        response.data = compress(response.data, ctype=c)
-        size = len(response.data)
-        response.headers['Content-Length'] = size
-        logger.debug('compression: %s' % c)
-        logger.debug('content-length %s' % size)
-
         return response
 
     def post(self):
@@ -81,14 +69,7 @@ class IndicatorsAPI(MethodView):
                 logger.info('fireball mode')
                 fireball = True
         try:
-
-            data = request.data
-            if request.headers.get('Content-Encoding') and request.headers['Content-Encoding'] == 'deflate':
-                data = zlib.decompress(data)
-
-            data = data.decode('utf-8')
-
-            r = Client(remote, pull_token()).indicators_create(data, nowait=nowait, fireball=fireball)
+            r = Client(remote, pull_token()).indicators_create(request.data, nowait=nowait, fireball=fireball)
             if nowait:
                 r = 'pending'
 
