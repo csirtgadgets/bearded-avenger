@@ -6,10 +6,13 @@ from pprint import pprint
 import logging
 from cif.constants import PYVERSION
 from cif.store.token_plugin import TokenManagerPlugin
+import os
 
 logger = logging.getLogger('cif.store.zelasticsearch')
 
 INDEX_NAME = 'tokens'
+CONFLICT_RETRIES = os.getenv('CIF_STORE_ES_CONFLICT_RETRIES', 5)
+CONFLICT_RETRIES = int(CONFLICT_RETRIES)
 
 
 class Token(DocType):
@@ -118,7 +121,12 @@ class TokenManager(TokenManagerPlugin):
 
         rv = list(self.search({'token': token}, raw=True))
         rv = Token.get(rv[0]['_id'])
-        rv.update(last_activity_at=timestamp)
+
+        try:
+            rv.update(last_activity_at=timestamp, retry_on_conflict=5)
+        except Exception as e:
+            import traceback
+            logger.error(traceback.print_exc())
 
         self._cache[token] = rv.to_dict()
         self._cache[token]['last_activity_at'] = timestamp
