@@ -123,7 +123,7 @@ class TokenManager(TokenManagerPlugin):
         rv = Token.get(rv[0]['_id'])
 
         try:
-            rv.update(last_activity_at=timestamp, retry_on_conflict=5)
+            rv.update(last_activity_at=timestamp, retry_on_conflict=CONFLICT_RETRIES)
         except Exception as e:
             import traceback
             logger.error(traceback.print_exc())
