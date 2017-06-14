@@ -423,6 +423,17 @@ class Store(multiprocessing.Process):
         logger.info('hunter token created: {}'.format(rv['token']))
         return rv['token']
 
+    def token_create_httpd(self, token=None):
+        logger.info('generating httpd token')
+        rv = self.store.tokens.create({
+            'username': u'httpd',
+            'groups': [u'everyone'],
+            'read': u'1',
+            'token': token
+        })
+        logger.info('httpd token created: {}'.format(rv['token']))
+        return rv['token']
+
 
 def main():
     p = get_argument_parser()
@@ -454,6 +465,8 @@ def main():
     p.add_argument('--token-create-smrt', action="store_true")
     p.add_argument('--token-create-smrt-remote', default=REMOTE_ADDR)
     p.add_argument('--token-create-hunter', action="store_true")
+    p.add_argument('--token-create-httpd', action="store_true")
+
     p.add_argument('--config-path', help='store the token as a config')
     p.add_argument('--token', help='specify the token to use', default=None)
 
@@ -514,6 +527,26 @@ def main():
         with Store(store_type=args.store, nodes=args.nodes) as s:
             s._load_plugin(store_type=args.store, nodes=args.nodes)
             t = s.token_create_admin(token=args.token)
+            if t:
+                if PYVERSION == 2:
+                    t = t.encode('utf-8')
+
+                data = {
+                    'token': t,
+                }
+
+                if args.config_path:
+                    with open(args.config_path, 'w') as f:
+                        f.write(yaml.dump(data, default_flow_style=False))
+
+                logger.info('token config generated: {}'.format(args.token_create_admin))
+            else:
+                logger.error('token not created')
+
+    if args.token_create_httpd:
+        with Store(store_type=args.store, nodes=args.nodes) as s:
+            s._load_plugin(store_type=args.store, nodes=args.nodes)
+            t = s.token_create_httpd(token=args.token)
             if t:
                 if PYVERSION == 2:
                     t = t.encode('utf-8')
