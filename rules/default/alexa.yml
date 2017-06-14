@@ -13,6 +13,7 @@ defaults:
   provider: alexa.com
   tlp: green
   altid_tlp: white
+  lasttime: 'month'
   confidence: |
     eval(max(0, min(
         12.5 - 2.5 * math.ceil(
