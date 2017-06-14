@@ -56,7 +56,7 @@ class _ElasticSearch(Store):
         self._alive = False
 
         while not self._alive:
-            if not self.ping():
+            if not self._health_check():
                 logger.warn('ES cluster not accessible')
                 logger.info('retrying connection in 30s')
                 sleep(30)
@@ -67,9 +67,7 @@ class _ElasticSearch(Store):
         self.tokens = TokenManager()
         self.indicators = IndicatorManager()
 
-    def ping(self):
-        # http://elasticsearch-py.readthedocs.org/en/master/api.html#elasticsearch.client.IndicesClient.stats
-
+    def _health_check(self):
         try:
             x = connections.get_connection().cluster.health()
         except ConnectionError as e:
@@ -81,10 +79,16 @@ class _ElasticSearch(Store):
             logger.error(traceback.print_exc())
             return
 
-        if x['status'] in ['green', 'yellow']:
-            logger.info('ES cluster is: %s' % x['status'])
-            return True
+        logger.info('ES cluster is: %s' % x['status'])
+        return x
 
-        logger.warn('ES Cluster RED')
+    def ping(self, token):
+        s = self._health_check()
+
+        if s['status'] == 'red':
+            return
+
+        if self.tokens.read(token) or self.tokens.write(token):
+            return True
 
 Plugin = _ElasticSearch
