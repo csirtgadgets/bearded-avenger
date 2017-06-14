@@ -7,6 +7,7 @@ from cifsdk.constants import PYVERSION
 from csirtg_indicator import resolve_itype
 from csirtg_indicator.exceptions import InvalidIndicator
 import re
+import arrow
 
 
 def is_subdomain(i):
@@ -40,6 +41,8 @@ class Fqdn(object):
                 continue
 
             ip = Indicator(**i.__dict__())
+            ip.lasttime = arrow.utcnow()
+
             ip.indicator = rr
             try:
                 resolve_itype(ip.indicator)

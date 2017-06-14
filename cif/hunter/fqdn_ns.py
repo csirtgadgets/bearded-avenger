@@ -4,6 +4,7 @@ from csirtg_indicator.exceptions import InvalidIndicator
 from cif.utils import resolve_ns
 from csirtg_indicator import Indicator
 from dns.resolver import Timeout
+import arrow
 
 
 class FqdnNs(object):
@@ -31,6 +32,8 @@ class FqdnNs(object):
 
             ip = Indicator(**i.__dict__())
             ip.indicator = str(rr)
+            ip.lasttime = arrow.utcnow()
+
             try:
                 resolve_itype(ip.indicator)
             except InvalidIndicator as e:
