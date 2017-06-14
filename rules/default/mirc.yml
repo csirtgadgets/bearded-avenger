@@ -8,6 +8,7 @@ defaults:
   application: irc
   remote: http://www.mirc.com/servers.ini
   altid: http://www.mirc.com/servers.ini
+  lasttime: 'month'
 
 feeds:
   domains:
