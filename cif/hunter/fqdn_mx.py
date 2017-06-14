@@ -6,7 +6,7 @@ from csirtg_indicator import Indicator
 from dns.resolver import Timeout
 import re
 from pprint import pprint
-
+import arrow
 
 class FqdnMx(object):
 
@@ -36,6 +36,8 @@ class FqdnMx(object):
 
             fqdn = Indicator(**i.__dict__())
             fqdn.indicator = rr.rstrip('.')
+            fqdn.lasttime = arrow.utcnow()
+
 
             try:
                 resolve_itype(fqdn.indicator)

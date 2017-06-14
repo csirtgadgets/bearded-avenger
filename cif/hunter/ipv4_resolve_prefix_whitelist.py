@@ -1,6 +1,6 @@
 import logging
 from csirtg_indicator import Indicator
-import os
+import arrow
 
 
 class Ipv4ResolvePrefixWhitelist(object):
@@ -22,6 +22,7 @@ class Ipv4ResolvePrefixWhitelist(object):
         prefix = '.'.join(prefix)
 
         ii = Indicator(**i.__dict__())
+        ii.lasttime = arrow.utcnow()
 
         ii.indicator = prefix
         ii.tags = ['whitelist']

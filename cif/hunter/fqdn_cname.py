@@ -4,7 +4,7 @@ from csirtg_indicator import Indicator
 from dns.resolver import Timeout
 from csirtg_indicator import resolve_itype
 from csirtg_indicator.exceptions import InvalidIndicator
-
+import arrow
 
 class FqdnCname(object):
 
@@ -30,6 +30,7 @@ class FqdnCname(object):
 
             fqdn = Indicator(**i.__dict__())
             fqdn.indicator = rr
+            fqdn.lasttime = arrow.utcnow()
 
             try:
                 resolve_itype(fqdn.indicator)

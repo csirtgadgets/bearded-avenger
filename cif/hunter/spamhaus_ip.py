@@ -3,6 +3,7 @@ from csirtg_indicator import Indicator
 from csirtg_indicator.utils import is_ipv4_net
 from cif.utils import resolve_ns
 from pprint import pprint
+import arrow
 
 CONFIDENCE = 9
 PROVIDER = 'spamhaus.org'
@@ -78,6 +79,7 @@ class SpamhausIp(object):
                 f.provider = PROVIDER
                 f.reference_tlp = 'white'
                 f.reference = 'http://www.spamhaus.org/query/bl?ip={}'.format(f.indicator)
+                f.lasttime = arrow.utcnow()
                 x = router.indicators_create(f)
 
         except Exception as e:

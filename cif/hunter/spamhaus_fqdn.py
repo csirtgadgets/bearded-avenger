@@ -3,6 +3,7 @@ import logging
 from csirtg_indicator import Indicator
 from pprint import pprint
 from cif.utils import resolve_ns
+import arrow
 
 CONFIDENCE = 9
 PROVIDER = 'spamhaus.org'
@@ -91,6 +92,7 @@ class SpamhausFqdn(object):
                     f.provider = PROVIDER
                     f.reference_tlp = 'white'
                     f.reference = 'http://www.spamhaus.org/query/dbl?domain={}'.format(f.indicator)
+                    f.lasttime = arrow.utcnow()
                     x = router.indicators_create(f)
                     self.logger.debug(x)
             except KeyError as e:

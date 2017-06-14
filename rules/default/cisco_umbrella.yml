@@ -6,6 +6,7 @@ defaults:
   provider: umbrella.cisco.com
   tlp: green
   altid_tlp: white
+  lasttime: 'month'
   values:
     - rank
     - indicator

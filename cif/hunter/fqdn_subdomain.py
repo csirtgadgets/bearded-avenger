@@ -2,7 +2,7 @@ import logging
 from csirtg_indicator import Indicator
 from csirtg_indicator import resolve_itype
 from csirtg_indicator.exceptions import InvalidIndicator
-
+import arrow
 
 class FqdnSubdomain(object):
 
@@ -22,6 +22,7 @@ class FqdnSubdomain(object):
 
         fqdn = Indicator(**i.__dict__())
         fqdn.indicator = i.is_subdomain()
+        fqdn.lasttime = arrow.utcnow()
 
         try:
             resolve_itype(fqdn.indicator)
