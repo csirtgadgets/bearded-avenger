@@ -119,6 +119,9 @@ class Geo(object):
 
         if g.location.latitude:
             indicator.latitude = g.location.latitude
+            
+        if g.location.latitude and g.location.longitude:
+            indicator.location = [g.location.longitude, g.location.latitude]
 
         if g.location.time_zone:
             indicator.timezone = g.location.time_zone
