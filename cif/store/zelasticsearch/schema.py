@@ -1,4 +1,4 @@
-from elasticsearch_dsl import DocType, Text, Date, Integer, Float, Ip, Text, Keyword
+from elasticsearch_dsl import DocType, Text, Date, Integer, Float, Ip, Text, Keyword, GeoPoint
 
 
 class Indicator(DocType):
@@ -26,3 +26,4 @@ class Indicator(DocType):
     rdata = Keyword()
     count = Integer()
     message = Text(multi=True)
+    location = GeoPoint()
