@@ -16,6 +16,36 @@ defaults:
     - null
 
 feeds:
+  dnsrd:
+    remote: https://dataplane.org/dnsrd.txt
+    application: dns
+    portlist: 53
+    tags:
+      - scanner
+      - dns
+    confidence: 9
+    description: 'identified as sending recursive DNS queries to a remote host'
+
+  dnsrdany:
+    remote: https://dataplane.org/dnsrdany.txt
+    application: dns
+    portlist: 53
+    confidence: 9
+    tags:
+      - scanner
+      - dns
+    description: 'identified as sending recursive DNS IN ANY queries to a remote host'
+
+  dnsversion:
+    remote: https://dataplane.org/dnsversion.txt
+    application: dns
+    portlist: 53
+    confidence: 9
+    tags:
+      - scanner
+      - dns
+    description: 'identified as sending DNS CH TXT VERSION.BIND queries to a remote host'
+
   # not enough info to be confident they're doing bad things
   sshclient:
     remote: https://dataplane.org/sshclient.txt
