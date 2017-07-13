@@ -4,6 +4,7 @@ from elasticsearch_dsl import DocType, Text, Date, Integer, Float, Ip, Text, Key
 class Indicator(DocType):
     indicator = Keyword()
     indicator_ipv4 = Ip()
+    indicator_ipv4_mask = Integer()
     indicator_ipv6 = Keyword()
     indicator_ipv6_mask = Integer()
     group = Keyword()
@@ -22,7 +23,7 @@ class Indicator(DocType):
     timezone = Text()
     city = Text(fields={'raw': Keyword()})
     description = Keyword()
-    tags = Text(multi=True, fields={'raw': Keyword()})
+    tags = Keyword(multi=True, fields={'raw': Keyword()})
     rdata = Keyword()
     count = Integer()
     message = Text(multi=True)

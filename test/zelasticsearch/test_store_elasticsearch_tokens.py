@@ -26,8 +26,8 @@ def store():
             pass
         yield s
 
-    #assert connections.get_connection().indices.delete(index='indicators-*')
-    #assert connections.get_connection().indices.delete(index='tokens')
+    assert connections.get_connection().indices.delete(index='indicators-*')
+    assert connections.get_connection().indices.delete(index='tokens')
 
 
 @pytest.yield_fixture

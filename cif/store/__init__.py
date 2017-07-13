@@ -291,6 +291,12 @@ class Store(multiprocessing.Process):
         if data.get('nolog') in ['1', 'True', 1, True]:
             return
 
+        if '*' in data.get('indicator'):
+            return
+
+        if '%' in data.get('indicator'):
+            return
+
         ts = arrow.utcnow().format('YYYY-MM-DDTHH:mm:ss.SSZ')
         s = Indicator(
             indicator=data['indicator'],

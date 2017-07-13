@@ -1,4 +1,4 @@
-from elasticsearch_dsl import DocType, String, Date, Integer, Float, Ip, Mapping, Index, GeoPoint, Byte, MetaField
+from elasticsearch_dsl import Index
 from elasticsearch import helpers
 import elasticsearch.exceptions
 from elasticsearch_dsl.connections import connections
@@ -65,12 +65,7 @@ class IndicatorManager(IndicatorManagerPlugin):
             index.doc_type(Indicator)
             index.settings(max_result_window=WINDOW_LIMIT)
             index.create()
-
-            m = Mapping('indicator')
-            m.field('indicator_ipv4', 'ip')
-            m.field('indicator_ipv4_mask', 'integer')
-            m.field('lasttime', 'date')
-            m.save(idx)
+            self.handle.indices.flush(idx)
 
         self.last_index_check = datetime.utcnow()
         return idx
@@ -136,7 +131,7 @@ class IndicatorManager(IndicatorManagerPlugin):
             ii = self.create(token, i, bulk=True)
             actions.append(ii)
 
-        helpers.bulk(self.handle, actions)
+        helpers.bulk(self.handle, actions, index=self._current_index())
 
         if flush:
             self.flush()
