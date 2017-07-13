@@ -66,6 +66,12 @@ def filter_indicator(s, q_filters):
     try:
         itype = resolve_itype(i)
     except InvalidIndicator:
+        if '%' in i:
+            i = i.replace('%', '*')
+
+        if '*' in i:
+            return s.query("wildcard", indicator=i)
+
         s = s.query("match", message=i)
         return s
 

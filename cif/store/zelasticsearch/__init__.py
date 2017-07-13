@@ -8,29 +8,23 @@ from elasticsearch_dsl.connections import connections
 from elasticsearch.exceptions import ConnectionError
 import traceback
 from time import sleep
-from cif.constants import TOKEN_CACHE_DELAY
-import arrow
-from cif.constants import PYVERSION
 
 ES_NODES = os.getenv('CIF_ES_NODES', '127.0.0.1:9200')
 TRACE = os.environ.get('CIF_STORE_ES_TRACE')
 TRACE_HTTP = os.getenv('CIF_STORE_ES_HTTP_TRACE')
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.ERROR)
 
-if not TRACE:
-    logger.setLevel(logging.ERROR)
+logging.getLogger('urllib3').setLevel(logging.ERROR)
+logging.getLogger('elasticsearch').setLevel(logging.ERROR)
 
-    es_logger = logging.getLogger('elasticsearch')
-    es_logger.propagate = False
-    es_logger.setLevel(logging.ERROR)
+if TRACE:
+    logger.setLevel(logging.DEBUG)
 
-if not TRACE_HTTP:
-    urllib_logger = logging.getLogger('urllib3')
-    urllib_logger.setLevel(logging.ERROR)
-    es_logger = logging.getLogger('elasticsearch')
-    es_logger.setLevel(logging.ERROR)
+if TRACE_HTTP:
+    logging.getLogger('urllib3').setLevel(logging.INFO)
+    logging.getLogger('elasticsearch').setLevel(logging.DEBUG)
 
 
 class _ElasticSearch(Store):
