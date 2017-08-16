@@ -61,11 +61,6 @@ if TRACE in [1, '1']:
 
 
 class Store(multiprocessing.Process):
-    def __enter__(self):
-        return self
-
-    def __exit__(self, type, value, traceback):
-        return self
 
     def __init__(self, store_type=STORE_DEFAULT, store_address=STORE_ADDR, **kwargs):
         multiprocessing.Process.__init__(self)
@@ -485,6 +480,11 @@ def main():
     logger.info('loglevel is: {}'.format(logging.getLevelName(logger.getEffectiveLevel())))
 
     setup_signals(__name__)
+
+    if not args.token_create_smrt and not args.token_create_admin and not args.token_create_hunter and not \
+            args.token_create_httpd:
+        logger.error('missing required arguments, see -h for more information')
+        raise SystemExit
 
     if args.token_create_smrt:
         with Store(store_type=args.store, nodes=args.nodes) as s:
