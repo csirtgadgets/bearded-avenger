@@ -61,6 +61,11 @@ if TRACE in [1, '1']:
 
 
 class Store(multiprocessing.Process):
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        return False
 
     def __init__(self, store_type=STORE_DEFAULT, store_address=STORE_ADDR, **kwargs):
         multiprocessing.Process.__init__(self)
