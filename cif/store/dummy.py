@@ -7,7 +7,6 @@ class Dummy(Store):
     name = 'dummy'
 
     def __init__(self, *args, **kwargs):
-        #super(Plugin, self).__init__(*args, **kwargs)
         pass
 
     def tokens_admin_exists(self):
