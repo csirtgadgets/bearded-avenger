@@ -570,7 +570,7 @@ def main():
                     with open(args.config_path, 'w') as f:
                         f.write(yaml.dump(data, default_flow_style=False))
 
-                logger.info('token config generated: {}'.format(args.token_create_admin))
+                logger.info('token config generated: {}'.format(args.token_create_httpd))
             else:
                 logger.error('token not created')
 
