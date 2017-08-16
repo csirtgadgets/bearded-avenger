@@ -21,6 +21,7 @@ before_install:
 
 install:
   - pip install pip --upgrade
+  - easy_install distribute
   - pip install setuptools --upgrade
   - pip install -r dev_requirements.txt
 
