@@ -18,6 +18,7 @@ PERM_WHITELIST = [
     'wordpress.com',
     'msn.com',
     'update.symantec.com',
+    'weebly.com'
 ]
 
 

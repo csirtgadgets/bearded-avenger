@@ -65,7 +65,7 @@ class Store(multiprocessing.Process):
         return self
 
     def __exit__(self, type, value, traceback):
-        return self
+        return False
 
     def __init__(self, store_type=STORE_DEFAULT, store_address=STORE_ADDR, **kwargs):
         multiprocessing.Process.__init__(self)
@@ -486,6 +486,11 @@ def main():
 
     setup_signals(__name__)
 
+    if not args.token_create_smrt and not args.token_create_admin and not args.token_create_hunter and not \
+            args.token_create_httpd:
+        logger.error('missing required arguments, see -h for more information')
+        raise SystemExit
+
     if args.token_create_smrt:
         with Store(store_type=args.store, nodes=args.nodes) as s:
             s._load_plugin(store_type=args.store, nodes=args.nodes)
@@ -565,7 +570,7 @@ def main():
                     with open(args.config_path, 'w') as f:
                         f.write(yaml.dump(data, default_flow_style=False))
 
-                logger.info('token config generated: {}'.format(args.token_create_admin))
+                logger.info('token config generated: {}'.format(args.token_create_httpd))
             else:
                 logger.error('token not created')
 

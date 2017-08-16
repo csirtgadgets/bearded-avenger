@@ -34,14 +34,3 @@ def indicator():
         'lasttime': arrow.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
         'itype': 'fqdn',
     }
-
-
-def test_store_dummy(indicator):
-    with Store(store_type='dummy') as s:
-        t = s.store.tokens.admin_exists()
-
-        x = s.handle_indicators_search(indicator)
-        assert x[0]['indicator'] == 'example.com'
-
-        x = s.handle_indicators_create(dict(indicator))
-        assert x[0]['indicator'] == 'example.com'
