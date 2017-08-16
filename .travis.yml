@@ -20,6 +20,8 @@ before_install:
     - docker ps -a
 
 install:
+  - pip install pip --upgrade
+  - pip install distrbute --upgrade
   - pip install -r dev_requirements.txt
 
 script:
