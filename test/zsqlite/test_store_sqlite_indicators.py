@@ -99,6 +99,7 @@ def test_store_sqlite_indicators(store, indicator):
     assert len(x) == 0
 
     indicator['indicator'] = '192.168.1.1'
+    indicator['itype'] = 'ipv4'
     indicator['tags'] = 'botnet'
 
     x = store.handle_indicators_create(t, indicator)
@@ -118,6 +119,7 @@ def test_store_sqlite_indicators(store, indicator):
     assert len(list(x)) > 0
 
     indicator['indicator'] = '2001:4860:4860::8888'
+    indicator['itype'] = 'ipv6'
     indicator['tags'] = 'botnet'
 
     x = store.handle_indicators_create(t, indicator)

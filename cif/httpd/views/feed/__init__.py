@@ -77,25 +77,32 @@ class FeedAPI(MethodView):
             filters['limit'] = FEEDS_LIMIT
 
         if current_app.config.get('dummy'):
-            r = DummyClient(remote, pull_token()).indicators_search(filters)
-            return jsonify_success(r)
+            if current_app.config.get('feed'):
+                r = DummyClient(remote, pull_token()).indicators_search(filters,
+                                                                        decode=True,
+                                                                        test_data=current_app.config['feed']['data'],
+                                                                        test_wl=current_app.config['feed']['wl'])
+            else:
+                r = DummyClient(remote, pull_token()).indicators_search(filters)
+                return jsonify_success(r)
 
-        try:
-            r = Client(remote, pull_token()).indicators_search(filters)
+        else:
+            try:
+                r = Client(remote, pull_token()).indicators_search(filters)
 
-        except AuthError:
-            return jsonify_unauth()
+            except AuthError:
+                return jsonify_unauth()
 
-        except RuntimeError as e:
-            return jsonify_unknown('search failed', 403)
+            except RuntimeError as e:
+                return jsonify_unknown('search failed', 403)
 
-        except InvalidSearch as e:
-            logger.error(e)
-            return jsonify_unknown('invalid search', 400)
+            except InvalidSearch as e:
+                logger.error(e)
+                return jsonify_unknown('invalid search', 400)
 
-        except Exception as e:
-            logger.error(e)
-            return jsonify_unknown(msg='search failed')
+            except Exception as e:
+                logger.error(e)
+                return jsonify_unknown(msg='search failed')
 
         r = aggregate(r)
 
@@ -106,11 +113,14 @@ class FeedAPI(MethodView):
         wl_filters['nolog'] = True
         wl_filters['limit'] = FEEDS_WHITELIST_LIMIT
 
-        try:
-            wl = Client(remote, pull_token()).indicators_search(wl_filters)
-        except Exception as e:
-            logger.error(e)
-            return jsonify_unknown('feed query failed', 503)
+        if current_app.config.get('feed').get('wl'):
+            wl = current_app.config.get('feed').get('wl')
+        else:
+            try:
+                wl = Client(remote, pull_token()).indicators_search(wl_filters)
+            except Exception as e:
+                logger.error(e)
+                return jsonify_unknown('feed query failed', 503)
 
         wl = aggregate(wl)
 
