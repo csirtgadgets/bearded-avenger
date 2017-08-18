@@ -78,9 +78,82 @@ def test_httpd_indicators(client):
 
 
 def test_httpd_feed(client):
-    rv = client.get('/feed?itype=fqdn&indicator=example.com&confidence=85', headers={'Authorization': 'Token token=1234'})
+    import arrow
+    httpd.app.config['feed'] = {}
+    httpd.app.config['feed']['data'] = [
+        {
+            'indicator': '128.205.1.1',
+            'confidence': '8',
+            'tags': ['malware'],
+            'reporttime': str(arrow.utcnow()),
+        },
+        {
+            'indicator': '128.205.2.1',
+            'confidence': '8',
+            'tags': ['malware'],
+            'reporttime': str(arrow.utcnow()),
+        },
+    ]
+    httpd.app.config['feed']['wl'] = [
+        {
+            'indicator': '128.205.0.0/16',
+            'confidence': '8',
+            'tags': ['whitelist'],
+            'reporttime': str(arrow.utcnow()),
+        },
+    ]
+
+    rv = client.get('/feed?itype=ipv4&confidence=7', headers={'Authorization': 'Token token=1234'})
 
     assert rv.status_code == 200
+
+    r = json.loads(rv.data.decode('utf-8'))
+    assert len(r['data']) == 0
+
+def test_httpd_feed_fqdn(client):
+    import arrow
+    httpd.app.config['feed'] = {}
+    httpd.app.config['feed']['data'] = [
+        {
+            'indicator': 'page-test.weebly.com',
+            'confidence': '8',
+            'tags': ['malware'],
+            'reporttime': str(arrow.utcnow()),
+        },
+        {
+            'indicator': 'example.com',
+            'confidence': '8',
+            'tags': ['malware'],
+            'reporttime': str(arrow.utcnow()),
+        },
+        {
+            'indicator': 'test.google.com',
+            'confidence': '8',
+            'tags': ['malware'],
+            'reporttime': str(arrow.utcnow()),
+        },
+        {
+            'indicator': 'test.test.ex.com',
+            'confidence': '8',
+            'tags': ['malware'],
+            'reporttime': str(arrow.utcnow()),
+        },
+    ]
+    httpd.app.config['feed']['wl'] = [
+        {
+            'indicator': 'ex.com',
+            'confidence': '8',
+            'tags': ['whitelist'],
+            'reporttime': str(arrow.utcnow()),
+        },
+    ]
+
+    rv = client.get('/feed?itype=fqdn&confidence=7', headers={'Authorization': 'Token token=1234'})
+
+    assert rv.status_code == 200
+
+    r = json.loads(rv.data.decode('utf-8'))
+    assert len(r['data']) == 1
 
 
 def test_httpd_tokens(client):
