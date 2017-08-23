@@ -390,13 +390,13 @@ class Store(multiprocessing.Process):
 
         raise AuthError('invalid token')
 
-    def token_create_admin(self, token=None):
+    def token_create_admin(self, token=None, groups=['everyone']):
         logger.info('testing for tokens...')
         if not self.store.tokens.admin_exists():
             logger.info('admin token does not exist, generating..')
             rv = self.store.tokens.create({
                 'username': u'admin',
-                'groups': [u'everyone'],
+                'groups': groups,
                 'read': u'1',
                 'write': u'1',
                 'admin': u'1',
@@ -407,33 +407,33 @@ class Store(multiprocessing.Process):
 
         logger.info('admin token exists...')
 
-    def token_create_smrt(self, token=None):
+    def token_create_smrt(self, token=None, groups=['everyone']):
         logger.info('generating smrt token')
         rv = self.store.tokens.create({
             'username': u'csirtg-smrt',
-            'groups': [u'everyone'],
+            'groups': groups,
             'write': u'1',
             'token': token
         })
         logger.info('smrt token created: {}'.format(rv['token']))
         return rv['token']
 
-    def token_create_hunter(self, token=None):
+    def token_create_hunter(self, token=None, groups=['everyone']):
         logger.info('generating hunter token')
         rv = self.store.tokens.create({
             'username': u'hunter',
-            'groups': [u'everyone'],
+            'groups': groups,
             'write': u'1',
             'token': token
         })
         logger.info('hunter token created: {}'.format(rv['token']))
         return rv['token']
 
-    def token_create_httpd(self, token=None):
+    def token_create_httpd(self, token=None, groups=['everyone']):
         logger.info('generating httpd token')
         rv = self.store.tokens.create({
             'username': u'httpd',
-            'groups': [u'everyone'],
+            'groups': groups,
             'read': u'1',
             'token': token
         })
@@ -475,10 +475,13 @@ def main():
 
     p.add_argument('--config-path', help='store the token as a config')
     p.add_argument('--token', help='specify the token to use', default=None)
+    p.add_argument('--token-groups', help="specify groups associated with token [default %(default)s]'", default='everyone')
 
     p.add_argument('--remote', help='specify remote')
 
     args = p.parse_args()
+
+    groups = args.token_groups.split(',')
 
     setup_logging(args)
     logger = logging.getLogger(__name__)
@@ -495,7 +498,7 @@ def main():
         with Store(store_type=args.store, nodes=args.nodes) as s:
             s._load_plugin(store_type=args.store, nodes=args.nodes)
 
-            t = s.token_create_smrt(token=args.token)
+            t = s.token_create_smrt(token=args.token, groups=groups)
             if t:
                 if PYVERSION == 2:
                     t = t.encode('utf-8')
@@ -517,7 +520,7 @@ def main():
     if args.token_create_hunter:
         with Store(store_type=args.store, nodes=args.nodes) as s:
             s._load_plugin(store_type=args.store, nodes=args.nodes)
-            t = s.token_create_hunter(token=args.token)
+            t = s.token_create_hunter(token=args.token, groups=groups)
             if t:
                 if PYVERSION == 2:
                     t = t.encode('utf-8')
@@ -537,7 +540,7 @@ def main():
     if args.token_create_admin:
         with Store(store_type=args.store, nodes=args.nodes) as s:
             s._load_plugin(store_type=args.store, nodes=args.nodes)
-            t = s.token_create_admin(token=args.token)
+            t = s.token_create_admin(token=args.token, groups=groups)
             if t:
                 if PYVERSION == 2:
                     t = t.encode('utf-8')
@@ -557,7 +560,7 @@ def main():
     if args.token_create_httpd:
         with Store(store_type=args.store, nodes=args.nodes) as s:
             s._load_plugin(store_type=args.store, nodes=args.nodes)
-            t = s.token_create_httpd(token=args.token)
+            t = s.token_create_httpd(token=args.token, groups=groups)
             if t:
                 if PYVERSION == 2:
                     t = t.encode('utf-8')
