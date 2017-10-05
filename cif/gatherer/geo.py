@@ -28,6 +28,7 @@ DB_PATH = os.environ.get('CIF_GEO_PATH')
 ASN_DB_PATH = 'GeoIPASNum.dat'
 ASN_DB_PATH2 = 'GeoLiteASNum.dat'
 CITY_DB_PATH = 'GeoLiteCity.dat'
+CITY_V6_DB_PATH = 'GeoLiteCityv6.dat'
 
 
 class Geo(object):
@@ -44,6 +45,7 @@ class Geo(object):
         self.db = None
         self.asn_db = None
         self.city_db = None
+        self.city_v6_db = None
 
         if DB_PATH:
             self.db = geoip2.database.Reader(os.path.join(DB_PATH, db))
@@ -66,6 +68,9 @@ class Geo(object):
             if os.path.isfile(os.path.join(p, CITY_DB_PATH)):
                 self.city_db = pygeoip.GeoIP(os.path.join(p, CITY_DB_PATH), pygeoip.MMAP_CACHE)
                 break
+
+            if os.path.isfile(os.path.join(p, CITY_V6_DB_PATH)):
+                self.city_v6_db = pygeoip.GeoIP(os.path.join(p, CITY_V6_DB_PATH), pygeoip.MMAP_CACHE)
 
     def _lookup_ip(self, host):
         try:
@@ -100,11 +105,12 @@ class Geo(object):
             if not indicator.rdata:
                 indicator.rdata = i
 
-        try:
-            i = self._ip_to_prefix(i)
-        except IndexError:
-            self.logger.error('unable to determine geo for %s' % indicator.indicator)
-            return
+        if indicator.itype == 'ipv4':
+            try:
+                i = self._ip_to_prefix(i)
+            except IndexError:
+                self.logger.error('unable to determine geo for %s' % indicator.indicator)
+                return
 
         g = self.db.city(i)
 
