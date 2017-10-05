@@ -14,6 +14,7 @@ from .filters import filter_build
 from .constants import LIMIT, WINDOW_LIMIT, TIMEOUT, UPSERT_MODE, PARTITION
 from .locks import LockManager
 from .schema import Indicator
+import arrow
 
 logger = logging.getLogger('cif.store.zelasticsearch')
 if PYVERSION > 2:
@@ -103,6 +104,15 @@ class IndicatorManager(IndicatorManagerPlugin):
 
         if data.get('group') and type(data['group']) != list:
             data['group'] = [data['group']]
+
+        if not data.get('lasttime'):
+            data['lasttime'] = arrow.utcnow().datetime.replace(tzinfo=None)
+
+        if not data.get('firsttime'):
+            data['firsttime'] = data['lasttime']
+
+        if not data.get('reporttime'):
+            data['reporttime'] = data['lasttime']
 
         if bulk:
             d = {

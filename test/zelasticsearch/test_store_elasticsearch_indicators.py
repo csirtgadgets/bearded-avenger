@@ -137,3 +137,7 @@ def test_store_elasticsearch_indicators_email(store, token, indicator_email):
     })
 
     assert len(x) > 0
+
+    assert(x[0]['lasttime'])
+    assert(x[0]['firsttime'])
+    assert (x[0]['reporttime'])
