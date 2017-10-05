@@ -17,15 +17,23 @@
       <ul class="nav navbar-nav">
         {% if request.endpoint == '/u/search' %}
           <li class="active"><a href="/u/search">Search <span class="sr-only">(current)</span></a></li>
+          <li><a href="/u/submit">Submit</a></li>
           <li><a href="/u/tokens">Tokens</a></li>
+        {% elif request.endpoint == '/u/submit' %}
+          <li><a href="/u/search">Search <span class="sr-only">(current)</span></a></li>
+          <li class="active"><a href="/u/submit">Submit</a></li>
+          <li><a href="/u/tokens">Tokens</a></li>
+
         {% else %}
           <li><a href="/u/search">Search <span class="sr-only">(current)</span></a></li>
+          <li><a href="/u/submit">Submit</a></li>
           <li class="active"><a href="/u/tokens">Tokens</a></li>
+
         {% endif %}
       </ul>
 
-      {% if request.endpoint == '/u/search' or (request.endpoint == '/u/tokens' and not session['admin']) %}
-      <form class="navbar-form navbar-left">
+      {% if request.endpoint in ['/u/search', '/u/submit'] or (request.endpoint == '/u/tokens' and not session['admin']) %}
+      <form class="navbar-form navbar-left" action="/u/search">
         <div class="form-group">
           {% set placeholder = 'evilbit.com' %}
           {% if request.endpoint == '/u/tokens' %}
