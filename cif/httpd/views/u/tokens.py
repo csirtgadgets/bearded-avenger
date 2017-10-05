@@ -26,8 +26,6 @@ class TokensUI(MethodView):
         if token_id and token_id != 'new':
             filters['token'] = token_id
 
-        logger.debug(filters)
-
         try:
             r = Client(remote, HTTPD_TOKEN).tokens_search(filters)
 

@@ -8,7 +8,8 @@ import textwrap
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 
-from flask import Flask, request, session, redirect, url_for, render_template, _request_ctx_stack
+from flask import Flask, request, session, redirect, url_for, render_template, _request_ctx_stack, send_from_directory
+#from flask.ext.session import Session
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_bootstrap import Bootstrap
@@ -25,6 +26,7 @@ from .views.indicators import IndicatorsAPI
 from .views.feed import FeedAPI
 from .views.confidence import ConfidenceAPI
 from .views.u.indicators import IndicatorsUI
+from .views.u.submit import SubmitUI
 from .views.u.tokens import TokensUI
 
 from pprint import pprint
@@ -39,6 +41,7 @@ LIMIT_MIN = os.getenv('CIF_HTTPD_LIMIT_MINUTE', 120)
 
 PIDFILE = os.getenv('CIF_HTTPD_PIDFILE', '{}/cif_httpd.pid'.format(RUNTIME_PATH))
 
+# NEEDS TO BE STATIC TO WORK WITH SESSIONS
 SECRET_KEY = os.getenv('CIF_HTTPD_SECRET_KEY', os.urandom(24))
 HTTPD_TOKEN = os.getenv('CIF_HTTPD_TOKEN')
 
@@ -64,7 +67,6 @@ def proxy_get_remote_address():
     return get_remote_address()
 
 app = Flask(__name__)
-app.secret_key = SECRET_KEY
 
 Bootstrap(app)
 remote = ROUTER_ADDR
@@ -77,8 +79,15 @@ limiter = Limiter(
     ]
 )
 
+
+@app.route('/favicon.ico')
+def favicon():
+   return send_from_directory(os.path.join(app.root_path, 'static'),
+                              'favicon.ico', mimetype='image/vnd.microsoft.icon')
+
 app.add_url_rule('/u', view_func=IndicatorsUI.as_view('/u'))
 app.add_url_rule('/u/search', view_func=IndicatorsUI.as_view('/u/search'))
+app.add_url_rule('/u/submit', view_func=SubmitUI.as_view('/u/submit'))
 
 tokens_view = TokensUI.as_view('/u/tokens')
 app.add_url_rule('/u/tokens/<string:token_id>', view_func=tokens_view, methods=['GET', 'POST', 'DELETE'])
@@ -96,6 +105,7 @@ app.add_url_rule('/search', view_func=IndicatorsAPI.as_view('search'))
 app.add_url_rule('/feed', view_func=FeedAPI.as_view('feed'))
 app.add_url_rule('/help/confidence', view_func=ConfidenceAPI.as_view('confidence'))
 
+app.secret_key = SECRET_KEY
 
 @app.teardown_request
 def teardown_request(exception):
@@ -104,13 +114,22 @@ def teardown_request(exception):
 
 @app.before_request
 def decompress():
+    if '/u/' in request.path:
+        return
+
     if request.headers.get('Content-Encoding') and request.headers['Content-Encoding'] == 'deflate':
         logger.info('decompressing request: %d' % len(request.data))
         request.data = zlib.decompress(request.data)
         logger.debug('content-length: %d' % len(request.data))
 
 
+# TODO- double check this still works
+@app.after_request
 def process_response(response):
+    if '/u/' in request.path:
+        print(request.path)
+        return response
+
     if request.headers.get('Accept-Encoding') and request.headers['Accept-Encoding'] == 'deflate':
         logger.debug('compressing resp: %d' % len(response.data))
         response.data = zlib.compress(response.data)
@@ -122,7 +141,7 @@ def process_response(response):
 
     return response
 
-app.process_response = process_response
+#app.process_response = process_response
 
 @app.before_request
 def before_request():
@@ -145,11 +164,14 @@ def before_request():
     if request.path == '/u/login':
         return
 
-    if '/u' in request.path:
+    if request.path == '/favicon.ico':
+        return
 
+    if '/u' in request.path:
         if request.remote_addr not in HTTPD_UI_HOSTS:
             return 'unauthorized, must connect from {}'.format(','.join(HTTPD_UI_HOSTS)), 401
 
+        # make sure SECRET_KEY is set properly
         if 'token' not in session:
             return render_template('login.html', code=401)
         else:
@@ -182,8 +204,8 @@ def login():
         if user['revoked']:
             return render_template('login.html', code=401)
 
-        for k in user:
-            session[k] = user[k]
+        for e in ['username', 'token', 'admin', 'read', 'write', 'groups']:
+            session[e] = user[e]
 
         return redirect(url_for('/u/search'))
 
@@ -242,7 +264,6 @@ def main():
 
     try:
         logger.info('pinging router...')
-        #app.config["SECRET_KEY"] = SECRET_KEY
         logger.info('starting up...')
         app.run(host=args.listen, port=args.listen_port, debug=args.fdebug, threaded=True, extra_files=extra_files)
 
