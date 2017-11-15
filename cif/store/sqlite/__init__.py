@@ -15,11 +15,11 @@ Base = declarative_base()
 from .token import TokenManager, Token
 from .indicator import Indicator, IndicatorManager
 
-DATAPATH = os.getenv('CIF_DATA_PATH')
+DATA_PATH = os.getenv('CIF_DATA_PATH')
 DB_FILE = os.path.join(RUNTIME_PATH, 'cif.sqlite')
 
-if DATAPATH:
-    DB_FILE = os.path.join(RUNTIME_PATH, 'cif.db')
+if DATA_PATH:
+    DB_FILE = os.path.join(DATA_PATH, 'cif.db')
 
 logger = logging.getLogger(__name__)
 TRACE = os.environ.get('CIF_STORE_SQLITE_TRACE')
