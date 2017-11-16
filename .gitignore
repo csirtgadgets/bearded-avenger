@@ -1,4 +1,5 @@
 .DS_Store
+cif-ansible-role/*
 deploymentkit/*
 Vagrantfile_*
 Vagrantfile\.*

@@ -66,9 +66,11 @@ def proxy_get_remote_address():
 
     return get_remote_address()
 
-app = Flask(__name__)
 
+app = Flask(__name__)
 Bootstrap(app)
+app.secret_key = SECRET_KEY
+
 remote = ROUTER_ADDR
 logger = logging.getLogger(__name__)
 limiter = Limiter(
@@ -104,8 +106,6 @@ app.add_url_rule('/indicators', view_func=IndicatorsAPI.as_view('indicators'))
 app.add_url_rule('/search', view_func=IndicatorsAPI.as_view('search'))
 app.add_url_rule('/feed', view_func=FeedAPI.as_view('feed'))
 app.add_url_rule('/help/confidence', view_func=ConfidenceAPI.as_view('confidence'))
-
-app.secret_key = SECRET_KEY
 
 @app.teardown_request
 def teardown_request(exception):
