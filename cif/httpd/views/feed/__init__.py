@@ -113,7 +113,7 @@ class FeedAPI(MethodView):
         wl_filters['nolog'] = True
         wl_filters['limit'] = FEEDS_WHITELIST_LIMIT
 
-        if current_app.config.get('feed').get('wl'):
+        if current_app.config.get('feed') and current_app.config.get('feed').get('wl'):
             wl = current_app.config.get('feed').get('wl')
         else:
             try:
