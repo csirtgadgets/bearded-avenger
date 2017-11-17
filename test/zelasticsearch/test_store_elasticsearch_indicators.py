@@ -81,6 +81,28 @@ def indicator_ipv6():
         reporttime=arrow.utcnow().datetime
     )
 
+@pytest.fixture
+def indicator_url():
+    return Indicator(
+        indicator='http://pwmsteel.com/dhYtebv3',
+        tags='exploit',
+        provider='csirtg.io',
+        group='everyone',
+        lasttime=arrow.utcnow().datetime,
+        reporttime=arrow.utcnow().datetime
+    )
+
+@pytest.fixture
+def indicator_malware():
+    return Indicator(
+        indicator='d52380918a07322c50f1bfa2b43af3bb54cb33db',
+        tags='malware',
+        provider='csirtg.io',
+        group='everyone',
+        lasttime=arrow.utcnow().datetime,
+        reporttime=arrow.utcnow().datetime
+    )
+
 
 @pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
 def test_store_elasticsearch_indicators(store, token, indicator):
@@ -141,3 +163,63 @@ def test_store_elasticsearch_indicators_email(store, token, indicator_email):
     assert(x[0]['lasttime'])
     assert(x[0]['firsttime'])
     assert (x[0]['reporttime'])
+
+
+@pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
+def test_store_elasticsearch_indicators_url(store, token, indicator_url):
+    x = store.handle_indicators_create(token, indicator_url.__dict__(), flush=True)
+
+    assert x > 0
+
+    x = store.handle_indicators_search(token, {
+        'indicator': indicator_url.indicator,
+    })
+
+    assert len(x) > 0
+
+    x = store.handle_indicators_search(token, {
+        'indicator': '*pwmsteel.com*',
+    })
+
+    assert len(x) > 0
+
+    x = store.handle_indicators_search(token, {
+        'indicator': '%pwmsteel.com%',
+    })
+
+    assert len(x) > 0
+
+    assert(x[0]['lasttime'])
+    assert(x[0]['firsttime'])
+    assert (x[0]['reporttime'])
+
+
+@pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
+def test_store_elasticsearch_indicators_malware(store, token, indicator_malware):
+    x = store.handle_indicators_create(token, indicator_malware.__dict__(), flush=True)
+
+    assert x > 0
+
+    x = store.handle_indicators_search(token, {
+        'indicator': indicator_malware.indicator,
+    })
+
+    assert len(x) > 0
+
+    x = store.handle_indicators_search(token, {
+        'indicator': '*a07322c50*',
+    })
+
+    assert len(x) > 0
+
+    x = store.handle_indicators_search(token, {
+        'indicator': '%a07322c50%',
+    })
+
+    assert len(x) > 0
+
+    assert(x[0]['lasttime'])
+    assert(x[0]['firsttime'])
+    assert (x[0]['reporttime'])
+
+    assert x[0]['indicator'] == indicator_malware.indicator

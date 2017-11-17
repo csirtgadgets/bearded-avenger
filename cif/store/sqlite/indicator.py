@@ -328,7 +328,9 @@ class IndicatorManager(IndicatorManagerPlugin):
             return s
 
         if itype in HASH_TYPES:
-            s = s.join(Hash).filter(Hash.hash == i)
+            s = s.join(Hash).filter(Hash.hash == str(i))
+            pprint(s)
+            pprint(str(i))
             return s
 
         raise InvalidIndicator

@@ -71,7 +71,6 @@ setup(
         'SQLAlchemy',
         'elasticsearch',
         'elasticsearch_dsl',
-        'rdflib',
         'ujson',
         'pyzmq>=16.0',
         'csirtg_indicator',
