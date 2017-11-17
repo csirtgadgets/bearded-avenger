@@ -180,3 +180,16 @@ def test_store_sqlite_indicators(store, indicator):
             'id': xx['id']
         }])
         assert r == 1
+
+    indicator['indicator'] = 'd52380918a07322c50f1bfa2b43af3bb54cb33db'
+    indicator['group'] = 'everyone'
+    indicator['itype'] = 'sha1'
+
+    x = store.handle_indicators_create(t, indicator)
+    assert x > 0
+
+    x = store.handle_indicators_search(t, {
+        'indicator': indicator['indicator'],
+        'nolog': 1
+    })
+    # assert len(x) == 1

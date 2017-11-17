@@ -11,6 +11,12 @@ hunter_threads=ENV['CIF_HUNTER_THREADS']
 hunter_advanced=ENV['CIF_HUNTER_ADVANCED']
 geo_fqdn=ENV['CIF_GATHERER_GEO_FQDN']
 csirtg_token=ENV['CSIRTG_TOKEN']
+distro=ENV.fetch('CIF_VAGRANT_DISTRO', 'ubuntu')
+redhat=0
+rhel_user=ENV['RHEL_USER']
+rhel_pass=ENV['RHEL_PASSWORD']
+
+redhat=1 if distro == 'redhat'
 
 unless File.directory?('deploymentkit')
     puts "Please unzip the latest release of the deploymentkit before continuing..."
@@ -28,8 +34,13 @@ export CIF_HUNTER_ADVANCED=#{hunter_advanced}
 export CIF_GATHERER_GEO_FQDN=#{geo_fqdn}
 export CIF_BOOTSTRAP_TEST=1
 export CSIRTG_TOKEN=#{csirtg_token}
+export RHEL=#{redhat}
+export USERNAME=#{rhel_user}
+export PASSWORD="#{rhel_pass}"
 
-echo "export CSIRTG_TOKEN='${CSIRTG_TOKEN}'" >> /home/ubuntu/.profile
+if [ ${USERNAME} != "" ]; then
+  subscription-manager register --username ${USERNAME} --password "${PASSWORD}" --auto-attach
+fi
 
 cd /vagrant/deploymentkit
 bash easybutton.sh
@@ -37,7 +48,15 @@ SCRIPT
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.provision "shell", inline: $script
-  config.vm.box = 'ubuntu/xenial64'
+
+  case distro
+    when 'redhat'
+      config.vm.box = "iamseth/rhel-7.3"
+    when 'centos'
+       config.vm.box = 'geerlingguy/centos7'
+    else
+     config.vm.box = 'ubuntu/xenial64'
+  end
 
   config.vm.network :forwarded_port, guest: 443, host: 8443
   
