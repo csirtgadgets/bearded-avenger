@@ -329,8 +329,6 @@ class IndicatorManager(IndicatorManagerPlugin):
 
         if itype in HASH_TYPES:
             s = s.join(Hash).filter(Hash.hash == str(i))
-            pprint(s)
-            pprint(str(i))
             return s
 
         raise InvalidIndicator
@@ -598,13 +596,9 @@ class IndicatorManager(IndicatorManagerPlugin):
                     url = Url(url=d['indicator'], indicator=ii)
                     s.add(url)
 
-                if itype is 'url':
-                    url = Url(url=d['indicator'], indicator=ii)
-                    s.add(url)
-
-                if itype is HASH_TYPES:
-                    hash = Hash(hash=d['indicator'], indicator=ii)
-                    s.add(hash)
+                if itype in HASH_TYPES:
+                    h = Hash(hash=d['indicator'], indicator=ii)
+                    s.add(h)
 
                 for t in tags:
                     t = Tag(tag=t, indicator=ii)
