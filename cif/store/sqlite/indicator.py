@@ -258,6 +258,9 @@ class IndicatorManager(IndicatorManagerPlugin):
     def create(self, token, data):
         return self.upsert(token, data)
 
+    def stats(self, filters):
+        return json.dumps([1, 2, 3, 4])
+
     def _filter_indicator(self, filters, s):
 
         for k, v in list(filters.items()):

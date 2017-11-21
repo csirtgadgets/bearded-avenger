@@ -18,5 +18,6 @@ class HelpAPI(MethodView):
             'GET /tokens?{username,token}': 'search for a set of tokens',
             'POST /tokens': 'create a token or set of tokens',
             'DELETE /tokens?{username,token}': 'delete a token or set of tokens',
-            'PATCH /token': 'update a token'
+            'PATCH /token': 'update a token',
+            'GET /stats?{filter=[provider|tag],start=int,end=int}': 'generate some basic stats (int = days)'
         })

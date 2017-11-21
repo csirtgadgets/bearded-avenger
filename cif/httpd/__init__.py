@@ -28,6 +28,7 @@ from .views.confidence import ConfidenceAPI
 from .views.u.indicators import IndicatorsUI
 from .views.u.submit import SubmitUI
 from .views.u.tokens import TokensUI
+from .views.stats import StatsAPI
 
 from pprint import pprint
 
@@ -106,6 +107,7 @@ app.add_url_rule('/indicators', view_func=IndicatorsAPI.as_view('indicators'))
 app.add_url_rule('/search', view_func=IndicatorsAPI.as_view('search'))
 app.add_url_rule('/feed', view_func=FeedAPI.as_view('feed'))
 app.add_url_rule('/help/confidence', view_func=ConfidenceAPI.as_view('confidence'))
+app.add_url_rule('/stats', view_func=StatsAPI.as_view('stats'))
 
 @app.teardown_request
 def teardown_request(exception):

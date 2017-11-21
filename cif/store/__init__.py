@@ -161,7 +161,6 @@ class Store(multiprocessing.Process):
             else:
                 rv = {"status": "success", "data": rv}
 
-
         except AuthError as e:
             logger.error(e)
             err = 'unauthorized'
@@ -387,6 +386,12 @@ class Store(multiprocessing.Process):
     def handle_tokens_edit(self, token, data, **kwargs):
         if self.store.tokens.admin(token):
             return self.store.tokens.edit(data)
+
+        raise AuthError('invalid token')
+
+    def handle_stats(self, token, data, **kwargs):
+        if self.store.tokens.admin(token):
+            return self.store.indicators.stats(data)
 
         raise AuthError('invalid token')
 
