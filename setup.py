@@ -86,6 +86,7 @@ setup(
             'cif-gatherer=cif.gatherer:main',
             'cif-httpd=cif.httpd:main',
             'cif-store=cif.store:main',
+            'cif-es-archive=cif.utils.es_archiver:main'
         ]
     },
 )
