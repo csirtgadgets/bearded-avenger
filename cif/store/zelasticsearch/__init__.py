@@ -79,10 +79,11 @@ class _ElasticSearch(Store):
     def ping(self, token):
         s = self._health_check()
 
-        if s['status'] == 'red':
+        if s is None or s['status'] == 'red':
             return
 
         if self.tokens.read(token) or self.tokens.write(token):
             return True
+
 
 Plugin = _ElasticSearch
