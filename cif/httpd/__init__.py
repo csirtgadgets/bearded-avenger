@@ -35,6 +35,8 @@ from pprint import pprint
 HTTP_LISTEN = '127.0.0.1'
 HTTP_LISTEN = os.environ.get('CIF_HTTPD_LISTEN', HTTP_LISTEN)
 
+TRACE = os.getenv('CIF_HTTPD_TRACE', 0)
+
 HTTP_LISTEN_PORT = 5000
 HTTP_LISTEN_PORT = os.environ.get('CIF_HTTPD_LISTEN_PORT', HTTP_LISTEN_PORT)
 
@@ -74,8 +76,12 @@ app.secret_key = SECRET_KEY
 
 remote = ROUTER_ADDR
 
+log_level = logging.WARN
+if TRACE == '1':
+    log_level = logging.DEBUG
+
 console = logging.StreamHandler()
-logging.getLogger('gunicorn.error').setLevel(logging.DEBUG)
+logging.getLogger('gunicorn.error').setLevel(log_level)
 logging.getLogger('gunicorn.error').addHandler(console)
 logger = logging.getLogger('gunicorn.error')
 
@@ -249,6 +255,8 @@ def main():
     args = p.parse_args()
     setup_logging(args)
     logger = logging.getLogger(__name__)
+    if TRACE:
+        logger.setLevel(logging.DEBUG)
     logger.info('loglevel is: {}'.format(logging.getLevelName(logger.getEffectiveLevel())))
 
     setup_signals(__name__)
