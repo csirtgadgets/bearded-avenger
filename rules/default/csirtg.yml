@@ -69,10 +69,3 @@ feeds:
       tags:
         - uce
         - uce-ip
-
-  darknet:
-    remote: https://csirtg.io/api/users/wes/feeds/darknet.csv
-    defaults:
-      tags:
-        - scanner
-        - darknet
