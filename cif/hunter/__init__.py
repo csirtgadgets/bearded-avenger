@@ -22,8 +22,8 @@ TRACE = os.environ.get('CIF_HUNTER_TRACE', False)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-if TRACE:
-    logger.setLevel(logging.DEBUG)
+if TRACE in [1, '1']:
+   logger.setLevel(logging.DEBUG)
 
 
 class Hunter(multiprocessing.Process):
