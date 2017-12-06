@@ -75,7 +75,8 @@ class IndicatorManager(IndicatorManagerPlugin):
         limit = filters.get('limit', LIMIT)
 
         s = Indicator.search(index='{}-*'.format(self.indicators_prefix))
-        s = s.params(size=limit, timeout=timeout, sort=sort)
+        s = s.params(size=limit, timeout=timeout)
+        s = s.sort('-reporttime', '-lasttime')
 
         s = filter_build(s, filters, token=token)
 
