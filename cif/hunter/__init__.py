@@ -115,7 +115,7 @@ class Hunter(multiprocessing.Process):
             for d in data:
                 d = Indicator(**d)
 
-                if d.indicator in ["", 'localhost']:
+                if d.indicator in ["", 'localhost', 'example.com']:
                     continue
 
                 if self.exclude.get(d.provider):
