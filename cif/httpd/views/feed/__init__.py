@@ -32,6 +32,22 @@ FEED_PLUGINS = {
     'sha512': Sha512
 }
 
+DAYS_SHORT = 21
+DAYS_MEDIUM = 45
+DAYS_LONG = 90
+DAYS_REALLY_LONG = 180
+
+FEED_DAYS = {
+    'ipv4': DAYS_SHORT,
+    'ipv6': DAYS_SHORT,
+    'url': DAYS_MEDIUM,
+    'email': DAYS_MEDIUM,
+    'fqdn': DAYS_MEDIUM,
+    'md5': DAYS_MEDIUM,
+    'sha1': DAYS_MEDIUM,
+    'sha256': DAYS_MEDIUM,
+}
+
 
 # http://stackoverflow.com/a/456747
 def feed_factory(name):
@@ -71,7 +87,10 @@ class FeedAPI(MethodView):
             return jsonify_unknown(err, 400)
 
         if not filters.get('days'):
-            filters['days'] = FEEDS_DAYS
+            if not filters.get('itype'):
+                filters['days'] = DAYS_SHORT
+            else:
+                filters['days'] = FEED_DAYS[filters['itype']]
 
         if not filters.get('limit'):
             filters['limit'] = FEEDS_LIMIT
@@ -107,6 +126,11 @@ class FeedAPI(MethodView):
         r = aggregate(r)
 
         wl_filters = copy.deepcopy(filters)
+
+        # whitelists are typically updated 1/month so we should catch those
+        # esp for IP addresses
+        if filters['days'] < 45:
+            filters['days'] = 45
         wl_filters['tags'] = 'whitelist'
         wl_filters['confidence'] = HTTPD_FEED_WHITELIST_CONFIDENCE
 
