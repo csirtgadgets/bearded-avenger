@@ -172,7 +172,7 @@ class FeedAPI(MethodView):
         logger.debug('%s merging' % id)
         r = f().process(r, wl)
 
-        logger.debug('%s done: %s' % (id, str((time.time - start))))
+        logger.debug('%s done: %s' % (id, str((time.time() - start))))
         response = jsonify({
             "message": "success",
             "data": r
