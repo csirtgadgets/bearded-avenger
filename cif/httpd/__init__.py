@@ -18,6 +18,7 @@ from cif.constants import ROUTER_ADDR, RUNTIME_PATH
 from cifsdk.utils import get_argument_parser, setup_logging, setup_signals, setup_runtime_path
 import zlib
 import time
+import uuid
 from .common import pull_token
 from .views.ping import PingAPI
 from .views.help import HelpAPI
@@ -128,6 +129,7 @@ def teardown_request(exception):
 def decompress():
     g.request_start_time = time.time()
     g.request_time = lambda: "%.5fs" % (time.time() - g.request_start_time)
+    g.sid = str(uuid.uuid4())
 
     if '/u/' in request.path:
         return

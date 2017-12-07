@@ -2,13 +2,16 @@ from ...common import pull_token, jsonify_success, jsonify_unauth, jsonify_unkno
     aggregate, VALID_FILTERS
 from pprint import pprint
 from flask.views import MethodView
-from flask import request, current_app, jsonify
+from flask import request, current_app, jsonify, g
 from cifsdk.client.zeromq import ZMQ as Client
 from cifsdk.client.dummy import Dummy as DummyClient
 from cif.constants import ROUTER_ADDR, FEEDS_DAYS, FEEDS_LIMIT, FEEDS_WHITELIST_LIMIT, HTTPD_FEED_WHITELIST_CONFIDENCE
 from cifsdk.exceptions import InvalidSearch, AuthError
 import logging
 import copy
+import os
+import time
+import uuid
 
 from .fqdn import Fqdn
 from .ipv4 import Ipv4
@@ -19,6 +22,8 @@ from .md5 import Md5
 from .sha1 import Sha1
 from .sha256 import Sha256
 from .sha512 import Sha512
+
+TRACE = os.getenv('CIF_HTTPD_TRACE', False)
 
 FEED_PLUGINS = {
     'ipv4': Ipv4,
@@ -63,13 +68,23 @@ def tag_contains_whitelist(data):
             return True
 
 
-logger = logging.getLogger('cif-httpd')
+log_level = logging.WARN
+if TRACE == '1':
+    log_level = logging.DEBUG
+
+console = logging.StreamHandler()
+logging.getLogger('gunicorn.error').setLevel(log_level)
+logging.getLogger('gunicorn.error').addHandler(console)
+logger = logging.getLogger('gunicorn.error')
+
 remote = ROUTER_ADDR
 
 
 class FeedAPI(MethodView):
     def get(self):
         filters = {}
+        start = time.time()
+        id = g.sid
         for f in VALID_FILTERS:
             if request.args.get(f):
                 filters[f] = request.args.get(f)
@@ -106,6 +121,8 @@ class FeedAPI(MethodView):
                 return jsonify_success(r)
 
         else:
+            logger.debug('%s building feed' % id)
+            logger.debug('%s getting dataset' % id)
             try:
                 r = Client(remote, pull_token()).indicators_search(filters)
 
@@ -137,6 +154,7 @@ class FeedAPI(MethodView):
         wl_filters['nolog'] = True
         wl_filters['limit'] = FEEDS_WHITELIST_LIMIT
 
+        logger.debug('gathering whitelist..')
         if current_app.config.get('feed') and current_app.config.get('feed').get('wl'):
             wl = current_app.config.get('feed').get('wl')
         else:
@@ -146,12 +164,15 @@ class FeedAPI(MethodView):
                 logger.error(e)
                 return jsonify_unknown('feed query failed', 503)
 
+        logger.debug('%s aggregating' % id)
         wl = aggregate(wl)
 
         f = feed_factory(filters['itype'])
 
+        logger.debug('%s merging' % id)
         r = f().process(r, wl)
 
+        logger.debug('%s done: %s' % (id, str((time.time - start))))
         response = jsonify({
             "message": "success",
             "data": r
