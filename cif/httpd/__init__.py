@@ -126,7 +126,6 @@ def teardown_request(exception):
 
 @app.before_request
 def decompress():
-    logger.debug(request.path)
     g.request_start_time = time.time()
     g.request_time = lambda: "%.5fs" % (time.time() - g.request_start_time)
 
@@ -142,7 +141,6 @@ def decompress():
 @app.after_request
 def process_response(response):
     if '/u/' in request.path:
-        print(request.path)
         return response
 
     if request.headers.get('Accept-Encoding') and request.headers['Accept-Encoding'] == 'deflate':
@@ -152,8 +150,14 @@ def process_response(response):
 
         size = len(response.data)
         response.headers['Content-Length'] = size
+        if size > 1024:
+            if size < (1024 * 1024):
+                size = str((size / 1024)) + 'KB'
+            else:
+                size = str((size / 1024 / 1024)) + 'MB'
         logger.debug('content-length %s' % size)
 
+    logger.debug(request.url)
     logger.debug('request: %s' % g.request_time())
     return response
 

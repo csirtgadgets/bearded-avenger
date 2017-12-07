@@ -161,7 +161,6 @@ class Store(multiprocessing.Process):
             else:
                 rv = {"status": "success", "data": rv}
 
-
         except AuthError as e:
             logger.error(e)
             err = 'unauthorized'
@@ -188,7 +187,14 @@ class Store(multiprocessing.Process):
         if err:
             rv = {'status': 'failed', 'message': err}
 
-        Msg(id=id, client_id=client_id, mtype=mtype, data=json.dumps(rv)).send(self.router)
+        try:
+            data = json.dumps(rv)
+        except Exception as e:
+            logger.error(e)
+            traceback.print_exc()
+            data = json.dumps({'status': 'failed', 'message': 'feed to large, retry the query'})
+
+        Msg(id=id, client_id=client_id, mtype=mtype, data=data).send(self.router)
 
         if not err:
             self.store.tokens.update_last_activity_at(token, arrow.utcnow().datetime)
