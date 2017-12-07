@@ -124,10 +124,10 @@ class TokenManager(TokenManagerPlugin):
 
         try:
             rv.update(last_activity_at=timestamp, retry_on_conflict=CONFLICT_RETRIES)
+            self._cache[token] = rv.to_dict()
+            self._cache[token]['last_activity_at'] = timestamp
         except Exception as e:
             import traceback
             logger.error(traceback.print_exc())
 
-        self._cache[token] = rv.to_dict()
-        self._cache[token]['last_activity_at'] = timestamp
         return timestamp
