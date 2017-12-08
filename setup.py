@@ -74,7 +74,7 @@ setup(
         'ujson',
         'pyzmq>=16.0',
         'csirtg_indicator',
-        'cifsdk>=3.0.0a24,<4.0',
+        'cifsdk',
         'csirtg_smrt',
         'csirtg_dnsdb'
     ],
