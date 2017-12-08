@@ -6,6 +6,7 @@ import os
 import arrow
 from cifsdk.exceptions import AuthError
 from pprint import pprint
+import json
 
 DISABLE_TESTS = True
 if os.environ.get('CIF_ELASTICSEARCH_TEST'):
@@ -162,7 +163,11 @@ def test_store_elasticsearch_tokens_groups3(store, indicator):
     assert i
 
     i = store.handle_indicators_search(t2['token'], {'itype': 'fqdn'})
+    i = json.loads(i)
+    #i = [i['_source'] for i in i['hits']['hits']]
     assert len(i) == 0
 
     i = store.handle_indicators_search(t2['token'], {'indicator': 'example.com'})
+    i = json.loads(i)
+    #i = [i['_source'] for i in i['hits']['hits']]
     assert len(i) == 0

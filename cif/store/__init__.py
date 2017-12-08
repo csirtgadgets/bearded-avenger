@@ -338,8 +338,13 @@ class Store(multiprocessing.Process):
             now = now.replace(hours=-int(data['hours']))
             data['reporttime'] = '{0}Z'.format(now.format('YYYY-MM-DDTHH:mm:ss'))
 
+        s = time.time()
+
+        self._log_search(t, data)
+
         try:
             x = self.store.indicators.search(t, data)
+            logger.debug('done')
         except Exception as e:
             logger.error(e)
 
@@ -348,14 +353,11 @@ class Store(multiprocessing.Process):
 
             raise InvalidSearch('invalid search')
 
-        self._log_search(t, data)
+        logger.debug('%s' % (time.time() - s))
 
-        if isinstance(x, GeneratorType):
-            x = list(x)
-
-        for xx in x:
-            if xx.get('message'):
-                xx['message'] = b64encode(xx['message']).encode('utf-8')
+        # for xx in x:
+        #     if xx.get('message'):
+        #         xx['message'] = b64encode(xx['message']).encode('utf-8')
 
         return x
 
