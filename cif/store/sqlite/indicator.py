@@ -418,11 +418,7 @@ class IndicatorManager(IndicatorManagerPlugin):
 
         rv = s.order_by(desc(Indicator.reporttime)).limit(limit)
 
-        start = time.time()
-        for i in rv:
-            yield self.to_dict(i)
-
-        logger.debug('done: %0.4f' % (time.time() - start))
+        return [self.to_dict(i) for i in rv]
 
     def delete(self, token, data=None, id=None):
         if type(data) is not list:

@@ -43,8 +43,15 @@ if not os.path.isfile(CONFIG_PATH):
 STORE_DEFAULT = os.getenv('CIF_STORE_STORE', STORE_DEFAULT)
 STORE_NODES = os.getenv('CIF_STORE_NODES')
 
-
 PIDFILE = os.getenv('CIF_ROUTER_PIDFILE', '{}/cif_router.pid'.format(RUNTIME_PATH))
+
+TRACE = os.environ.get('CIF_ROUTER_TRACE')
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.ERROR)
+
+if TRACE in [1, '1']:
+    logger.setLevel(logging.DEBUG)
 
 
 class Router(object):

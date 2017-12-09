@@ -15,6 +15,7 @@ from .constants import LIMIT, WINDOW_LIMIT, TIMEOUT, UPSERT_MODE, PARTITION
 from .locks import LockManager
 from .schema import Indicator
 import arrow
+import time
 
 logger = logging.getLogger('cif.store.zelasticsearch')
 if PYVERSION > 2:
@@ -22,6 +23,12 @@ if PYVERSION > 2:
 
 
 class IndicatorManager(IndicatorManagerPlugin):
+    class Deserializer(object):
+        def __init__(self):
+            pass
+
+        def loads(self, s, mimetype=None):
+            return s
 
     def __init__(self, *args, **kwargs):
         super(IndicatorManager, self).__init__(*args, **kwargs)
@@ -75,26 +82,34 @@ class IndicatorManager(IndicatorManagerPlugin):
         limit = filters.get('limit', LIMIT)
 
         s = Indicator.search(index='{}-*'.format(self.indicators_prefix))
-        s = s.params(size=limit, timeout=timeout, sort=sort)
+        s = s.params(size=limit, timeout=timeout)
+        s = s.sort('-reporttime', '-lasttime')
 
         s = filter_build(s, filters, token=token)
 
-        logger.debug(json.dumps(s.to_dict(), indent=4))
+        logger.debug(s.to_dict())
 
+        start = time.time()
         try:
-            rv = s.execute()
+            es = connections.get_connection(s._using)
+            old_serializer = es.transport.deserializer
+            es.transport.deserializer = self.Deserializer()
+            rv = es.search(
+                index=s._index,
+                doc_type=s._doc_type,
+                body=s.to_dict(),
+                filter_path=['hits.hits._source'],
+                **s._params)
+            # transport caches this, so the tokens mis-fire
+            es.transport.deserializer = old_serializer
         except elasticsearch.exceptions.RequestError as e:
             logger.error(e)
+            es.transport.deserializer = old_serializer
             return
 
-        if not rv.hits.hits:
-            return
+        logger.debug('query took: %0.2f' % (time.time() - start))
 
-        for r in rv.hits.hits:
-            if raw:
-                yield r
-            else:
-                yield r['_source']
+        return rv
 
     def create(self, token, data, raw=False, bulk=False):
         index = self._create_index()

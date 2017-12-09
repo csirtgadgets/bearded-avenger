@@ -4,7 +4,7 @@ from cif.store import Store
 from elasticsearch_dsl.connections import connections
 import os
 import arrow
-
+import json
 from pprint import pprint
 
 DISABLE_TESTS = True
@@ -158,6 +158,9 @@ def test_store_elasticsearch_indicators_email(store, token, indicator_email):
         'indicator': '%example%',
     })
 
+    x = json.loads(x)
+    x = [i['_source'] for i in x['hits']['hits']]
+
     assert len(x) > 0
 
     assert(x[0]['lasttime'])
@@ -187,6 +190,9 @@ def test_store_elasticsearch_indicators_url(store, token, indicator_url):
         'indicator': '%pwmsteel.com%',
     })
 
+    x = json.loads(x)
+    x = [i['_source'] for i in x['hits']['hits']]
+
     assert len(x) > 0
 
     assert(x[0]['lasttime'])
@@ -215,6 +221,9 @@ def test_store_elasticsearch_indicators_malware(store, token, indicator_malware)
     x = store.handle_indicators_search(token, {
         'indicator': '%a07322c50%',
     })
+
+    x = json.loads(x)
+    x = [i['_source'] for i in x['hits']['hits']]
 
     assert len(x) > 0
 

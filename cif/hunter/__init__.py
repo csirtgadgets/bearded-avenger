@@ -17,13 +17,13 @@ ZMQ_HWM = 1000000
 EXCLUDE = os.environ.get('CIF_HUNTER_EXCLUDE', None)
 HUNTER_ADVANCED = os.getenv('CIF_HUNTER_ADVANCED', 0)
 
-TRACE = os.environ.get('CIF_HUNTER_TRACE')
+TRACE = os.environ.get('CIF_HUNTER_TRACE', False)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-if TRACE:
-    logger.setLevel(logging.DEBUG)
+if TRACE in [1, '1']:
+   logger.setLevel(logging.DEBUG)
 
 
 class Hunter(multiprocessing.Process):
@@ -115,7 +115,7 @@ class Hunter(multiprocessing.Process):
             for d in data:
                 d = Indicator(**d)
 
-                if d.indicator in ["", 'localhost']:
+                if d.indicator in ["", 'localhost', 'example.com']:
                     continue
 
                 if self.exclude.get(d.provider):

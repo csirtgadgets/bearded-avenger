@@ -8,7 +8,7 @@ import textwrap
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 
-from flask import Flask, request, session, redirect, url_for, render_template, _request_ctx_stack, send_from_directory
+from flask import Flask, request, session, redirect, url_for, render_template, _request_ctx_stack, send_from_directory, g
 #from flask.ext.session import Session
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -17,6 +17,8 @@ from os import path
 from cif.constants import ROUTER_ADDR, RUNTIME_PATH
 from cifsdk.utils import get_argument_parser, setup_logging, setup_signals, setup_runtime_path
 import zlib
+import time
+import uuid
 from .common import pull_token
 from .views.ping import PingAPI
 from .views.help import HelpAPI
@@ -33,6 +35,8 @@ from pprint import pprint
 
 HTTP_LISTEN = '127.0.0.1'
 HTTP_LISTEN = os.environ.get('CIF_HTTPD_LISTEN', HTTP_LISTEN)
+
+TRACE = os.getenv('CIF_HTTPD_TRACE', 0)
 
 HTTP_LISTEN_PORT = 5000
 HTTP_LISTEN_PORT = os.environ.get('CIF_HTTPD_LISTEN_PORT', HTTP_LISTEN_PORT)
@@ -72,7 +76,16 @@ Bootstrap(app)
 app.secret_key = SECRET_KEY
 
 remote = ROUTER_ADDR
-logger = logging.getLogger(__name__)
+
+log_level = logging.WARN
+if TRACE == '1':
+    log_level = logging.DEBUG
+
+console = logging.StreamHandler()
+logging.getLogger('gunicorn.error').setLevel(log_level)
+logging.getLogger('gunicorn.error').addHandler(console)
+logger = logging.getLogger('gunicorn.error')
+
 limiter = Limiter(
     app,
     key_func=proxy_get_remote_address,
@@ -114,20 +127,22 @@ def teardown_request(exception):
 
 @app.before_request
 def decompress():
+    g.request_start_time = time.time()
+    g.request_time = lambda: "%.5fs" % (time.time() - g.request_start_time)
+    g.sid = str(uuid.uuid4())
+
     if '/u/' in request.path:
         return
 
     if request.headers.get('Content-Encoding') and request.headers['Content-Encoding'] == 'deflate':
-        logger.info('decompressing request: %d' % len(request.data))
+        logger.debug('decompressing request: %d' % len(request.data))
         request.data = zlib.decompress(request.data)
         logger.debug('content-length: %d' % len(request.data))
 
 
-# TODO- double check this still works
 @app.after_request
 def process_response(response):
     if '/u/' in request.path:
-        print(request.path)
         return response
 
     if request.headers.get('Accept-Encoding') and request.headers['Accept-Encoding'] == 'deflate':
@@ -137,11 +152,17 @@ def process_response(response):
 
         size = len(response.data)
         response.headers['Content-Length'] = size
+        if size > 1024:
+            if size < (1024 * 1024):
+                size = str((size / 1024)) + 'KB'
+            else:
+                size = str((size / 1024 / 1024)) + 'MB'
         logger.debug('content-length %s' % size)
 
+    logger.debug(request.url)
+    logger.debug('request: %s' % g.request_time())
     return response
 
-#app.process_response = process_response
 
 @app.before_request
 def before_request():
@@ -240,6 +261,8 @@ def main():
     args = p.parse_args()
     setup_logging(args)
     logger = logging.getLogger(__name__)
+    if TRACE:
+        logger.setLevel(logging.DEBUG)
     logger.info('loglevel is: {}'.format(logging.getLevelName(logger.getEffectiveLevel())))
 
     setup_signals(__name__)
@@ -276,6 +299,7 @@ def main():
 
     if os.path.isfile(args.pidfile):
         os.unlink(args.pidfile)
+
 
 if __name__ == "__main__":
     main()
