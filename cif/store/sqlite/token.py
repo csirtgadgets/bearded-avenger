@@ -1,11 +1,12 @@
 import logging
 import arrow
+
 from sqlalchemy import Column, Integer, String, DateTime, UnicodeText, Boolean, or_, ForeignKey
 from sqlalchemy.orm import class_mapper, relationship, backref
-from cifsdk.constants import PYVERSION
 from sqlalchemy.ext.declarative import declarative_base
+
+from cifsdk.constants import PYVERSION
 from cif.store.token_plugin import TokenManagerPlugin
-from pprint import pprint
 
 logger = logging.getLogger('cif.store.sqlite')
 
@@ -13,6 +14,7 @@ if PYVERSION > 2:
     basestring = (str, bytes)
 
 Base = declarative_base()
+
 
 class Token(Base):
     __tablename__ = 'tokens'
@@ -75,6 +77,7 @@ class TokenManager(TokenManagerPlugin):
 
         s = s.filter(Token.revoked is not True)
 
+        # keep this as ==
         s = s.filter(or_(Token.expires == None, Token.expires >= arrow.utcnow().datetime))
 
         # update the cache
@@ -152,9 +155,6 @@ class TokenManager(TokenManagerPlugin):
 
         if not rv:
             return 'token not found'
-
-        #if data.get('groups'):
-        #    rv.first().groups = data['groups'].split(',')
 
         s.commit()
 

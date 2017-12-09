@@ -1,12 +1,13 @@
-from elasticsearch_dsl import DocType, String, Date, Integer, Boolean, Float, Ip, GeoPoint
-import elasticsearch.exceptions
-from elasticsearch_dsl.connections import connections
 import arrow
-from pprint import pprint
 import logging
+import os
+
+import elasticsearch.exceptions
+from elasticsearch_dsl import DocType, String, Date, Boolean
+from elasticsearch_dsl.connections import connections
+
 from cif.constants import PYVERSION
 from cif.store.token_plugin import TokenManagerPlugin
-import os
 
 logger = logging.getLogger('cif.store.zelasticsearch')
 

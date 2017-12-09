@@ -1,7 +1,6 @@
 from sqlalchemy.types import UserDefinedType
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import types
-import socket
 
 Base = declarative_base()
 
@@ -14,7 +13,7 @@ class Hash(UserDefinedType):
         self.version = version
 
     def get_col_spec(self, **kw):
-        return "HASH"
+        return 'HASH'
 
     def bind_processor(self, dialect):
 

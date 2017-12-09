@@ -1,11 +1,14 @@
-from csirtg_indicator.utils import resolve_itype
 import socket
-from cifsdk.exceptions import InvalidSearch
-from csirtg_indicator.exceptions import InvalidIndicator
-import binascii
-from cifsdk.constants import PYVERSION
-from elasticsearch_dsl import Q
 import ipaddress
+import binascii
+
+from csirtg_indicator.utils import resolve_itype
+from csirtg_indicator.exceptions import InvalidIndicator
+
+from cifsdk.exceptions import InvalidSearch
+from cifsdk.constants import PYVERSION
+
+from elasticsearch_dsl import Q
 
 from .constants import VALID_FILTERS
 

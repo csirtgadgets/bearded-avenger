@@ -43,7 +43,6 @@ def _id_deterministic(i):
     groups = ','.join(sorted(i['group']))
 
     id = ','.join([groups, i['provider'], i['indicator'], tags])
-    ts = i.get('reporttime')
     ts = i.get('lasttime')
     if ts:
         id = '{},{}'.format(id, ts)
@@ -52,6 +51,5 @@ def _id_deterministic(i):
 
 
 def i_to_id(i):
-    #id = _id_random(i)
     id = _id_deterministic(i)
     return sha256(id.encode('utf-8')).hexdigest()

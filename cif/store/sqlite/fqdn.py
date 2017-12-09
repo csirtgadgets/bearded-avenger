@@ -12,7 +12,7 @@ class Fqdn(UserDefinedType):
         self.version = version
 
     def get_col_spec(self, **kw):
-        return "FQDN"
+        return 'FQDN'
 
     def bind_processor(self, dialect):
 

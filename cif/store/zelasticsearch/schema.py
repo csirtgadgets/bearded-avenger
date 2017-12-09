@@ -1,4 +1,4 @@
-from elasticsearch_dsl import DocType, Text, Date, Integer, Float, Ip, Text, Keyword, GeoPoint
+from elasticsearch_dsl import DocType, Date, Integer, Float, Ip, Text, Keyword, GeoPoint
 
 
 class Indicator(DocType):

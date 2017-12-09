@@ -1,34 +1,34 @@
 import os
-
 import arrow
-from sqlalchemy import Column, Integer, String, Float, DateTime, UnicodeText, desc, ForeignKey, or_, Index
-from sqlalchemy.orm import relationship, backref, class_mapper, lazyload, joinedload, subqueryload
-
-from cifsdk.constants import RUNTIME_PATH, PYVERSION
 import json
 from base64 import b64decode, b64encode
+import ipaddress
+import re
+import logging
+import time
+
+from sqlalchemy import Column, Integer, String, Float, DateTime, UnicodeText, desc, ForeignKey, or_, Index
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship, backref, class_mapper, lazyload
+
 from csirtg_indicator import resolve_itype
 from csirtg_indicator.exceptions import InvalidIndicator
-from cif.store.indicator_plugin import IndicatorManagerPlugin
+from cifsdk.constants import RUNTIME_PATH, PYVERSION
 from cifsdk.exceptions import InvalidSearch
-import ipaddress
+
+from cif.store.indicator_plugin import IndicatorManagerPlugin
+from cif.httpd.common import VALID_FILTERS
+
 from .ip import Ip
 from .fqdn import Fqdn
 from .url import Url
 from .hash import Hash
-from pprint import pprint
-from sqlalchemy.ext.declarative import declarative_base
-import re
-import logging
-import time
 
 logger = logging.getLogger('cif.store.sqlite')
 
 DB_FILE = os.path.join(RUNTIME_PATH, 'cif.sqlite')
 REQUIRED_FIELDS = ['provider', 'indicator', 'tags', 'group', 'itype']
 HASH_TYPES = ['sha1', 'sha256', 'sha512', 'md5']
-
-from cif.httpd.common import VALID_FILTERS
 
 if PYVERSION > 2:
     basestring = (str, bytes)

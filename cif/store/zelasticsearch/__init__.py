@@ -28,7 +28,6 @@ if TRACE_HTTP:
 
 
 class _ElasticSearch(Store):
-    # http://stackoverflow.com/questions/533631/what-is-a-mixin-and-why-are-they-useful
 
     name = 'elasticsearch'
 
@@ -51,8 +50,8 @@ class _ElasticSearch(Store):
 
         while not self._alive:
             if not self._health_check():
-                logger.warn('ES cluster not accessible')
-                logger.info('retrying connection in 30s')
+                logger.warning('ES cluster not accessible')
+                logger.warning('retrying connection in 30s')
                 sleep(30)
 
             self._alive = True
@@ -65,7 +64,7 @@ class _ElasticSearch(Store):
         try:
             x = connections.get_connection().cluster.health()
         except ConnectionError as e:
-            logger.warn('elasticsearch connection error')
+            logger.warning('elasticsearch connection error')
             logger.error(e)
             return
 

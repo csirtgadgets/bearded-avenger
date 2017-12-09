@@ -5,7 +5,6 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.engine import Engine
-import sqlite3
 
 from cifsdk.constants import RUNTIME_PATH
 from cif.store.plugin import Store
@@ -86,5 +85,6 @@ class SQLite(Store):
     def ping(self, token):
         if self.tokens.read(token) or self.tokens.write(token):
             return True
+
 
 Plugin = SQLite
