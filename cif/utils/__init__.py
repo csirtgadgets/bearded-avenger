@@ -24,7 +24,7 @@ def resolve_ns(data, t='A', timeout=HUNTER_RESOLVER_TIMEOUT):
 
         if not str(e).startswith('The DNS response does not contain an answer to the question'):
             if not str(e).startswith('None of DNS query names exist'):
-                logger.warn('{} - {}'.format(data, e))
+                logger.info('{} - {}'.format(data, e))
         return []
 
     return resp

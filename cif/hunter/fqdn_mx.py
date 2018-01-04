@@ -8,6 +8,7 @@ import re
 from pprint import pprint
 import arrow
 
+
 class FqdnMx(object):
 
     def __init__(self):
@@ -38,16 +39,20 @@ class FqdnMx(object):
             fqdn.indicator = rr.rstrip('.')
             fqdn.lasttime = arrow.utcnow()
 
+            # 10
+            if re.match('^\d+$', rr):
+                return
 
             try:
                 resolve_itype(fqdn.indicator)
             except InvalidIndicator as e:
-                self.logger.error(fqdn)
-                self.logger.error(e)
+                self.logger.info(fqdn)
+                self.logger.info(e)
             else:
                 fqdn.itype = 'fqdn'
                 fqdn.rdata = i.indicator
                 fqdn.confidence = (fqdn.confidence - 5) if fqdn.confidence >= 5 else 0
                 router.indicators_create(fqdn)
+
 
 Plugin = FqdnMx
