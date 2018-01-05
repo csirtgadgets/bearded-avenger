@@ -389,8 +389,12 @@ class IndicatorManager(IndicatorManagerPlugin):
 
         return s
 
-    def _filter_groups(self, token, s):
-        groups = token.get('groups', 'everyone')
+    def _filter_groups(self, filters, token, s):
+        if token:
+            groups = token.get('groups', 'everyone')
+        else:
+            groups = filters.get('groups')
+
         if isinstance(groups, str):
             groups = [groups]
 
@@ -408,7 +412,11 @@ class IndicatorManager(IndicatorManagerPlugin):
 
         s = self._filter_indicator(myfilters, s)
         s = self._filter_terms(myfilters, s)
-        s = self._filter_groups(token, s)
+
+        if myfilters.get('groups'):
+            s = self._filter_groups(myfilters, None, s)
+        else:
+            s = self._filter_groups({}, token, s)
         return s
 
     def search(self, token, filters, limit=500):

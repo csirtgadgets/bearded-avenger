@@ -99,8 +99,12 @@ def filter_terms(s, q_filters):
     return s
 
 
-def filter_groups(s, token):
-    groups = token.get('groups', 'everyone')
+def filter_groups(s, q_filters, token=None):
+    if token:
+        groups = token.get('groups', 'everyone')
+    else:
+        groups = q_filters['groups']
+
     if isinstance(groups, basestring):
         groups = [groups]
 
@@ -127,7 +131,10 @@ def filter_build(s, filters, token=None):
     # transform all other filters into term=
     s = filter_terms(s, q_filters)
 
-    if token:
-        s = filter_groups(s, token)
+    if filters.get('groups'):
+        s = filter_groups(s, filters)
+    else:
+        if token:
+            s = filter_groups(s, {}, token=token)
 
     return s

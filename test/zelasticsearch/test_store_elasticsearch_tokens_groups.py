@@ -102,7 +102,11 @@ def test_store_elasticsearch_tokens_groups1(store, token, indicator):
     assert i
 
     i = store.handle_indicators_search(t, {'itype': 'fqdn'})
+    i = json.loads(i)
+    i = [i['_source'] for i in i['hits']['hits']]
     assert len(list(i)) > 0
+
+    pprint(i)
 
     i = store.handle_indicators_search(t, {'indicator': 'example.com'})
     assert len(list(i)) > 0
@@ -164,10 +168,49 @@ def test_store_elasticsearch_tokens_groups3(store, indicator):
 
     i = store.handle_indicators_search(t2['token'], {'itype': 'fqdn'})
     i = json.loads(i)
-    #i = [i['_source'] for i in i['hits']['hits']]
     assert len(i) == 0
 
     i = store.handle_indicators_search(t2['token'], {'indicator': 'example.com'})
     i = json.loads(i)
-    #i = [i['_source'] for i in i['hits']['hits']]
     assert len(i) == 0
+
+
+@pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
+def test_store_elasticsearch_tokens_groups4(store, indicator):
+    t = store.store.tokens.create({
+        'username': 'test',
+        'groups': ['staff', 'staff2'],
+        'write': True,
+        'read': True
+    })
+
+    i = store.handle_indicators_create(t['token'], {
+        'indicator': 'example.com',
+        'group': 'staff',
+        'provider': 'example.com',
+        'tags': ['test'],
+        'itype': 'fqdn',
+        'lasttime': arrow.utcnow().datetime,
+        'reporttime': arrow.utcnow().datetime
+
+    }, flush=True)
+
+    assert i
+
+    i = store.handle_indicators_create(t['token'], {
+        'indicator': 'example.com',
+        'group': 'staff2',
+        'provider': 'example.com',
+        'tags': ['test'],
+        'itype': 'fqdn',
+        'lasttime': arrow.utcnow().datetime,
+        'reporttime': arrow.utcnow().datetime
+
+    }, flush=True)
+
+    assert i
+
+    i = store.handle_indicators_search(t['token'], {'itype': 'fqdn', 'groups': 'staff'})
+    i = json.loads(i)
+    i = [i['_source'] for i in i['hits']['hits']]
+    assert len(i) == 1

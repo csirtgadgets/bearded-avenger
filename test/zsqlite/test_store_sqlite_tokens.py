@@ -168,3 +168,41 @@ def test_store_sqlite_tokens_groups3(store, indicator):
 
     i = store.store.indicators.search(t2, {'indicator': 'example.com'})
     assert len(list(i)) == 0
+
+
+def test_store_sqlite_tokens_groups4(store, indicator):
+    t = store.store.tokens.create({
+        'username': 'test',
+        'groups': ['staff', 'staff2'],
+        'write': True,
+        'read': True
+    })
+
+    i = store.store.indicators.create(t, {
+        'indicator': 'example.com',
+        'group': 'staff',
+        'provider': 'example.com',
+        'tags': ['test'],
+        'itype': 'fqdn',
+        'lasttime': arrow.utcnow().datetime,
+        'reporttime': arrow.utcnow().datetime
+
+    })
+
+    assert i
+
+    i = store.store.indicators.create(t, {
+        'indicator': 'example.com',
+        'group': 'staff2',
+        'provider': 'example.com',
+        'tags': ['test'],
+        'itype': 'fqdn',
+        'lasttime': arrow.utcnow().datetime,
+        'reporttime': arrow.utcnow().datetime
+
+    })
+
+    assert i
+
+    i = store.store.indicators.search(t['token'], {'itype': 'fqdn', 'groups': 'staff'})
+    assert len(list(i)) == 1

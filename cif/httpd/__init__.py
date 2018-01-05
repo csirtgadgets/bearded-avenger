@@ -11,6 +11,7 @@ from argparse import RawDescriptionHelpFormatter
 from flask import Flask, request, session, redirect, url_for, render_template, _request_ctx_stack, send_from_directory, g
 #from flask.ext.session import Session
 from flask_limiter import Limiter
+from flask_cors import CORS
 from flask_limiter.util import get_remote_address
 from flask_bootstrap import Bootstrap
 from os import path
@@ -73,6 +74,7 @@ def proxy_get_remote_address():
 
 app = Flask(__name__)
 Bootstrap(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 app.secret_key = SECRET_KEY
 
 remote = ROUTER_ADDR
@@ -80,6 +82,7 @@ remote = ROUTER_ADDR
 log_level = logging.WARN
 if TRACE == '1':
     log_level = logging.DEBUG
+    logging.getLogger('flask_cors').level = logging.DEBUG
 
 console = logging.StreamHandler()
 logging.getLogger('gunicorn.error').setLevel(log_level)
@@ -99,6 +102,7 @@ limiter = Limiter(
 def favicon():
    return send_from_directory(os.path.join(app.root_path, 'static'),
                               'favicon.ico', mimetype='image/vnd.microsoft.icon')
+
 
 app.add_url_rule('/u', view_func=IndicatorsUI.as_view('/u'))
 app.add_url_rule('/u/search', view_func=IndicatorsUI.as_view('/u/search'))
