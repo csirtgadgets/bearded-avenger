@@ -25,7 +25,7 @@ def test_gatherer_asn():
     a._resolve_ns = _resolve
     x = a.process(Indicator(indicator='216.90.108.0'))
 
-    if x.asn:
+    if x.asn and x.asn_desc:
         assert x.asn == '23028'
         assert x.asn_desc.startswith('TEAM-CYMRU')
     else:
