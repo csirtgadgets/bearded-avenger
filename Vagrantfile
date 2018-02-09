@@ -38,12 +38,18 @@ export RHEL=#{redhat}
 export USERNAME=#{rhel_user}
 export PASSWORD="#{rhel_pass}"
 
-if [ ${USERNAME} != "" ]; then
-  subscription-manager register --username ${USERNAME} --password "${PASSWORD}" --auto-attach
+if [ "${RHEL}" == "1" ]; then
+  subscription-manager register --username "${USERNAME}" --password "${PASSWORD}" --auto-attach
+  subscription-manager attach
 fi
 
 cd /vagrant/deploymentkit
 bash easybutton.sh
+
+if [ "${RHEL}" == "1" ]; then
+  echo 'unregistering'
+  subscription-manager unregister
+fi
 SCRIPT
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
