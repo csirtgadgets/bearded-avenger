@@ -38,7 +38,7 @@ export RHEL=#{redhat}
 export USERNAME=#{rhel_user}
 export PASSWORD="#{rhel_pass}"
 
-if [ "${USERNAME}" != "" ]; then
+if [ "${RHEL}" == "1" ]; then
   subscription-manager register --username "${USERNAME}" --password "${PASSWORD}" --auto-attach
   subscription-manager attach
 fi
@@ -46,7 +46,7 @@ fi
 cd /vagrant/deploymentkit
 bash easybutton.sh
 
-if [ "${USERNAME}" != "" ]; then
+if [ "${RHEL}" == "1" ]; then
   echo 'unregistering'
   subscription-manager unregister
 fi
