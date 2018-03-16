@@ -37,8 +37,8 @@ defaults:
 
 feeds:
   # A feed of IP addresses block by a firewall (e.g. port scanners)
-  port-scanners:
-    remote: https://csirtg.io/api/users/csirtgadgets/feeds/port-scanners.csv
+  darknet:
+    remote: https://csirtg.io/api/users/csirtgadgets/feeds/darknet.csv
     defaults:
       tags:
         - scanner
