@@ -7,4 +7,5 @@ export CIF_HUNTER_ADVANCED=1
 #export CIF_GATHERER_GEO_FQDN=1
 export CIF_VAGRANT_DISTRO=centos
 
+vagrant box update
 time vagrant up

@@ -353,7 +353,9 @@ class IndicatorManager(IndicatorManagerPlugin):
                 s = s.filter(Indicator.reporttime <= filters[k])
 
             elif k == 'tags':
-                s = s.outerjoin(Tag).filter(Tag.tag == filters[k])
+                t = filters[k].split(',')
+                s = s.outerjoin(Tag)
+                s = s.filter(or_(Tag.tag == tt for tt in t))
 
             elif k == 'confidence':
                 if ',' in str(filters[k]):
