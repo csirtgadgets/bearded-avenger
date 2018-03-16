@@ -7,7 +7,7 @@ from cifsdk.constants import PYVERSION
 from elasticsearch_dsl import Q
 import ipaddress
 
-from .constants import VALID_FILTERS
+from cif.httpd.common import VALID_FILTERS
 
 
 if PYVERSION > 2:
@@ -90,6 +90,9 @@ def filter_indicator(s, q_filters):
 
 def filter_terms(s, q_filters):
     for f in q_filters:
+        if f in ['nolog', 'days', 'hours', 'groups', 'limit']:
+            continue
+
         kwargs = {f: q_filters[f]}
         if isinstance(q_filters[f], list):
             s = s.filter('terms', **kwargs)
