@@ -15,8 +15,8 @@ end
 
 $script = <<SCRIPT
 
-#cd /vagrant/deploymentkit
-#bash easybutton.sh
+cd /vagrant/deploymentkit
+bash easybutton.sh
 SCRIPT
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
