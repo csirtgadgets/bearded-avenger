@@ -22,7 +22,7 @@ apwgsdk==0.0.0a6
 csirtg_smrt==0.0.0rc1
 csirtg_dnsdb==0.0.0a4
 tornado>=4.4.1,<5.0
-faker==0.7.11
+faker<1.0
 Flask-Bootstrap==3.3.6.0
 gevent==1.2.1
 gunicorn==19.7.1

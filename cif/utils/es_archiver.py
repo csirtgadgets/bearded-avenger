@@ -9,6 +9,7 @@ from argparse import RawDescriptionHelpFormatter
 import logging
 import textwrap
 from elasticsearch import Elasticsearch
+from elasticsearch_dsl.connections import connections
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from elasticsearch import helpers
@@ -58,26 +59,25 @@ def main():
     logger.info('month: {}'.format(end_month))
 
     es = Elasticsearch(args.nodes, timeout=120, max_retries=10, retry_on_timeout=True)
+    # connections.create_connection(hosts=args.nodes)
+    # es = connections.get_connection()
 
-    monthlies = es.indices.get_alias(index='{}-*.*'.format('cif.indicators')).keys()
+    monthlies = es.indices.get_alias(index='{}-*.*'.format('indicators')).keys()
     to_archive = {}
     for m in monthlies:
-        match = re.search(r"^cif\.indicators-(\d{4}\.\d{2})$", m)
+        match = re.search(r"^indicators-((\d{4})\.\d{2})$", m)
         if match.group(1) < end_month:
-            to_archive['{}-{}'.format(args.index_prefix, match.group(1))] = '{}-{}'.format(args.index_prefix,
-                                                                                        match.group(1))
+            to_archive['indicators-{}'.format(match.group(1))] = 'indicators-{}'.format(match.group(2))
 
     # https://www.elastic.co/guide/en/elasticsearch/reference/1.4/docs-delete-by-query.html
     # http://elasticsearch-py.readthedocs.io/en/master/api.html#elasticsearch.Elasticsearch.delete_by_query
     # http://stackoverflow.com/questions/26808239/elasticsearch-python-api-delete-documents-by-query
 
-    pprint(to_archive)
     yearlies = ()
     for c in to_archive:
         logger.info('archiving: {}'.format(c))
 
-        match = re.search(r"^cif\.indicators-(\d{4}).\d{2}$", c)
-        i = 'cif.indicators-' + str(match.group(1))
+        i = to_archive[c]
         logger.debug(i)
         # check to see if yearly bucket exists?
         if not es.indices.exists(index=i):
@@ -86,7 +86,7 @@ def main():
             idx = Index(i)
             idx.aliases(live={})
             idx.doc_type(Indicator)
-            idx.settings(max_results_window=WINDOW_LIMIT)
+            #idx.settings(max_results_window=WINDOW_LIMIT)
             idx.create()
             es.indices.flush(idx)
 
@@ -94,36 +94,15 @@ def main():
 
         # aggregate index into yearly bucket
         # based on provider, tags(?), indicator
-        data = ()
-        for d in elasticsearch.helpers.scroll(es, scroll='60m', size=args.limit):
-            i = (d['indicator'], d['provider'], data['group'], sorted(d['tags']).join(','))
-
-            if i not in data:
-                data[i].add(d)
-            else:
-                i = data[i]
-                i['count'] += d['count']
-
-                if i['lasttime'] < d['lasttime']:
-                    i['lasttime'] = d['lasttime']
-
-                if i['reporttime'] > d['reporttime']:
-                    i['reporttime'] = d['reporttime']
-
-                if i['firsttime'] > d['firsttime']:
-                    i['firsttime'] = d['firsttime']
-
-                if not i['message']:
-                    i['message'] = []
-
-                if d['message']:
-                    i['message'].append(d['message'])
+        for d in elasticsearch.helpers.scan(es, scroll='60m', size=args.limit):
+            d = d['_source']
+            i = (d['indicator'], d['provider'], d['group'], ','.join(sorted(d['tags'])))
 
         if len(data) == 0:
             logger.info('nothing to archive...')
             continue
 
-        actions = [{'_index': 'cif.indicators-2017', '_type': 'indicator', '_source': d} for d in data]
+        actions = [{'_index': 'indicators-2017', '_type': 'indicator', '_source': d} for d in data]
 
         # add to yearly
         if not args.dry_run:

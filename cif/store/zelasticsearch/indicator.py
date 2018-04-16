@@ -38,7 +38,6 @@ class IndicatorManager(IndicatorManagerPlugin):
         self.idx = self._current_index()
         self.last_index_check = datetime.now() - timedelta(minutes=5)
         self.handle = connections.get_connection()
-        self.lockm = LockManager(self.handle, logger)
 
         self._create_index()
 
@@ -277,12 +276,10 @@ class IndicatorManager(IndicatorManagerPlugin):
             try:
                 helpers.bulk(self.handle, actions)
             except Exception as e:
-                #self.lockm.lock_release()
                 raise e
 
         if flush:
             self.flush()
 
-        #self.lockm.lock_release()
         return count
 
