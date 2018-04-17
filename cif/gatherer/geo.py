@@ -25,10 +25,10 @@ ENABLE_FQDN = os.getenv('CIF_GATHERER_GEO_FQDN')
 DB_FILE = 'GeoLite2-City.mmdb'
 DB_PATH = os.environ.get('CIF_GEO_PATH')
 
-ASN_DB_PATH = 'GeoIPASNum.dat'
-ASN_DB_PATH2 = 'GeoLiteASNum.dat'
-CITY_DB_PATH = 'GeoLiteCity.dat'
-CITY_V6_DB_PATH = 'GeoLiteCityv6.dat'
+#ASN_DB_PATH = 'GeoIPASNum.dat'
+#ASN_DB_PATH2 = 'GeoLiteASNum.dat'
+#CITY_DB_PATH = 'GeoLiteCity.dat'
+#CITY_V6_DB_PATH = 'GeoLiteCityv6.dat'
 
 
 class Geo(object):
@@ -44,8 +44,6 @@ class Geo(object):
 
         self.db = None
         self.asn_db = None
-        self.city_db = None
-        self.city_v6_db = None
 
         if DB_PATH:
             self.db = geoip2.database.Reader(os.path.join(DB_PATH, db))
@@ -54,23 +52,6 @@ class Geo(object):
                 if os.path.isfile(os.path.join(p, db)):
                     self.db = geoip2.database.Reader(os.path.join(p, db))
                     break
-
-        for p in DB_SEARCH_PATHS:
-            if os.path.isfile(os.path.join(p, ASN_DB_PATH)):
-                self.asn_db = pygeoip.GeoIP(os.path.join(p, ASN_DB_PATH), pygeoip.MMAP_CACHE)
-                break
-
-            if os.path.isfile(os.path.join(p, ASN_DB_PATH2)):
-                self.asn_db = pygeoip.GeoIP(os.path.join(p, ASN_DB_PATH2), pygeoip.MMAP_CACHE)
-                break
-
-        for p in DB_SEARCH_PATHS:
-            if os.path.isfile(os.path.join(p, CITY_DB_PATH)):
-                self.city_db = pygeoip.GeoIP(os.path.join(p, CITY_DB_PATH), pygeoip.MMAP_CACHE)
-                break
-
-            if os.path.isfile(os.path.join(p, CITY_V6_DB_PATH)):
-                self.city_v6_db = pygeoip.GeoIP(os.path.join(p, CITY_V6_DB_PATH), pygeoip.MMAP_CACHE)
 
     def _lookup_ip(self, host):
         try:
@@ -132,10 +113,18 @@ class Geo(object):
         if g.location.time_zone:
             indicator.timezone = g.location.time_zone
 
-        g = self.city_db.record_by_addr(i)
+        # g = self.db.record_by_addr(i)
 
-        if g and g.get('region_code'):
-            indicator.region = g['region_code']
+        # if g and g.region_code:
+        #     indicator.region = g['region_code']
+
+        try:
+            indicator.region = g.subdivisions[0].names['en']
+        except Exception:
+            pass
+
+        if not self.asn_db:
+            return
 
         g = self.asn_db.asn_by_addr(i)
         if g:
