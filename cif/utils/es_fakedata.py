@@ -16,6 +16,12 @@ import os
 from faker import Faker
 import random
 import arrow
+from elasticsearch_dsl import Index
+from elasticsearch import helpers
+import elasticsearch.exceptions
+from elasticsearch_dsl.connections import connections
+from cif.store.zelasticsearch.schema import Indicator
+from cif.store.zelasticsearch.helpers import expand_ip_idx
 
 MONTHS = 6
 LIMIT = 5000
@@ -45,11 +51,15 @@ def main():
     setup_logging(args)
     logger = logging.getLogger(__name__)
 
-    es = Elasticsearch(args.nodes, timeout=120, max_retries=10, retry_on_timeout=True)
+    # es = Elasticsearch(args.nodes, timeout=120, max_retries=10, retry_on_timeout=True)
+    connections.create_connection(hosts=args.nodes)
+    es = connections.get_connection()
 
     fake = Faker()
-    data = {}
+    ips = [fake.ipv4() for n in range(1,25)]
     for m in range(1, int(args.months)):
+        data = {}
+
         if m < 10:
             m = "0%s" % m
 
@@ -66,11 +76,11 @@ def main():
             ts = '%sZ' % ts
             # create an indicator
             i = {
-                'indicator': fake.ipv4(),
+                'indicator': random.choice(ips),
                 'itype': 'ipv4',
                 'tags': random.choices(['scanner', 'botnet', 'malware', 'suspicious', 'hijacked'], k=2),
                 'description': fake.name(),
-                'count': random.randint(1, 66),
+                'count': 1, #random.randint(1, 66),
                 'confidence': random.randint(1, 10),
                 'reporttime': ts,
                 'lasttime': ts,
@@ -81,37 +91,27 @@ def main():
                 'asn': random.randint(1, 65535),
                 'group': 'everyone',
             }
-
             # drop it in the bucket
             data[month].append(i)
+            if n % 10000 == 0:
+                logger.info('%i generated' % n)
 
-    from elasticsearch_dsl import Index
-    from elasticsearch import helpers
-    import elasticsearch.exceptions
-    from elasticsearch_dsl.connections import connections
-    from cif.store.zelasticsearch.schema import Indicator
-    from cif.store.zelasticsearch.helpers import expand_ip_idx
+            try:
+                index = Index(month)
+                index.aliases(live={})
+                index.doc_type(Indicator)
+                index.create()
+                es.indices.flush(month)
+            except elasticsearch.exceptions.RequestError:
+                pass
 
-    connections.create_connection(hosts=args.nodes)
-    es = connections.get_connection()
+            actions = []
 
-    for bucket in data:
-        try:
-            index = Index(bucket)
-            index.aliases(live={})
-            index.doc_type(Indicator)
-            index.create()
-            es.indices.flush(bucket)
-        except elasticsearch.exceptions.RequestError:
-            pass
-
-        actions = []
-
-        for i in data[bucket]:
+        for i in data[month]:
             expand_ip_idx(i)
 
             i = {
-                '_index': bucket,
+                '_index': month,
                 '_type': 'indicator',
                 '_source': i
             }
@@ -119,8 +119,40 @@ def main():
             actions.append(i)
 
         print("sending...")
-        helpers.bulk(es, actions, index=bucket)
+        helpers.bulk(es, actions, index=month)
         print("sent %i actions" % (len(actions) + 1))
+
+
+
+    # connections.create_connection(hosts=args.nodes)
+    # es = connections.get_connection()
+    #
+    # for bucket in data:
+    #     try:
+    #         index = Index(bucket)
+    #         index.aliases(live={})
+    #         index.doc_type(Indicator)
+    #         index.create()
+    #         es.indices.flush(bucket)
+    #     except elasticsearch.exceptions.RequestError:
+    #         pass
+    #
+    #     actions = []
+    #
+    #     for i in data[bucket]:
+    #         expand_ip_idx(i)
+    #
+    #         i = {
+    #             '_index': bucket,
+    #             '_type': 'indicator',
+    #             '_source': i
+    #         }
+    #
+    #         actions.append(i)
+    #
+    #     print("sending...")
+    #     helpers.bulk(es, actions, index=bucket)
+    #     print("sent %i actions" % (len(actions) + 1))
 
 
 if __name__ == "__main__":

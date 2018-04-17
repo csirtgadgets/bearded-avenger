@@ -58,9 +58,9 @@ def main():
 
     logger.info('month: {}'.format(end_month))
 
-    es = Elasticsearch(args.nodes, timeout=120, max_retries=10, retry_on_timeout=True)
-    # connections.create_connection(hosts=args.nodes)
-    # es = connections.get_connection()
+    # es = Elasticsearch(hosts=args.nodes, timeout=120, max_retries=10, retry_on_timeout=True)
+    connections.create_connection(hosts=args.nodes, timeout=(60 * 30))
+    es = connections.get_connection()
 
     monthlies = es.indices.get_alias(index='{}-*.*'.format('indicators')).keys()
     to_archive = {}
@@ -73,7 +73,7 @@ def main():
     # http://elasticsearch-py.readthedocs.io/en/master/api.html#elasticsearch.Elasticsearch.delete_by_query
     # http://stackoverflow.com/questions/26808239/elasticsearch-python-api-delete-documents-by-query
 
-    yearlies = ()
+    yearlies = []
     for c in to_archive:
         logger.info('archiving: {}'.format(c))
 
@@ -86,40 +86,35 @@ def main():
             idx = Index(i)
             idx.aliases(live={})
             idx.doc_type(Indicator)
-            #idx.settings(max_results_window=WINDOW_LIMIT)
             idx.create()
-            es.indices.flush(idx)
 
-            yearlies.add(i)
+            yearlies.append(i)
 
-        # aggregate index into yearly bucket
-        # based on provider, tags(?), indicator
-        for d in elasticsearch.helpers.scan(es, scroll='60m', size=args.limit):
-            d = d['_source']
-            i = (d['indicator'], d['provider'], d['group'], ','.join(sorted(d['tags'])))
-
-        if len(data) == 0:
-            logger.info('nothing to archive...')
-            continue
-
-        actions = [{'_index': 'indicators-2017', '_type': 'indicator', '_source': d} for d in data]
-
-        # add to yearly
-        if not args.dry_run:
-            helpers.bulk(es, actions)
+        # re-index
+        # https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-reindex.html
+        q = {
+            "conflicts": "proceed",
+            'source': {
+                'index': c,
+            },
+            'dest': {
+                'index': to_archive[c]
+            }
+        }
+        es.reindex(body=q, timeout='60m')
 
         logger.debug('flushing...')
-        if es.flush():
+        if es.indices.flush():
             logger.debug('removing %s' % c)
             # remove old index
             if not args.dry_run:
-                es.indices.delete(index=c, wait_for_completion=True)
+                es.indices.delete(index=c)
 
     # optimize yearlies
     for y in yearlies:
         logger.debug('optimizing: %s' % y)
         if not args.dry_run:
-            es.indices.optimize(index=y)
+            es.indices.forcemerge(index=y)
 
         logger.debug('optimized: %s' % y)
 
