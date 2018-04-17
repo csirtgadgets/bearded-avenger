@@ -20,10 +20,30 @@ from cif.constants import VERSION
 from cifsdk.utils import setup_logging
 from pprint import pprint
 import os
+import uuid
+from hashlib import sha256
 
 CONFIDENCE = 50
 MONTHS = 12
 LIMIT = 5000
+
+
+def _id_deterministic(i):
+    tags = ','.join(sorted(i['tags']))
+    groups = ','.join(sorted(i['group']))
+
+    id = ','.join([groups, i['provider'], i['indicator'], tags])
+    ts = i.get('lasttime')
+    if ts:
+        id = '{},{}'.format(id, ts)
+
+    return id
+
+
+def i_to_id(i):
+    #id = _id_random(i)
+    id = _id_deterministic(i)
+    return sha256(id.encode('utf-8')).hexdigest()
 
 
 def main():
@@ -55,8 +75,6 @@ def main():
     connections.create_connection(hosts=args.nodes, timeout=(60 * 30))
     es = connections.get_connection()
 
-    idx = es.indices.get_alias(index='indicators-2017')
-
     # setup the query
     q = {
         'sort': [
@@ -72,10 +90,11 @@ def main():
         # check to see if we've seen this before
         i = data['_source']
         cache_id = data['_id']
+        id = _id_deterministic(i)
 
-        if (i['indicator']) not in cache:
+        if id not in cache:
             # if not, store key, and continue
-            cache[i['indicator']] = data
+            cache[id] = data
             continue
 
         pprint(cache[i['indicator']])

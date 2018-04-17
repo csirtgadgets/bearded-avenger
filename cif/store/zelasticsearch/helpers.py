@@ -43,7 +43,7 @@ def _id_deterministic(i):
     groups = ','.join(sorted(i['group']))
 
     id = ','.join([groups, i['provider'], i['indicator'], tags])
-    ts = i.get('reporttime')
+    #ts = i.get('reporttime')
     ts = i.get('lasttime')
     if ts:
         id = '{},{}'.format(id, ts)
