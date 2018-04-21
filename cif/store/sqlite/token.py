@@ -146,15 +146,40 @@ class TokenManager(TokenManagerPlugin):
         if not data.get('token'):
             return 'token required for updating'
 
+        if not data.get('groups'):
+            return 'groups required for updating'
+
         s = self.handle()
         rv = s.query(Token).filter_by(token=data['token'])
-        rv.update(dict(write=data.get('write'), admin=data.get('admin'), username=data.get('username')))
-
-        if not rv:
+        if not rv.first():
             return 'token not found'
 
-        #if data.get('groups'):
-        #    rv.first().groups = data['groups'].split(',')
+        t = rv.first()
+        groups = [g.group for g in t.groups]
+
+        for g in data['groups']:
+            if g in groups:
+                continue
+
+            gg = Group(
+                group=g,
+                token=t
+            )
+            s.add(gg)
+
+        s.commit()
+
+        # remove groups not in update
+        q = s.query(Group)
+        for g in groups:
+            if g in data['groups']:
+                continue
+
+            rv = q.filter_by(group=g)
+            if not rv.count():
+                continue
+
+            rv.delete()
 
         s.commit()
 
