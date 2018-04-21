@@ -1,5 +1,3 @@
-
-
 import logging
 import os
 import geoip2.database
@@ -18,17 +16,14 @@ import socket
 DB_SEARCH_PATHS = [
     './',
     '/usr/share/GeoIP',
-    '/usr/local/share/GeoIP'
+    '/usr/local/share/GeoIP',
+    '/usr/local/var/GeoIP'
 ]
 
 ENABLE_FQDN = os.getenv('CIF_GATHERER_GEO_FQDN')
 DB_FILE = 'GeoLite2-City.mmdb'
+ASN_DB_PATH = os.getenv('CIF_GEO_ASN_PATH', 'GeoLite2-ASN.mmdb')
 DB_PATH = os.environ.get('CIF_GEO_PATH')
-
-#ASN_DB_PATH = 'GeoIPASNum.dat'
-#ASN_DB_PATH2 = 'GeoLiteASNum.dat'
-#CITY_DB_PATH = 'GeoLiteCity.dat'
-#CITY_V6_DB_PATH = 'GeoLiteCityv6.dat'
 
 
 class Geo(object):
@@ -52,6 +47,11 @@ class Geo(object):
                 if os.path.isfile(os.path.join(p, db)):
                     self.db = geoip2.database.Reader(os.path.join(p, db))
                     break
+
+        for p in DB_SEARCH_PATHS:
+            if os.path.exists(os.path.join(p, ASN_DB_PATH)):
+                self.asn_db = geoip2.database.Reader(os.path.join(p, ASN_DB_PATH))
+                break
 
     def _lookup_ip(self, host):
         try:
@@ -126,12 +126,16 @@ class Geo(object):
         if not self.asn_db:
             return
 
-        g = self.asn_db.asn_by_addr(i)
-        if g:
-            m = re.match('^AS(\d+)\s([^.]+)', g)
-            if m:
-                indicator.asn = m.group(1)
-                indicator.asn_desc = m.group(2)
+        g = self.asn_db.asn(i)
+
+        if not g:
+            return
+
+        if g.autonomous_system_number:
+            indicator.asn = g.autonomous_system_number
+
+        if g.autonomous_system_organization:
+            indicator.asn_desc = g.autonomous_system_organization
 
     def process(self, indicator):
         if indicator.itype not in ['ipv4', 'ipv6', 'fqdn', 'url']:
