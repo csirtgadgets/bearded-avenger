@@ -47,7 +47,9 @@ class IndicatorManager(IndicatorManagerPlugin):
 
     def _current_index(self):
         dt = datetime.utcnow()
-        dt = dt.strftime('%Y.%m')
+
+        if self.partition == 'month':  # default partition setting
+            dt = dt.strftime('%Y.%m')
 
         if self.partition == 'day':
             dt = dt.strftime('%Y.%m.%d')
