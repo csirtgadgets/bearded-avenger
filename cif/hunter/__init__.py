@@ -7,6 +7,7 @@ import cif.hunter
 from cifsdk.client.zeromq import ZMQ as Client
 from cif.constants import HUNTER_ADDR, ROUTER_ADDR, HUNTER_SINK_ADDR
 from csirtg_indicator import Indicator
+from csirtg_indicator.exceptions import InvalidIndicator
 import multiprocessing
 import os
 
@@ -99,13 +100,17 @@ class Hunter(multiprocessing.Process):
                     continue
 
                 if not data.get('itype'):
-                    data = Indicator(
-                        indicator=data['indicator'],
-                        tags='search',
-                        confidence=10,
-                        group='everyone',
-                        tlp='amber',
-                    ).__dict__()
+                    try: 
+                        data = Indicator(
+                            indicator=data['indicator'],
+                            tags='search',
+                            confidence=10,
+                            group='everyone',
+                            tlp='amber',
+                        ).__dict__()
+                    except InvalidIndicator:
+                        logger.debug('skipping invalid indicator: {}'.format(data['indicator']))
+                        continue
 
                 if not data.get('tags'):
                     data['tags'] = []
