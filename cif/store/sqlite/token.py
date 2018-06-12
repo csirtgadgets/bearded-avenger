@@ -198,7 +198,13 @@ class TokenManager(TokenManagerPlugin):
 
         s = self.handle()
         s.query(Token).filter_by(token=token).update({Token.last_activity_at: timestamp})
-        s.commit()
+
+        try:
+            s.commit()
+        except Exception as e:
+            logger.error(e)
+            logger.debug('rolling back transaction..')
+            s.rollback()
 
         t = list(self.search({'token': token}))
 
