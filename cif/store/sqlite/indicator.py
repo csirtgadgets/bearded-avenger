@@ -628,6 +628,13 @@ class IndicatorManager(IndicatorManagerPlugin):
 
         logger.debug('committing')
         start = time.time()
-        s.commit()
+        try:
+            s.commit()
+        except Exception as e:
+            n = 0
+            logger.error(e)
+            logger.debug('rolling back transaction..')
+            s.rollback()
+
         logger.debug('done: %0.2f' % (time.time() - start))
         return n
