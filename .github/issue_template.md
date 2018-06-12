@@ -1,3 +1,5 @@
+# Do you have an active https://csirtg.io/support account ? :)
+
 # Expected behavior and actual behavior.
 
 # Steps to reporduce the problem
