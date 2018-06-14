@@ -73,8 +73,8 @@ setup(
         'elasticsearch_dsl',
         'ujson',
         'pyzmq>=16.0',
-        'csirtg_indicator',
-        'cifsdk',
+        'csirtg_indicator>=1.0.0,<2.0',
+        'cifsdk>=3.0.0rc2,<4.0',
         'csirtg_smrt',
         'csirtg_dnsdb'
     ],
