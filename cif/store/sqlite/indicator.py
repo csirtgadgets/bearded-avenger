@@ -464,8 +464,6 @@ class IndicatorManager(IndicatorManagerPlugin):
         n = 0
         tmp_added = {}
 
-        s.begin(subtransactions=True)
-
         for d in data:
             logger.debug(d)
 

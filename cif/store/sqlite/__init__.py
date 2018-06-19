@@ -28,7 +28,7 @@ TRACE = os.environ.get('CIF_STORE_SQLITE_TRACE')
 SYNC = os.environ.get('CIF_STORE_SQLITE_SYNC', 'NORMAL')
 
 AUTOFLUSH = os.getenv('CIF_STORE_SQLITE_AUTOFLUSH', '1')
-if AUTOFLUSH in ['0', '']:
+if AUTOFLUSH == '0':
     AUTOFLUSH = False
 else:
     AUTOFLUSH = True
