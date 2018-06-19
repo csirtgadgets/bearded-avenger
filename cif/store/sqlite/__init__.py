@@ -27,6 +27,13 @@ TRACE = os.environ.get('CIF_STORE_SQLITE_TRACE')
 # http://stackoverflow.com/q/9671490/7205341
 SYNC = os.environ.get('CIF_STORE_SQLITE_SYNC', 'NORMAL')
 
+AUTOFLUSH = os.getenv('CIF_STORE_SQLITE_AUTOFLUSH', '1')
+if AUTOFLUSH in ['0', '']:
+    AUTOFLUSH = False
+else:
+    AUTOFLUSH = True
+
+
 # https://www.sqlite.org/pragma.html#pragma_cache_size
 CACHE_SIZE = os.environ.get('CIF_STORE_SQLITE_CACHE_SIZE', 512000000)  # 256MB
 
@@ -59,11 +66,12 @@ class SQLite(Store):
     # http://www.pythoncentral.io/sqlalchemy-orm-examples/
     name = 'sqlite'
 
-    def __init__(self, dbfile=DB_FILE, autocommit=False, dictrows=True, **kwargs):
+    def __init__(self, dbfile=DB_FILE, autocommit=False, autoflush=AUTOFLUSH, dictrows=True, **kwargs):
         self.logger = logging.getLogger(__name__)
 
         self.dbfile = dbfile
         self.autocommit = autocommit
+        self.autoflush = autoflush
         self.dictrows = dictrows
         self.path = "sqlite:///{0}".format(self.dbfile)
 
@@ -73,7 +81,7 @@ class SQLite(Store):
 
         # http://docs.sqlalchemy.org/en/latest/orm/contextual.html
         self.engine = create_engine(self.path, echo=echo)
-        self.handle = sessionmaker(bind=self.engine)
+        self.handle = sessionmaker(bind=self.engine, autocommit=autocommit, autoflush=autoflush)
         self.handle = scoped_session(self.handle)
 
         Base.metadata.create_all(self.engine)
