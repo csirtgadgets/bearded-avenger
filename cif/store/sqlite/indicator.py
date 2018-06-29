@@ -455,18 +455,9 @@ class IndicatorManager(IndicatorManagerPlugin):
 
         return rv
 
-    def upsert(self, token, data, **kwargs):
-        if type(data) == dict:
-            data = [data]
-
-        s = self.handle()
-
-        n = 0
-        tmp_added = {}
-
-        for d in data:
-            logger.debug(d)
-
+    def upsert_indicators(self, s, n, d, token, tmp_added, batch):
+        try:
+            n += 1
             if not d.get('group'):
                 raise InvalidIndicator('missing group')
 
@@ -547,14 +538,16 @@ class IndicatorManager(IndicatorManagerPlugin):
                         m = Message(message=d['message'], indicator=r)
                         s.add(m)
 
-                    n += 1
+                    
                 else:
                     logger.debug('skipping: %s' % d['indicator'])
+                    n -= 1
             else:
                 if tmp_added.get(d['indicator']):
                     if d.get('lasttime') in tmp_added[d['indicator']]:
                         logger.debug('skipping: %s' % d['indicator'])
-                        continue
+                        n -= 1
+                        return n
                 else:
                     tmp_added[d['indicator']] = set()
 
@@ -572,6 +565,7 @@ class IndicatorManager(IndicatorManagerPlugin):
                     d['firsttime'] = d['lasttime']
 
                 ii = Indicator(**d)
+                logger.debug('inserting: %s' % d['indicator'])
                 s.add(ii)
 
                 itype = resolve_itype(d['indicator'])
@@ -619,22 +613,63 @@ class IndicatorManager(IndicatorManagerPlugin):
                     m = Message(message=d['message'], indicator=ii)
                     s.add(m)
 
-                n += 1
                 tmp_added[d['indicator']].add(d['lasttime'])
 
             # if we're in testing mode, this needs re-attaching since we've manipulated the dict for Indicator()
             # see test_store_sqlite
             d['tags'] = ','.join(tags)
 
-            logger.debug('committing')
-            start = time.time()
-            try:
-                s.commit()
-            except Exception as e:
-                n = 0
-                logger.error(e)
-                logger.debug('rolling back transaction..')
+
+        except Exception as e:
+            logger.error(e)
+            if batch:
+                logger.debug('Failing batch - passing exception to upper layer')
+                raise
+            else:
+                n -= 1
+                logger.debug('Rolling back individual transaction..')
                 s.rollback()
 
-        logger.debug('done: %0.2f' % (time.time() - start))
+# When this function is called in non-batch mode, we need to commit each individual indicator at this point.  For batches, the commit happens at a higher layer. 
+
+        if not batch:
+            try:
+                logger.debug('Committing individual indicator')
+                start = time.time()
+                s.commit()
+            except Exception as e:
+                n -= 1
+                logger.error(e)
+                logger.debug('Rolling back individual transaction..')
+                s.rollback()
+
+        return n
+
+
+
+    def upsert(self, token, data, **kwargs):
+        if type(data) == dict:
+            data = [data]
+
+        s = self.handle()
+
+        n = 0
+        tmp_added = {}
+
+        try:
+            for d in data:
+               n = self.upsert_indicators(s, n, d, token, tmp_added, True)
+            logger.debug('committing entire batch')
+            start = time.time()
+            s.commit()
+            logger.debug('done: %0.2f' % (time.time() - start))
+        except Exception as e:
+            n = 0
+            tmp_added = {}
+            logger.error(e)
+            logger.debug('rolling back transaction..')
+            s.rollback()
+            logger.debug('Trying batch again in non-batch mode')
+            for d in data:
+                n = self.upsert_indicators(s, n, d, token, tmp_added, False)
         return n

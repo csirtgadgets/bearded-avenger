@@ -209,14 +209,14 @@ class Store(multiprocessing.Process):
             _t = self.store.tokens.write(t)
             try:
                 start_time = time.time()
-                logger.info('inserting %d indicators..', len(data))
+                logger.info('attempting to insert %d indicators..', len(data))
 
-                rv = self.store.indicators.upsert(_t, data)
+                n = self.store.indicators.upsert(_t, data)
 
-                n = len(data)
+                #n = len(data)
                 t_time = time.time() - start_time
-                logger.info('inserting %d indicators.. took %0.2f seconds (%0.2f/sec)', n, t_time, (n / t_time))
-                rv = {"status": "success", "data": rv}
+                logger.info('actually inserted %d indicators.. took %0.2f seconds (%0.2f/sec)', n, t_time, (n / t_time))
+                rv = {"status": "success", "data": n}
 
             except AuthError as e:
                 rv = {'status': 'failed', 'message': 'unauthorized'}
@@ -242,7 +242,7 @@ class Store(multiprocessing.Process):
 
         if len(data) > 1:
             start_time = time.time()
-            logger.info('inserting %d indicators..', len(data))
+            logger.info('attempting to insert %d indicators..', len(data))
 
             # this will raise AuthError if the groups don't match
             if isinstance(data, dict):
@@ -261,13 +261,13 @@ class Store(multiprocessing.Process):
                     except (TypeError, binascii.Error) as e:
                         pass
 
-            r = self.store.indicators.upsert(t, data, flush=flush)
+            n = self.store.indicators.upsert(t, data, flush=flush)
 
-            n = len(data)
+            #n = len(data)
             t = time.time() - start_time
-            logger.info('inserting %d indicators.. took %0.2f seconds (%0.2f/sec)', n, t, (n/t))
+            logger.info('actually inserted %d indicators.. took %0.2f seconds (%0.2f/sec)', n, t, (n/t))
 
-            return r
+            return n
 
         data = data[0]
         if data['group'] not in t['groups']:
