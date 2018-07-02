@@ -92,7 +92,7 @@ def test_store_sqlite_tokens_groups(store):
     except AuthError as e:
         pass
 
-    assert i is None
+    assert i == 0
 
     i = store.store.indicators.create(t, {
         'indicator': 'example.com',
@@ -134,7 +134,7 @@ def test_store_sqlite_tokens_groups2(store, indicator):
     except AuthError as e:
         pass
 
-    assert i is None
+    assert (i is None or i == 0)
 
 
 def test_store_sqlite_tokens_groups3(store, indicator):
