@@ -619,7 +619,6 @@ class IndicatorManager(IndicatorManagerPlugin):
             # see test_store_sqlite
             d['tags'] = ','.join(tags)
 
-
         except Exception as e:
             logger.error(e)
             if batch:
@@ -630,7 +629,8 @@ class IndicatorManager(IndicatorManagerPlugin):
                 logger.debug('Rolling back individual transaction..')
                 s.rollback()
 
-# When this function is called in non-batch mode, we need to commit each individual indicator at this point.  For batches, the commit happens at a higher layer. 
+        # When this function is called in non-batch mode, we need to commit each individual indicator at this point.
+        # For batches, the commit happens at a higher layer.
 
         if not batch:
             try:
@@ -644,8 +644,6 @@ class IndicatorManager(IndicatorManagerPlugin):
                 s.rollback()
 
         return n
-
-
 
     def upsert(self, token, data, **kwargs):
         if type(data) == dict:
