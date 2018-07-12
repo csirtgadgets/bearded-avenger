@@ -94,7 +94,7 @@ class TokenManager(TokenManagerPlugin):
             t.delete()
 
         connections.get_connection().indices.flush(index='tokens')
-        return len(rv)
+	return len(list(rv))
 
     def edit(self, data):
         if not data.get('token'):
