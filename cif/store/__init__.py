@@ -326,17 +326,18 @@ class Store(multiprocessing.Process):
                 if isinstance(data['indicator'], str):
                     data['indicator'] = unicode(data['indicator'])
 
-        if data.get('days'):
-            now = arrow.utcnow()
-            data['reporttimeend'] = '{0}Z'.format(now.format('YYYY-MM-DDTHH:mm:ss'))
-            now = now.replace(days=-int(data['days']))
-            data['reporttime'] = '{0}Z'.format(now.format('YYYY-MM-DDTHH:mm:ss'))
+        if not data.get('reporttime'):
+            if data.get('days'):
+                now = arrow.utcnow()
+                data['reporttimeend'] = '{0}Z'.format(now.format('YYYY-MM-DDTHH:mm:ss'))
+                now = now.replace(days=-int(data['days']))
+                data['reporttime'] = '{0}Z'.format(now.format('YYYY-MM-DDTHH:mm:ss'))
 
-        if data.get('hours'):
-            now = arrow.utcnow()
-            data['reporttimeend'] = '{0}Z'.format(now.format('YYYY-MM-DDTHH:mm:ss'))
-            now = now.replace(hours=-int(data['hours']))
-            data['reporttime'] = '{0}Z'.format(now.format('YYYY-MM-DDTHH:mm:ss'))
+            if data.get('hours'):
+                now = arrow.utcnow()
+                data['reporttimeend'] = '{0}Z'.format(now.format('YYYY-MM-DDTHH:mm:ss'))
+                now = now.replace(hours=-int(data['hours']))
+                data['reporttime'] = '{0}Z'.format(now.format('YYYY-MM-DDTHH:mm:ss'))
 
         s = time.time()
 
