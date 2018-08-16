@@ -397,8 +397,13 @@ class IndicatorManager(IndicatorManagerPlugin):
         else:
             groups = filters.get('groups')
 
-        if isinstance(groups, str):
+        if not isinstance(groups, list):
             groups = [groups]
+
+        if PYVERSION < 3:
+            for g in groups:
+                if isinstance(g, unicode):
+                    g = g.decode('utf-8')
 
         s = s.filter(or_(Indicator.group == g for g in groups))
         return s
