@@ -126,7 +126,6 @@ class FeedAPI(MethodView):
             logger.debug('%s getting dataset' % id)
             try:
                 r = Client(remote, pull_token()).indicators_search(filters)
-
             except AuthError:
                 return jsonify_unauth()
 
