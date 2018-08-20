@@ -35,7 +35,6 @@ class IndicatorsAPI(MethodView):
 
         try:
             r = Client(remote, pull_token()).indicators_search(filters, decode=False)
-
         except RuntimeError as e:
             logger.error(e)
             return jsonify_unknown(msg='search failed')

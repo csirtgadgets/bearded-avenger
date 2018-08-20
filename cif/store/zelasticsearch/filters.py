@@ -6,6 +6,7 @@ import binascii
 from cifsdk.constants import PYVERSION
 from elasticsearch_dsl import Q
 import ipaddress
+import arrow
 
 from cif.httpd.common import VALID_FILTERS
 
@@ -54,6 +55,26 @@ def filter_confidence(s, filter):
         low, high = c.split(',')
 
     s = s.filter('range', confidence={'gte': float(low), 'lte': float(high)})
+    return s
+
+
+def filter_reporttime(s, filter):
+    if not filter.get('reporttime'):
+        return s
+
+    c = filter.pop('reporttime')
+    if PYVERSION == 2:
+        if type(c) == unicode:
+            c = str(c)
+
+    low, high = c, arrow.utcnow()
+    if isinstance(c, basestring) and ',' in c:
+        low, high = c.split(',')
+
+    low = arrow.get(low).datetime
+    high = arrow.get(high).datetime
+
+    s = s.filter('range', reporttime={'gte': low, 'lte': high})
     return s
 
 
@@ -130,6 +151,8 @@ def filter_build(s, filters, token=None):
     s = filter_indicator(s, q_filters)
 
     s = filter_confidence(s, q_filters)
+
+    s = filter_reporttime(s, q_filters)
 
     # transform all other filters into term=
     s = filter_terms(s, q_filters)
