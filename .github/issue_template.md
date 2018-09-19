@@ -12,3 +12,5 @@
 # Did you attempt to fix the problem and submit a pull request?
 
 # Specifications like the version of the project, operating system, or hardware.
+
+# How large is your /var/lib/cif.sqlite database?
