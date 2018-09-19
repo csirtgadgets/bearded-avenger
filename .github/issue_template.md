@@ -2,6 +2,8 @@
 
 # Did you check the FAQ https://github.com/csirtgadgets/bearded-avenger-deploymentkit/wiki/FAQ ?
 
+# Are you running with hunters enabled? If so, does turning them off resolve the problem?
+
 # Expected behavior and actual behavior.
 
 # Steps to reporduce the problem
