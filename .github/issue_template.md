@@ -15,4 +15,6 @@
 
 # Specifications like the version of the project, operating system, or hardware.
 
+# Does adding additional memory to the box resolve the problem?
+
 # How large is your /var/lib/cif.sqlite database?
