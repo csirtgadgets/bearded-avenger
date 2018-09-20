@@ -485,8 +485,7 @@ class IndicatorManager(IndicatorManagerPlugin):
             i = s.query(Indicator).options(lazyload('*')).filter_by(
                 provider=d['provider'],
                 itype=d['itype'],
-                indicator=d['indicator'],
-                confidence=d.get('confidence', None)
+                indicator=d['indicator']
             ).order_by(Indicator.lasttime.desc())
 
             if d.get('rdata'):
