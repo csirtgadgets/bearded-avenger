@@ -40,6 +40,7 @@ def indicator():
         'group': 'everyone',
         'lasttime': arrow.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
         'itype': 'fqdn',
+        'confidence': 6
     }
 
 
@@ -147,7 +148,7 @@ def test_store_sqlite_indicators(store, indicator):
     except InvalidIndicator:
         pass
 
-    assert (x is None or x == 0)
+    assert (x is None or x == 1)
 
     indicator['tags'] = 'malware'
 
@@ -157,7 +158,7 @@ def test_store_sqlite_indicators(store, indicator):
     except InvalidIndicator:
         pass
 
-    assert (x is None or x == 0)
+    assert (x is None or x == 1)
 
     r = store.handle_indicators_delete(t, data=[{
         'indicator': 'example.com',
