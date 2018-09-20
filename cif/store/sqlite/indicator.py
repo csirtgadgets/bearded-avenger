@@ -13,9 +13,6 @@ from cif.store.indicator_plugin import IndicatorManagerPlugin
 from cifsdk.exceptions import InvalidSearch
 import ipaddress
 from .ip import Ip
-from .fqdn import Fqdn
-from .url import Url
-from .hash import Hash
 from pprint import pprint
 from sqlalchemy.ext.declarative import declarative_base
 import re
@@ -162,7 +159,7 @@ class Fqdn(Base):
     __tablename__ = 'indicators_fqdn'
 
     id = Column(Integer, primary_key=True)
-    fqdn = Column(Fqdn, index=True)
+    fqdn = Column(UnicodeText, index=True)
 
     indicator_id = Column(Integer, ForeignKey('indicators.id', ondelete='CASCADE'))
     indicator = relationship(
@@ -174,7 +171,7 @@ class Url(Base):
     __tablename__ = 'indicators_url'
 
     id = Column(Integer, primary_key=True)
-    url = Column(Url, index=True)
+    url = Column(UnicodeText, index=True)
 
     indicator_id = Column(Integer, ForeignKey('indicators.id', ondelete='CASCADE'))
     indicator = relationship(
@@ -186,7 +183,7 @@ class Hash(Base):
     __tablename__ = 'indicators_hash'
 
     id = Column(Integer, primary_key=True)
-    hash = Column(Hash, index=True)
+    hash = Column(String, index=True)
 
     indicator_id = Column(Integer, ForeignKey('indicators.id', ondelete='CASCADE'))
     indicator = relationship(
@@ -319,7 +316,7 @@ class IndicatorManager(IndicatorManagerPlugin):
         if itype == 'fqdn':
             s = s.join(Fqdn).filter(or_(
                     Fqdn.fqdn.like('%.{}'.format(i)),
-                    Fqdn.fqdn == i)
+                    Fqdn.fqdn == str(i))
             )
             return s
 
@@ -489,6 +486,7 @@ class IndicatorManager(IndicatorManagerPlugin):
                 provider=d['provider'],
                 itype=d['itype'],
                 indicator=d['indicator'],
+                confidence=d.get('confidence', None)
             ).order_by(Indicator.lasttime.desc())
 
             if d.get('rdata'):
