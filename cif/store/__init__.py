@@ -202,7 +202,7 @@ class Store(multiprocessing.Process):
     def _flush_create_queue(self):
         for t in self.create_queue:
             if len(self.create_queue[t]['messages']) == 0:
-                return
+                continue
 
             logger.debug('flushing queue...')
             data = [msg[0] for _, _, msg in self.create_queue[t]['messages']]
