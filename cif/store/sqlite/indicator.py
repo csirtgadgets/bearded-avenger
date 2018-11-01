@@ -520,6 +520,10 @@ class IndicatorManager(IndicatorManagerPlugin):
             r = i.first()
 
             if r:
+                if not d.get('lasttime') or d.get('lasttime') == None:
+                    # If no lasttime submitted, presume a lasttime value of now
+                    d['lasttime'] = arrow.utcnow().datetime
+
                 if d.get('lasttime') and arrow.get(d['lasttime']).datetime > arrow.get(r.lasttime).datetime:
                     logger.debug('{} {}'.format(arrow.get(r.lasttime).datetime, arrow.get(d['lasttime']).datetime))
                     logger.debug('upserting: %s' % d['indicator'])
@@ -540,7 +544,6 @@ class IndicatorManager(IndicatorManagerPlugin):
                         m = Message(message=d['message'], indicator=r)
                         s.add(m)
 
-                    
                 else:
                     logger.debug('skipping: %s' % d['indicator'])
                     n -= 1
