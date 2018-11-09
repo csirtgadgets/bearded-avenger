@@ -1,0 +1,54 @@
+defaults:
+  provider: NormShield.com
+  confidence: 80
+  tlp: green
+  altid_tlp: white
+
+
+feeds:
+  wannacry-ips:
+    remote: https://raw.githubusercontent.com/firehol/blocklist-ipsets/master/normshield_high_wannacry.ipset
+    pattern: '^(\S+)$'
+    values:
+      - indicator
+    defaults:
+      tags:
+        - Malware
+        - wannacry
+
+  bruteforce-ips:
+    remote: https://github.com/firehol/blocklist-ipsets/raw/master/normshield_high_bruteforce.ipset
+    pattern: '^(\S+)$'
+    values:
+      - indicator
+    defaults:
+      tags:
+        - bruteforce
+
+  spam-ips:
+    remote: https://github.com/firehol/blocklist-ipsets/raw/master/normshield_high_spam.ipset
+    pattern: '^(\S+)$'
+    values:
+      - indicator
+    defaults:
+      tags:
+        - spam
+
+  abuse-ips:
+    remote: https://github.com/firehol/blocklist-ipsets/raw/master/normshield_high_suspicious.ipset
+    pattern: '^(\S+)$'
+    values:
+      - indicator
+    defaults:
+      tags:
+        - abuse
+
+  webscan-ips:
+    remote: https://github.com/firehol/blocklist-ipsets/raw/master/normshield_high_webscan.ipset
+    pattern: '^(\S+)$'
+    values:
+      - indicator
+    defaults:
+      tags:
+        - scanner
+        - webscan
