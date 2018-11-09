@@ -15,7 +15,7 @@ feeds:
     defaults:
       tags:
         - spam
-	- Toxic IP Addresses
+	    - Toxic IP Addresses
 
   domain-list:
     remote: http://stopforumspam.com/downloads/toxic_domains_whole_filtered_10000.txt
@@ -25,7 +25,7 @@ feeds:
     defaults:
       tags:
         - spam
-	- Toxic domains
+	    - Toxic domains
 
   mail_list:
     remote: 'http://stopforumspam.com/downloads/listed_email_1_all.zip'
