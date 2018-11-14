@@ -1,0 +1,14 @@
+defaults:
+  provider: sblam.com
+  confidence: 7
+  tlp: green
+  altid_tlp: white
+  tags:
+    - spam
+    - spammers
+feeds:
+  proxy:
+    remote: https://sblam.com/blacklist.txt
+    pattern: '^(\S+)$'
+    values:
+      - indicator
