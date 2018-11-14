@@ -34,8 +34,10 @@ def _filter_ipv6(s, i):
     if mask < 32:
         raise InvalidSearch('prefix needs to be greater than or equal to 32')
 
-    start = binascii.b2a_hex(socket.inet_pton(socket.AF_INET6, str(ip.network_address))).decode('utf-8')
-    end = binascii.b2a_hex(socket.inet_pton(socket.AF_INET6, str(ip.broadcast_address))).decode('utf-8')
+    start = binascii.b2a_hex(socket.inet_pton(
+        socket.AF_INET6, str(ip.network_address))).decode('utf-8')
+    end = binascii.b2a_hex(socket.inet_pton(
+        socket.AF_INET6, str(ip.broadcast_address))).decode('utf-8')
 
     s = s.filter('range', indicator_ipv6={'gte': start, 'lte': end})
     return s
@@ -111,7 +113,7 @@ def filter_indicator(s, q_filters):
 
 def filter_terms(s, q_filters):
     for f in q_filters:
-        if f in ['nolog', 'days', 'hours', 'groups', 'limit']:
+        if f in ['nolog', 'days', 'hours', 'groups', 'limit', 'tags']:
             continue
 
         kwargs = {f: q_filters[f]}
@@ -119,6 +121,21 @@ def filter_terms(s, q_filters):
             s = s.filter('terms', **kwargs)
         else:
             s = s.filter('term', **kwargs)
+
+    return s
+
+
+def filter_tags(s, q_filters):
+    tags = q_filters['tags']
+
+    if isinstance(tags, basestring):
+        tags = tags.split(',')
+
+    tt = []
+    for t in tags:
+        tt.append(Q('term', tags=t))
+
+    s.query = Q('bool', must=s.query, should=tt, minimum_should_match=1)
 
     return s
 
@@ -156,6 +173,9 @@ def filter_build(s, filters, token=None):
 
     # transform all other filters into term=
     s = filter_terms(s, q_filters)
+
+    if filters.get('tags'):
+        s = filter_tags(s, filters)
 
     if filters.get('groups'):
         s = filter_groups(s, filters)
