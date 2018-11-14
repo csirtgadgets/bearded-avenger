@@ -1,6 +1,6 @@
 defaults:
   provider: NormShield.com
-  confidence: 80
+  confidence: 8
   tlp: green
   altid_tlp: white
 

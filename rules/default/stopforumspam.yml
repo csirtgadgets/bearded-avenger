@@ -1,5 +1,5 @@
 defaults:
-  confidence: 70
+  confidence: 7
   tlp: green
   altid_tlp: white
   provider: stopforumspam.com
