@@ -1,0 +1,18 @@
+parser: pattern
+defaults:
+  provider: torproject.org
+  tlp: green
+  altid_tlp: white
+  confidence: 8.5
+feeds:
+  tor_exit_nodes:
+    remote: https://check.torproject.org/exit-addresses
+    pattern: '^ExitAddress\s(\S+)\s(\d{4}-\d{2}-\d{2})\s\S+$'
+    values:
+      - indicator
+      - lasttime
+    defaults:
+      tags:
+        - tor
+      protocol: tcp
+      description: 'Tor Exit Node'

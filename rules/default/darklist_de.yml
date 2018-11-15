@@ -1,0 +1,16 @@
+defaults:
+  provider: darklist.de
+  confidence: 7
+  tlp: green
+  altid_tlp: white
+  tags:
+    - blacklist
+  altid: http://www.darklist.de/raw.php
+
+
+feeds:
+  compromised-ips:
+    remote: http://www.darklist.de/raw.php
+    pattern: '^(\S+)$'
+    values:
+    - indicator

@@ -1,0 +1,37 @@
+defaults:
+  confidence: 7
+  tlp: green
+  altid_tlp: white
+  provider: stopforumspam.com
+
+feeds:
+  ip_list:
+    remote: 'http://stopforumspam.com/downloads/listed_ip_1_all.zip'
+    pattern: '^\"(\S+)\",\"(\S+)\",\"(\S+\s\S+)\"$'
+    values:
+      - indicator
+      - null
+      - lasttime
+    defaults:
+      tags:
+        - spam
+
+  domain-list:
+    remote: http://stopforumspam.com/downloads/toxic_domains_whole_filtered_10000.txt
+    pattern: '^(\S+)$'
+    values:
+      - indicator
+    defaults:
+      tags:
+        - spam
+
+  mail_list:
+    remote: 'http://stopforumspam.com/downloads/listed_email_1_all.zip'
+    pattern: '^\"(\S+)\",\"(\S+)\",\"(\S+\s\S+)\"$'
+    values:
+      - indicator
+      - null
+      - lasttime
+    defaults:
+      tags:
+        - spam

@@ -202,21 +202,48 @@ class Store(multiprocessing.Process):
     def _flush_create_queue(self):
         for t in self.create_queue:
             if len(self.create_queue[t]['messages']) == 0:
-                return
+                continue
 
             logger.debug('flushing queue...')
             data = [msg[0] for _, _, msg in self.create_queue[t]['messages']]
             _t = self.store.tokens.write(t)
+
             try:
                 start_time = time.time()
                 logger.info('attempting to insert %d indicators..', len(data))
 
+                # this will raise AuthError if the groups don't match
+                if isinstance(data, dict):
+                    data = [data]
+
+                for i in data:
+                    if not i.get('group'):
+                        i['group'] = 'everyone'
+
+                    if not i.get('provider') or i['provider'] == '':
+                        i['provider'] = _t['username']
+
+                    if i['group'] not in _t['groups']:
+                        raise AuthError('unable to write to %s' % i['group'])
+
+                    if not i.get('tags'):
+                        i['tags'] = ['suspicious']
+
+                    if i.get('message'):
+                        try:
+                            i['message'] = str(b64decode(data['message']))
+                        except (TypeError, binascii.Error) as e:
+                            pass
+
                 n = self.store.indicators.upsert(_t, data)
 
-                #n = len(data)
                 t_time = time.time() - start_time
                 logger.info('actually inserted %d indicators.. took %0.2f seconds (%0.2f/sec)', n, t_time, (n / t_time))
-                rv = {"status": "success", "data": n}
+
+                if n == 0:
+                    rv = {'status': 'failed', 'message': 'invalid indicator'}
+                else:
+                    rv = {"status": "success", "data": n}
 
             except AuthError as e:
                 rv = {'status': 'failed', 'message': 'unauthorized'}
@@ -240,7 +267,7 @@ class Store(multiprocessing.Process):
         # this will raise AuthError if false
         t = self.store.tokens.write(token)
 
-        if len(data) > 1:
+        if len(data) > 1 or t['username'] == 'admin':
             start_time = time.time()
             logger.info('attempting to insert %d indicators..', len(data))
 
@@ -250,10 +277,16 @@ class Store(multiprocessing.Process):
 
             for i in data:
                 if not i.get('group'):
-                    raise InvalidIndicator('missing group')
+                    i['group'] = 'everyone'
+
+                if not i.get('provider') or i['provider'] == '':
+                    i['provider'] = t['username']
 
                 if i['group'] not in t['groups']:
                     raise AuthError('unable to write to %s' % i['group'])
+
+                if not i.get('tags'):
+                    i['tags'] = ['suspicious']
 
                 if i.get('message'):
                     try:
@@ -263,7 +296,6 @@ class Store(multiprocessing.Process):
 
             n = self.store.indicators.upsert(t, data, flush=flush)
 
-            #n = len(data)
             t = time.time() - start_time
             logger.info('actually inserted %d indicators.. took %0.2f seconds (%0.2f/sec)', n, t, (n/t))
 
@@ -271,7 +303,7 @@ class Store(multiprocessing.Process):
 
         data = data[0]
         if data['group'] not in t['groups']:
-            raise AuthError('unauthorized to write to group: %s' % g)
+            raise AuthError('unauthorized to write to group: %s' % data['group'])
 
         if data.get('message'):
             try:
@@ -326,17 +358,18 @@ class Store(multiprocessing.Process):
                 if isinstance(data['indicator'], str):
                     data['indicator'] = unicode(data['indicator'])
 
-        if data.get('days'):
-            now = arrow.utcnow()
-            data['reporttimeend'] = '{0}Z'.format(now.format('YYYY-MM-DDTHH:mm:ss'))
-            now = now.replace(days=-int(data['days']))
-            data['reporttime'] = '{0}Z'.format(now.format('YYYY-MM-DDTHH:mm:ss'))
+        if not data.get('reporttime'):
+            if data.get('days'):
+                now = arrow.utcnow()
+                data['reporttimeend'] = '{0}Z'.format(now.format('YYYY-MM-DDTHH:mm:ss'))
+                now = now.replace(days=-int(data['days']))
+                data['reporttime'] = '{0}Z'.format(now.format('YYYY-MM-DDTHH:mm:ss'))
 
-        if data.get('hours'):
-            now = arrow.utcnow()
-            data['reporttimeend'] = '{0}Z'.format(now.format('YYYY-MM-DDTHH:mm:ss'))
-            now = now.replace(hours=-int(data['hours']))
-            data['reporttime'] = '{0}Z'.format(now.format('YYYY-MM-DDTHH:mm:ss'))
+            if data.get('hours'):
+                now = arrow.utcnow()
+                data['reporttimeend'] = '{0}Z'.format(now.format('YYYY-MM-DDTHH:mm:ss'))
+                now = now.replace(hours=-int(data['hours']))
+                data['reporttime'] = '{0}Z'.format(now.format('YYYY-MM-DDTHH:mm:ss'))
 
         s = time.time()
 

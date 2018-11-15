@@ -3,7 +3,7 @@ defaults:
   provider: netlab.360.com
   confidence: 7
   tlp: green
-  altid: http://data.netlab.360.com/feeds/ek/magnitude.txt
+  altid: https://data.netlab.360.com/dga/
   altid_tlp: white
   protocol: tcp
   tags:
@@ -16,225 +16,198 @@ defaults:
 
 
 feeds:
-
-  magnitude:
-    remote: http://data.netlab.360.com/feeds/ek/magnitude.txt
+  bamital:
+    remote: https://data.netlab.360.com/feeds/dga/bamital.txt
     defaults:
-      tags:
-        - dga
-        - exploit
-        - malware
-      values:
-        - description
-        - lasttime
-        - rdata
-        - indicator
-        - null
-
-
-  bamita:
-    remote: http://data.netlab.360.com/feeds/dga/bamital.txt
-    defaults:
-      description: bamita
+      description: bamital
 
   banjori:
-    remote: http://data.netlab.360.com/feeds/dga/banjori.txt
+    remote: https://data.netlab.360.com/feeds/dga/banjori.txt
     defaults:
-      description: banjori
+      description: banjori    
 
-  banjori:
-    remote: http://data.netlab.360.com/feeds/dga/banjori.txt
+  balckhole:
+    remote: https://data.netlab.360.com/feeds/dga/balckhole.txt
     defaults:
-      description: banjori
+      description: balckhole
+
+  ccleaner:
+    remote: https://data.netlab.360.com/feeds/dga/ccleaner.txt
+    defaults:
+      description: ccleaner
 
   chinad:
-    remote: http://data.netlab.360.com/feeds/dga/chinad.txt
+    remote: https://data.netlab.360.com/feeds/dga/chinad.txt
     defaults:
       description: chinad
 
   conficker:
-    remote: http://data.netlab.360.com/feeds/dga/conficker.txt
+    remote: https://data.netlab.360.com/feeds/dga/conficker.txt
     defaults:
       description: conficker
 
   cryptolocker:
-    remote: http://data.netlab.360.com/feeds/dga/cryptolocker.txt
+    remote: https://data.netlab.360.com/feeds/dga/cryptolocker.txt
     defaults:
       description: cryptolocker
 
+  gspy:
+    remote: https://data.netlab.360.com/feeds/dga/gspy.txt
+    defaults:
+      description: gspy
+
   dircrypt:
-    remote: http://data.netlab.360.com/feeds/dga/dircrypt.txt
+    remote: https://data.netlab.360.com/feeds/dga/dircrypt.txt
     defaults:
       description: dircrypt
-      values:
-        - indicator
-        - null
-        - null
 
   dyre:
-    remote: http://data.netlab.360.com/feeds/dga/dyre.txt
+    remote: https://data.netlab.360.com/feeds/dga/dyre.txt
     defaults:
       description: dyre
 
+  emotet:
+    remote: https://data.netlab.360.com/feeds/dga/emotet.txt
+    defaults:
+      description: emotet
+
   fobber:
-    remote: http://data.netlab.360.com/feeds/dga/fobber.txt
+    remote: https://data.netlab.360.com/feeds/dga/fobber.txt
     defaults:
       description: fobber
-      values:
-        - indicator
-        - null
-        - null
 
   gameover:
-    remote: http://data.netlab.360.com/feeds/dga/gameover.txt
+    remote: https://data.netlab.360.com/feeds/dga/gameover.txt
     defaults:
       description: gameover
 
-  gspy:
-    remote: http://data.netlab.360.com/feeds/dga/gspy.txt
-    defaults:
-      description: gspy
-      values:
-        - indicator
-        - null
-        - null
-
   locky:
-    remote: http://data.netlab.360.com/feeds/dga/locky.txt
+    remote: https://data.netlab.360.com/feeds/dga/locky.txt
     defaults:
       description: locky
-      values:
-        - indicator
-        - lasttime
-        - null
 
   madmax:
-    remote: http://data.netlab.360.com/feeds/dga/madmax.txt
+    remote: https://data.netlab.360.com/feeds/dga/madmax.txt
     defaults:
       description: madmax
 
-#  mirai:
-#    remote: http://data.netlab.360.com/feeds/dga/mirai.txt
-#    defaults:
-#      description: mirai
+  matsnu:
+    remote: https://data.netlab.360.com/feeds/dga/matsnu.txt
+    defaults:
+      description: matsnu
+
+  mirai:
+    remote: https://data.netlab.360.com/feeds/dga/mirai.txt
+    defaults:
+      description: mirai
 
   murofet:
-    remote: http://data.netlab.360.com/feeds/dga/murofet.txt
+    remote: https://data.netlab.360.com/feeds/dga/murofet.txt
     defaults:
       description: murofet
 
   necurs:
-    remote: http://data.netlab.360.com/feeds/dga/necurs.txt
+    remote: https://data.netlab.360.com/feeds/dga/necurs.txt
     defaults:
       description: necurs
 
   nymaim:
-    remote: http://data.netlab.360.com/feeds/dga/nymaim.txt
+    remote: https://data.netlab.360.com/feeds/dga/nymaim.txt
     defaults:
       description: nymaim
 
+  padcrypt:
+    remote: https://data.netlab.360.com/feeds/dga/padcrypt.txt
+    defaults:
+      description: padcrypt
+
   proslikefan:
-    remote: http://data.netlab.360.com/feeds/dga/proslikefan.txt
+    remote: https://data.netlab.360.com/feeds/dga/proslikefan.txt
     defaults:
       description: proslikefan
 
   pykspa:
-    remote: http://data.netlab.360.com/feeds/dga/pykspa.txt
+    remote: https://data.netlab.360.com/feeds/dga/pykspa.txt
     defaults:
       description: pykspa
 
   qadars:
-    remote: http://data.netlab.360.com/feeds/dga/qadars.txt
+    remote: https://data.netlab.360.com/feeds/dga/qadars.txt
     defaults:
       description: qadars
 
-  ramnit:
-    remote: http://data.netlab.360.com/feeds/dga/ramnit.txt
+  ranmit:
+    remote: https://data.netlab.360.com/feeds/dga/ranmit.txt
     defaults:
-      description: ramnit
-      values:
-        - indicator
-        - null
-        - null
+      description: ranmit
 
   ranbyus:
-    remote: http://data.netlab.360.com/feeds/dga/ranbyus.txt
+    remote: https://data.netlab.360.com/feeds/dga/ranbyus.txt
     defaults:
       description: ranbyus
-      values:
-        - indicator
-        - firsttime
-        - lasttime
 
   rovnix:
-    remote: http://data.netlab.360.com/feeds/dga/rovnix.txt
+    remote: https://data.netlab.360.com/feeds/dga/rovnix.txt
     defaults:
       description: rovnix
-      values:
-        - indicator
-        - null
-        - null
 
   shifu:
-    remote: http://data.netlab.360.com/feeds/dga/shifu.txt
+    remote: https://data.netlab.360.com/feeds/dga/shifu.txt
     defaults:
       description: shifu
-      values:
-        - indicator
-        - null
-        - null
 
   simda:
-    remote: http://data.netlab.360.com/feeds/dga/simda.txt
+    remote: https://data.netlab.360.com/feeds/dga/simda.txt
     defaults:
       description: simda
-      values:
-        - indicator
-        - null
-        - null
 
   suppobox:
-    remote: http://data.netlab.360.com/feeds/dga/suppobox.txt
+    remote: https://data.netlab.360.com/feeds/dga/suppobox.txt
     defaults:
       description: suppobox
 
   symmi:
-    remote: http://data.netlab.360.com/feeds/dga/symmi.txt
+    remote: https://data.netlab.360.com/feeds/dga/symmi.txt
     defaults:
       description: symmi
-      values:
-        - indicator
-        - firsttime
-        - lasttime
 
   tempedreve:
-    remote: http://data.netlab.360.com/feeds/dga/tempedreve.txt
+    remote: https://data.netlab.360.com/feeds/dga/tempedreve.txt
     defaults:
       description: tempedreve
-      values:
-        - indicator
-        - null
-        - null
 
   tinba:
-    remote: http://data.netlab.360.com/feeds/dga/tinba.txt
+    remote: https://data.netlab.360.com/feeds/dga/tinba.txt
     defaults:
       description: tinba
 
+  tinynuke:
+    remote: https://data.netlab.360.com/feeds/dga/tinynuke.txt
+    defaults:
+      description: tinynuke
+
   tofsee:
-    remote: http://data.netlab.360.com/feeds/dga/tofsee.txt
+    remote: https://data.netlab.360.com/feeds/dga/tofsee.txt
     defaults:
       description: tofsee
 
   vawtrak:
-    remote: http://data.netlab.360.com/feeds/dga/vawtrak.txt
+    remote: https://data.netlab.360.com/feeds/dga/vawtrak.txt
     defaults:
       description: vawtrak
 
   vidro:
-    remote: http://data.netlab.360.com/feeds/dga/vidro.txt
+    remote: https://data.netlab.360.com/feeds/dga/vidro.txt
     defaults:
       description: vidro
 
-  
+  virut:
+    remote: https://data.netlab.360.com/feeds/dga/virut.txt
+    defaults:
+      description: virut
+
+  xshellghost:
+    remote: https://data.netlab.360.com/feeds/dga/xshellghost.txt
+    defaults:
+      description: xshellghost
 

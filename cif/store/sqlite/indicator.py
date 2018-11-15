@@ -13,9 +13,6 @@ from cif.store.indicator_plugin import IndicatorManagerPlugin
 from cifsdk.exceptions import InvalidSearch
 import ipaddress
 from .ip import Ip
-from .fqdn import Fqdn
-from .url import Url
-from .hash import Hash
 from pprint import pprint
 from sqlalchemy.ext.declarative import declarative_base
 import re
@@ -162,7 +159,7 @@ class Fqdn(Base):
     __tablename__ = 'indicators_fqdn'
 
     id = Column(Integer, primary_key=True)
-    fqdn = Column(Fqdn, index=True)
+    fqdn = Column(UnicodeText, index=True)
 
     indicator_id = Column(Integer, ForeignKey('indicators.id', ondelete='CASCADE'))
     indicator = relationship(
@@ -174,7 +171,7 @@ class Url(Base):
     __tablename__ = 'indicators_url'
 
     id = Column(Integer, primary_key=True)
-    url = Column(Url, index=True)
+    url = Column(UnicodeText, index=True)
 
     indicator_id = Column(Integer, ForeignKey('indicators.id', ondelete='CASCADE'))
     indicator = relationship(
@@ -186,7 +183,7 @@ class Hash(Base):
     __tablename__ = 'indicators_hash'
 
     id = Column(Integer, primary_key=True)
-    hash = Column(Hash, index=True)
+    hash = Column(String, index=True)
 
     indicator_id = Column(Integer, ForeignKey('indicators.id', ondelete='CASCADE'))
     indicator = relationship(
@@ -319,7 +316,7 @@ class IndicatorManager(IndicatorManagerPlugin):
         if itype == 'fqdn':
             s = s.join(Fqdn).filter(or_(
                     Fqdn.fqdn.like('%.{}'.format(i)),
-                    Fqdn.fqdn == i)
+                    Fqdn.fqdn == str(i))
             )
             return s
 
@@ -397,8 +394,13 @@ class IndicatorManager(IndicatorManagerPlugin):
         else:
             groups = filters.get('groups')
 
-        if isinstance(groups, str):
+        if not isinstance(groups, list):
             groups = [groups]
+
+        if PYVERSION < 3:
+            for g in groups:
+                if isinstance(g, unicode):
+                    g = g.decode('utf-8')
 
         s = s.filter(or_(Indicator.group == g for g in groups))
         return s
@@ -483,7 +485,7 @@ class IndicatorManager(IndicatorManagerPlugin):
             i = s.query(Indicator).options(lazyload('*')).filter_by(
                 provider=d['provider'],
                 itype=d['itype'],
-                indicator=d['indicator'],
+                indicator=d['indicator']
             ).order_by(Indicator.lasttime.desc())
 
             if d.get('rdata'):
@@ -518,6 +520,10 @@ class IndicatorManager(IndicatorManagerPlugin):
             r = i.first()
 
             if r:
+                if not d.get('lasttime') or d.get('lasttime') == None:
+                    # If no lasttime submitted, presume a lasttime value of now
+                    d['lasttime'] = arrow.utcnow().datetime
+
                 if d.get('lasttime') and arrow.get(d['lasttime']).datetime > arrow.get(r.lasttime).datetime:
                     logger.debug('{} {}'.format(arrow.get(r.lasttime).datetime, arrow.get(d['lasttime']).datetime))
                     logger.debug('upserting: %s' % d['indicator'])
@@ -538,7 +544,6 @@ class IndicatorManager(IndicatorManagerPlugin):
                         m = Message(message=d['message'], indicator=r)
                         s.add(m)
 
-                    
                 else:
                     logger.debug('skipping: %s' % d['indicator'])
                     n -= 1

@@ -101,11 +101,12 @@ class FeedAPI(MethodView):
             err = "invalid feed itype: {}, valid types are [{}]".format(filters['itype'], '|'.join(FEED_PLUGINS))
             return jsonify_unknown(err, 400)
 
-        if not filters.get('days'):
-            if not filters.get('itype'):
-                filters['days'] = DAYS_SHORT
-            else:
-                filters['days'] = FEED_DAYS[filters['itype']]
+        if not filters.get('reporttime'):
+            if not filters.get('days'):
+                if not filters.get('itype'):
+                    filters['days'] = DAYS_SHORT
+                else:
+                    filters['days'] = FEED_DAYS[filters['itype']]
 
         if not filters.get('limit'):
             filters['limit'] = FEEDS_LIMIT
@@ -125,7 +126,6 @@ class FeedAPI(MethodView):
             logger.debug('%s getting dataset' % id)
             try:
                 r = Client(remote, pull_token()).indicators_search(filters)
-
             except AuthError:
                 return jsonify_unauth()
 
@@ -146,8 +146,11 @@ class FeedAPI(MethodView):
 
         # whitelists are typically updated 1/month so we should catch those
         # esp for IP addresses
-        if filters['days'] < 45:
-            filters['days'] = 45
+        if not wl_filters.get('days') or int(wl_filters['days']) < 45:
+            wl_filters['days'] = 45
+            if wl_filters.get('reporttime'):
+                del wl_filters['reporttime']
+
         wl_filters['tags'] = 'whitelist'
         wl_filters['confidence'] = HTTPD_FEED_WHITELIST_CONFIDENCE
 
