@@ -4,21 +4,32 @@ defaults:
   altid_tlp: white
   altid: https://feodotracker.abuse.ch/host/<indicator>
   description: feodo
-  tags:
-    - feodo
-    - botnet
 
 feeds:
-  domains:
+  c2:
     confidence: 8
-    remote: https://feodotracker.abuse.ch/blocklist/?download=domainblocklist
-    pattern: ^(\S+)$
+    remote: https://feodotracker.abuse.ch/downloads/ipblocklist.csv
+    pattern: ^(\S+\s\S+),(\S+),(\S+),(\S+)$
     values:
+      - firsttime
       - indicator
+      - null
+      - null
+    defaults:
+      tags:
+        - feodo
+        - botnet
+        - c2
 
-  ips:
-    confidence: 6
-    remote: https://feodotracker.abuse.ch/blocklist/?download=ipblocklist
-    pattern: ^(\S+)$
+  hashes:
+    confidence: 8
+    remote: https://feodotracker.abuse.ch/downloads/malware_hashes.csv
+    pattern: ^(\S+\s\S+),(\S+),(\S+)$
     values:
+      - firsttime
       - indicator
+      - null
+    defaults:
+      tags:
+        - feodo
+        - botnet
