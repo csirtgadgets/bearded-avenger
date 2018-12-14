@@ -4,7 +4,8 @@ defaults:
   tlp: green
   altid_tlp: white
   confidence: 9
-  tags: malware
+  tags:
+    - malware
   application: https
   protocol: tcp
   values:
@@ -12,8 +13,8 @@ defaults:
     - reporttime
     - indicator
     - null
-    - description
     - null
+    - description
     - null
 feeds:
   Malware:
