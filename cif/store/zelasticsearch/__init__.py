@@ -1,6 +1,7 @@
 import logging
 import os
 
+from cifsdk.exceptions import CIFException
 from cif.store.plugin import Store
 from cif.store.zelasticsearch.token import TokenManager
 from cif.store.zelasticsearch.indicator import IndicatorManager
@@ -80,7 +81,7 @@ class _ElasticSearch(Store):
         s = self._health_check()
 
         if s is None or s['status'] == 'red':
-            return
+            raise CIFException('ES Cluster Issue')
 
         if self.tokens.read(token) or self.tokens.write(token):
             return True
