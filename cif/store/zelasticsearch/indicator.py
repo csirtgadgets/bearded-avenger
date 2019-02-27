@@ -4,7 +4,7 @@ import elasticsearch.exceptions
 from elasticsearch_dsl.connections import connections
 from cif.store.indicator_plugin import IndicatorManagerPlugin
 from pprint import pprint
-from cifsdk.exceptions import AuthError
+from cifsdk.exceptions import AuthError, CIFException
 from datetime import datetime, timedelta
 from cifsdk.constants import PYVERSION
 import logging
@@ -108,6 +108,11 @@ class IndicatorManager(IndicatorManagerPlugin):
             logger.error(e)
             es.transport.deserializer = old_serializer
             return
+        # catch all other es errors
+        except elasticsearch.ElasticsearchException as e:
+            logger.error(e)
+            es.transport.deserializer = old_serializer
+            raise CIFException
 
         logger.debug('query took: %0.2f' % (time.time() - start))
 
@@ -158,7 +163,12 @@ class IndicatorManager(IndicatorManagerPlugin):
             ii = self.create(token, i, bulk=True)
             actions.append(ii)
 
-        helpers.bulk(self.handle, actions, index=self._current_index())
+        try:
+            helpers.bulk(self.handle, actions, index=self._current_index())
+
+        except Exception as e:
+            logger.error(e)
+            actions = []
 
         if flush:
             self.flush()
@@ -287,4 +297,3 @@ class IndicatorManager(IndicatorManagerPlugin):
 
         #self.lockm.lock_release()
         return count
-

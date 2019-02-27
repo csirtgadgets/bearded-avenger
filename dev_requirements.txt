@@ -1,4 +1,4 @@
 coverage>=4.2
-pytest-cov>=2.2.1
+pytest-cov>=2.2.1,<2.6.1
 pytest>=2.8.0,<3.0
 -r requirements.txt
