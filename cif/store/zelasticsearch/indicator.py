@@ -37,6 +37,7 @@ class IndicatorManager(IndicatorManagerPlugin):
         self.partition = PARTITION
         self.idx = self._current_index()
         self.last_index_check = datetime.now() - timedelta(minutes=5)
+        self.last_index_value = None
         self.handle = connections.get_connection()
         self.lockm = LockManager(self.handle, logger)
 
