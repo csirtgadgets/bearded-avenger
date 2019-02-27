@@ -63,11 +63,12 @@ class IndicatorManager(IndicatorManagerPlugin):
     def _create_index(self):
         # https://github.com/csirtgadgets/massive-octo-spice/blob/develop/elasticsearch/observables.json
         # http://elasticsearch-py.readthedocs.org/en/master/api.html#elasticsearch.Elasticsearch.bulk
-        idx = self._current_index()
 
         # every time we check it does a HEAD req
-        if (datetime.utcnow() - self.last_index_check) < timedelta(minutes=2):
-            return idx
+        if self.last_index_value and (datetime.utcnow() - self.last_index_check) < timedelta(minutes=2):
+            return self.last_index_value
+
+        idx = self._current_index()
 
         if not self.handle.indices.exists(idx):
             index = Index(idx)
@@ -78,6 +79,7 @@ class IndicatorManager(IndicatorManagerPlugin):
             self.handle.indices.flush(idx)
 
         self.last_index_check = datetime.utcnow()
+        self.last_index_value = idx
         return idx
 
     def search(self, token, filters, sort='reporttime', raw=False, timeout=TIMEOUT):
