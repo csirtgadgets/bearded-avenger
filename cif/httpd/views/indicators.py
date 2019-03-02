@@ -34,7 +34,9 @@ class IndicatorsAPI(MethodView):
             return jsonify_success(r)
 
         try:
-            r = Client(remote, pull_token()).indicators_search(filters, decode=False)
+            with Client(remote, pull_token()) as cli:
+                r = cli.indicators_search(filters, decode=False)
+
         except RuntimeError as e:
             logger.error(e)
             return jsonify_unknown(msg='search failed')
@@ -68,7 +70,9 @@ class IndicatorsAPI(MethodView):
                 logger.info('fireball mode')
                 fireball = True
         try:
-            r = Client(remote, pull_token()).indicators_create(request.data, nowait=nowait, fireball=fireball)
+            with Client(remote, pull_token()) as cli:
+                r = cli.indicators_create(request.data, nowait=nowait,
+                                          fireball=fireball)
             if nowait:
                 r = 'pending'
 
@@ -99,7 +103,8 @@ class IndicatorsAPI(MethodView):
     def delete(self):
         try:
             data = request.data.decode('utf-8')
-            r = Client(remote, pull_token()).indicators_delete(data)
+            with Client(remote, pull_token()) as cli:
+                r = cli.indicators_delete(data)
 
         except RuntimeError as e:
             logger.error(e)
