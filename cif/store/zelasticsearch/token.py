@@ -84,7 +84,7 @@ class TokenManager(TokenManagerPlugin):
         if not (data.get('token') or data.get('username')):
             return 'username or token required'
 
-        rv = self.search(data, raw=True)
+        rv = list(self.search(data, raw=True))
 
         if not rv:
             return 0
@@ -94,7 +94,7 @@ class TokenManager(TokenManagerPlugin):
             t.delete()
 
         connections.get_connection().indices.flush(index='tokens')
-        return len(list(rv))
+        return len(rv)
 
     def edit(self, data):
         if not data.get('token'):
