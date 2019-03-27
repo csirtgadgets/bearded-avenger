@@ -84,7 +84,7 @@ class TokenManager(TokenManagerPlugin):
         if not (data.get('token') or data.get('username')):
             return 'username or token required'
 
-        rv = self.search(data, raw=True)
+        rv = list(self.search(data, raw=True))
 
         if not rv:
             return 0
@@ -94,18 +94,28 @@ class TokenManager(TokenManagerPlugin):
             t.delete()
 
         connections.get_connection().indices.flush(index='tokens')
-        return len(list(rv))
+        return len(rv)
 
     def edit(self, data):
         if not data.get('token'):
             return 'token required for updating'
 
-        d = list(self.search({'token': data['token']}))
+        d = list(self.search({'token': data['token']}, raw=True))
         if not d:
             return 'token not found'
 
-        d.update(fields=data)
+        d = Token.get(d[0]['_id'])
+
+        try:
+            d.update(groups=data['groups'])
+
+        except Exception as e:
+            import traceback
+            logger.error(traceback.print_exc())
+            return False
+
         connections.get_connection().indices.flush(index='tokens')
+        return True
 
     def update_last_activity_at(self, token, timestamp):
         if isinstance(timestamp, str):
