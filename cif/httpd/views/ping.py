@@ -21,7 +21,8 @@ class PingAPI(MethodView):
             return jsonify_success(r)
 
         try:
-            r = Client(remote, pull_token()).ping(write=write)
+            with Client(remote, pull_token()) as cli:
+                r = cli.ping(write=write)
 
         except TimeoutError:
             return jsonify_unknown(msg='timeout', code=408)
