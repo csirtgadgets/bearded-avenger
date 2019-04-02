@@ -49,10 +49,21 @@ CREATE_QUEUE_TIMEOUT = os.environ.get('CIF_STORE_TIMEOUT', 300)
 # queue max to flush before we hit CIF_STORE_QUEUE_FLUSH mark
 CREATE_QUEUE_MAX = os.environ.get('CIF_STORE_QUEUE_MAX', 1000)
 
+# require provider to match the token username
+STRICT_PROVIDERS = os.environ.get('CIF_STRICT_PROVIDERS', False)
+# allow these users to override provider - csv list
+STRICT_PROVIDERS_EXCEPTIONS = os.environ.get('CIF_STRICT_PROVIDERS_EXCEPTIONS','csirtg-smrt')
+STRICT_PROVIDERS_EXCEPTIONS = STRICT_PROVIDERS_EXCEPTIONS.split(',')
+
+if STRICT_PROVIDERS in [1, '1']:
+    STRICT_PROVIDERS = True
+else:
+    STRICT_PROVIDERS = False
+
 MORE_DATA_NEEDED = -2
 
 TRACE = os.environ.get('CIF_STORE_TRACE')
-    
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
 
@@ -220,6 +231,10 @@ class Store(multiprocessing.Process):
                     if not i.get('group'):
                         i['group'] = 'everyone'
 
+                    # optionally force provider to match username with exceptions
+                    if i.get('provider') and STRICT_PROVIDERS and not _t['username'] in STRICT_PROVIDERS_EXCEPTIONS:
+                        i['provider'] = _t['username']
+
                     if not i.get('provider') or i['provider'] == '':
                         i['provider'] = _t['username']
 
@@ -278,6 +293,10 @@ class Store(multiprocessing.Process):
             for i in data:
                 if not i.get('group'):
                     i['group'] = 'everyone'
+
+                # optionally force provider to match username with exceptions
+                if i.get('provider') and STRICT_PROVIDERS and not t['username'] in STRICT_PROVIDERS_EXCEPTIONS:
+                    i['provider'] = t['username']
 
                 if not i.get('provider') or i['provider'] == '':
                     i['provider'] = t['username']
