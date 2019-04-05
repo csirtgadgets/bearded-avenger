@@ -100,7 +100,7 @@ limiter = Limiter(
 
 @app.route('/favicon.ico')
 def favicon():
-   return send_from_directory(os.path.join(app.root_path, 'static'),
+    return send_from_directory(os.path.join(app.root_path, 'static'),
                               'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
 
@@ -123,6 +123,7 @@ app.add_url_rule('/indicators', view_func=IndicatorsAPI.as_view('indicators'))
 app.add_url_rule('/search', view_func=IndicatorsAPI.as_view('search'))
 app.add_url_rule('/feed', view_func=FeedAPI.as_view('feed'))
 app.add_url_rule('/help/confidence', view_func=ConfidenceAPI.as_view('confidence'))
+
 
 @app.teardown_request
 def teardown_request(exception):
@@ -172,7 +173,6 @@ def process_response(response):
 def before_request():
     """
     Grab the API token from headers
-
     :return: 401 if no token is present
     """
 
@@ -219,21 +219,20 @@ def login():
         if request.form['token'] == '':
             return render_template('login.html')
 
-        with Client(remote, HTTPD_TOKEN) as cli:
-            rv = cli.tokens_search({'token': request.form['token']})
-
+        c = Client(remote, HTTPD_TOKEN)
+        rv = c.tokens_search({'token': request.form['token']})
         if len(rv) == 0:
             return render_template('login.html', code=401)
 
         user = rv[0]
 
-        if user['revoked']:
+        if user.get('revoked'):
             return render_template('login.html', code=401)
 
         for e in ['username', 'token', 'admin', 'read', 'write', 'groups']:
             session[e] = user[e]
-
-        return redirect(url_for('/u/search'))
+        return redirect(url_for('/u'))
+    return render_template('login.html')
 
 
 @app.route('/u/logout')
