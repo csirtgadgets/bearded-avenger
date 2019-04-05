@@ -21,7 +21,8 @@ class PingAPI(MethodView):
             return jsonify_success(r)
 
         try:
-            r = Client(remote, pull_token()).ping(write=write)
+            with Client(remote, HTTPD_TOKEN) as cli:
+                r = cli.tokens_search({'token': request.form['token']})
 
         except TimeoutError:
             return jsonify_unknown(msg='timeout', code=408)
