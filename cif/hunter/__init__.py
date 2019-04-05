@@ -100,7 +100,7 @@ class Hunter(multiprocessing.Process):
                     continue
 
                 if not data.get('itype'):
-                    try: 
+                    try:
                         data = Indicator(
                             indicator=data['indicator'],
                             tags='search',
@@ -127,6 +127,7 @@ class Hunter(multiprocessing.Process):
                     for t in d.tags:
                         if t in self.exclude[d.provider]:
                             logger.debug('skipping: {}'.format(d.indicator))
+                            continue
 
                 for p in plugins:
                     if p.is_advanced:
