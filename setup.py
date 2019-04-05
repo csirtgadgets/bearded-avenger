@@ -57,6 +57,10 @@ template_files = [
     'cif/httpd/templates/submit.html'
 ]
 
+static_files = [
+    'cif/httpd/static/favicon.ico'
+]
+
 setup(
     name="cif",
     version=versioneer.get_version(),
@@ -76,7 +80,7 @@ setup(
     author="Wes Young",
     author_email="wes@csirtgadgets.org",
     packages=find_packages(),
-    data_files=[('cif/httpd/static/', ['cif/httpd/static/favicon.ico']),
+    data_files=[('cif/httpd/static/', static_files),
                 ('cif/httpd/templates/', template_files),
                 ('cif/httpd/templates/tokens/', token_files)],
     install_requires=[
