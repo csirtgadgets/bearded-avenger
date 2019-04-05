@@ -2,28 +2,43 @@
 
 {% block content %}
 
-<table class="table table-striped" id="results">
+<table class="table table-striped table-bordered" id="results">
     <thead>
+        <th>LastTime</th>
         <th>Group</th>
         <th>TLP</th>
         <th>Indicator</th>
-        <th>LastTime</th>
-        <th>ReportTime</th>
-        <th>Count</th>
+        <th>Provider</th>
+        <th>Tags</th>
+        <th>Confidence</th>
+        <th>Protocol</th>
+        <th>Portlist</th>
     </thead>
     <tbody>
      {% for r in records: %}
       <tr>
-        <td>{{ r['group'] }}</td>
+        <td>{{ r['lasttime'] }}</td>
+        <td>
+        {% for g in r['group']: %}
+          {{ g }}
+          {{ "," if not loop.last }}
+        {% endfor %}
+        </td>
         <td>{{ r['tlp'] }}</td>
         <td>{{ r['indicator'] }}</td>
-        <td>{{ r['lasttime'] }}</td>
-        <td>{{ r['reporttime'] }}</td>
-        <td>{{ r['count'] }}</td>
+        <td>{{ r['provider'] }}</td>
+        <td>
+        {% for t in r['tags']: %}
+          {{ t }}
+          {{ "," if not loop.last }}
+        {% endfor %}
+        </td>
+        <td>{{ r['confidence'] }}</td>
+        <td>{{ r['protocol'] }}</td>
+        <td>{{ r['portlist'] }}</td>
       </tr>
     {% endfor %}
     </tbody>
-
 </table>
 
 {% endblock %}

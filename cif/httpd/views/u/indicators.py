@@ -12,16 +12,28 @@ logger = logging.getLogger('cif-httpd')
 
 class IndicatorsUI(MethodView):
     def get(self):
-
-        q = request.args.get('q')
-        if not q:
-            return render_template('indicators.html')
-
         filters = {}
-        if q in ['ipv4', 'ipv6', 'fqdn', 'url', 'email']:
-            filters['itype'] = q
-        else:
-            filters['indicator'] = q
+
+        if request.args.get('q'):
+            q = request.args.get('q')
+            if q in ['ipv4', 'ipv6', 'fqdn', 'url', 'email']:
+                filters['itype'] = q
+            else:
+                filters['indicator'] = q
+
+        if request.args.get('confidence'):
+            filters['confidence'] = request.args.get('confidence')
+        if request.args.get('provider'):
+            filters['provider'] = request.args.get('provider')
+        if request.args.get('group'):
+            filters['group'] = request.args.get('group')
+        if request.args.get('tags'):
+            filters['tags'] = request.args.get('tags')
+        if request.args.get('lasttime'):
+            filters['lasttime'] = request.args.get('lasttime')
+
+        if not filters:
+                return render_template('indicators.html')
 
         try:
             r = Client(remote, session['token']).indicators_search(filters)

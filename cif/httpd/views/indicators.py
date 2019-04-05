@@ -28,6 +28,16 @@ class IndicatorsAPI(MethodView):
 
         if request.args.get('q'):
             filters['indicator'] = request.args.get('q')
+        if request.args.get('confidence'):
+            filters['confidence'] = request.args.get('confidence')
+        if request.args.get('provider'):
+            filters['provider'] = request.args.get('provider')
+        if request.args.get('group'):
+            filters['group'] = request.args.get('group')
+        if request.args.get('tags'):
+            filters['tags'] = request.args.get('tags')
+        if request.args.get('lasttime'):
+            filters['lasttime'] = request.args.get('lasttime')
 
         if current_app.config.get('dummy'):
             r = DummyClient(remote, pull_token()).indicators_search(filters)
