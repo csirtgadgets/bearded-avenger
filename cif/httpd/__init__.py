@@ -219,8 +219,9 @@ def login():
         if request.form['token'] == '':
             return render_template('login.html')
 
-        c = Client(remote, HTTPD_TOKEN)
-        rv = c.tokens_search({'token': request.form['token']})
+        with Client(remote, HTTPD_TOKEN) as cli:
+            rv = cli.tokens_search({'token': request.form['token']})
+
         if len(rv) == 0:
             return render_template('login.html', code=401)
 
