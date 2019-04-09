@@ -4,6 +4,7 @@ from elasticsearch_dsl.connections import connections
 import arrow
 from pprint import pprint
 import logging
+from .constants import LIMIT, TIMEOUT
 from cif.constants import PYVERSION
 from cif.store.token_plugin import TokenManagerPlugin
 import os
@@ -37,6 +38,7 @@ class TokenManager(TokenManagerPlugin):
 
     def search(self, data, raw=False):
         s = Token.search()
+        s = s.params(size=LIMIT, timeout=TIMEOUT)
 
         for k in ['token', 'username', 'admin', 'write', 'read']:
             if data.get(k):
