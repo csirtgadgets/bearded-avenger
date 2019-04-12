@@ -1,4 +1,4 @@
-from elasticsearch_dsl import DocType, String, Date, Integer, Boolean, Float, Ip, GeoPoint
+from elasticsearch_dsl import DocType, String, Date, Integer, Boolean, Float, Ip, GeoPoint, Keyword, Index
 import elasticsearch.exceptions
 from elasticsearch_dsl.connections import connections
 import arrow
@@ -12,28 +12,38 @@ import os
 logger = logging.getLogger('cif.store.zelasticsearch')
 
 INDEX_NAME = 'tokens'
+NEW_INDEX_NAME = 'tokens_new'
 CONFLICT_RETRIES = os.getenv('CIF_STORE_ES_CONFLICT_RETRIES', 5)
 CONFLICT_RETRIES = int(CONFLICT_RETRIES)
 
 
 class Token(DocType):
-    username = String()
-    token = String()
+    username = Keyword()
+    token = Keyword()
     expires = Date()
     read = Boolean()
     write = Boolean()
     revoked = Boolean()
-    acl = String()
-    groups = String()
+    acl = Keyword()
+    groups = Keyword()
     admin = Boolean()
     last_activity_at = Date()
 
     class Meta:
-        index = INDEX_NAME
+        index = NEW_INDEX_NAME
 
 
 class TokenManager(TokenManagerPlugin):
     def __init__(self, *args, **kwargs):
+        if Index(INDEX_NAME).exists() and not Index(NEW_INDEX_NAME).exists():
+            Token.init()
+            connections.get_connection().reindex(body={"source": {"index": INDEX_NAME}, "dest": {"index": NEW_INDEX_NAME}}, request_timeout=3600)
+            Index(INDEX_NAME).delete()
+            Index(NEW_INDEX_NAME).put_alias(name=INDEX_NAME)
+        else:
+            Token.init()
+            Index(NEW_INDEX_NAME).put_alias(name=INDEX_NAME)
+
         super(TokenManager, self).__init__(**kwargs)
 
     def search(self, data, raw=False):
