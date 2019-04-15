@@ -12,9 +12,16 @@ import os
 logger = logging.getLogger('cif.store.zelasticsearch')
 
 INDEX_NAME = 'tokens'
-NEW_INDEX_NAME = 'tokens_new'
 CONFLICT_RETRIES = os.getenv('CIF_STORE_ES_CONFLICT_RETRIES', 5)
 CONFLICT_RETRIES = int(CONFLICT_RETRIES)
+
+
+class ReIndexError(Exception):
+    def __init__(self, value):
+        self.value = value
+        
+    def __str__(self):
+        return repr(self.value)
 
 
 class Token(DocType):
@@ -30,19 +37,17 @@ class Token(DocType):
     last_activity_at = Date()
 
     class Meta:
-        index = NEW_INDEX_NAME
+        index = INDEX_NAME
 
 
 class TokenManager(TokenManagerPlugin):
     def __init__(self, *args, **kwargs):
-        if Index(INDEX_NAME).exists() and not Index(NEW_INDEX_NAME).exists():
+        try:
             Token.init()
-            connections.get_connection().reindex(body={"source": {"index": INDEX_NAME}, "dest": {"index": NEW_INDEX_NAME}}, request_timeout=3600)
-            Index(INDEX_NAME).delete()
-            Index(NEW_INDEX_NAME).put_alias(name=INDEX_NAME)
-        else:
-            Token.init()
-            Index(NEW_INDEX_NAME).put_alias(name=INDEX_NAME)
+        except elasticsearch.exceptions.RequestError:
+            raise ReIndexError("Your Tokens index is using an old mapping, please run reindex_tokens.py")
+        except Exception as e:
+            raise ReIndexError("Unspecified error: %s" % e)
 
         super(TokenManager, self).__init__(**kwargs)
 
