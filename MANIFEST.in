@@ -13,7 +13,6 @@ include Vagrantfile.centos
 include Vagrantfile_es
 include Vagrantfile_prod
 include Vagrantfile_prod.centos
-recursive-include cif/httpd *
 recursive-include test *
 recursive-include deployment *
 recursive-include hacking *

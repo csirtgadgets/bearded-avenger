@@ -1,29 +1,68 @@
+
 {%- extends "layout.html" %}
+{%- block head %}
+    {{super()}}
+    <script src="https://code.jquery.com/jquery-3.3.1.js"></script>
+    <script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/1.5.6/css/buttons.bootstrap.min.css"></script>
+
+{%- endblock head %}>
+
 
 {% block content %}
-
-<table class="table table-striped" id="results">
+  <table id="search_results" class="display" style="width:100%">
     <thead>
+      <tr>
+        <th>LastTime</th>
         <th>Group</th>
         <th>TLP</th>
         <th>Indicator</th>
-        <th>LastTime</th>
-        <th>ReportTime</th>
-        <th>Count</th>
-    </thead>
-    <tbody>
-     {% for r in records: %}
-      <tr>
-        <td>{{ r['group'] }}</td>
-        <td>{{ r['tlp'] }}</td>
-        <td>{{ r['indicator'] }}</td>
-        <td>{{ r['lasttime'] }}</td>
-        <td>{{ r['reporttime'] }}</td>
-        <td>{{ r['count'] }}</td>
+        <th>Provider</th>
+        <th>Tags</th>
+        <th>Confidence</th>
+        <th>Protocol</th>
+        <th>Portlist</th>
       </tr>
-    {% endfor %}
-    </tbody>
+    </thead>
+    <tfoot>
+      <tr>
+        <th>LastTime</th>
+        <th>Group</th>
+        <th>TLP</th>
+        <th>Indicator</th>
+        <th>Provider</th>
+        <th>Tags</th>
+        <th>Confidence</th>
+        <th>Protocol</th>
+        <th>Portlist</th>
+      </tr>
+    </tfoot>
+  </table>
 
-</table>
-
+<script>
+function setupData() {
+    $(document).ready(function () {
+        $('#search_results').DataTable({
+            "ajax": {
+                "url": "/u/indicators_get_data",
+                "dataType": "json",
+                "dataSrc": "data",
+                "contentType":"application/json"
+            },
+            "columns": [
+                {"data": "lasttime", "defaultContent": ""},
+                {"data": "group", "defaultContent": ""},
+                {"data": "tlp", "defaultContent": ""},
+                {"data": "indicator", "defaultContent": ""},
+                {"data": "provider", "defaultContent": ""},
+                {"data": "tags", "defaultContent": ""},
+                {"data": "confidence", "defaultContent": ""},
+                {"data": "protocol", "defaultContent": ""},
+                {"data": "portlist", "defaultContent": ""}
+            ]
+        });
+    });
+}
+$( window ).on( "load", setupData );
+</script>
 {% endblock %}

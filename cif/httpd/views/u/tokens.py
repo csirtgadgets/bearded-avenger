@@ -144,8 +144,6 @@ class TokensUI(MethodView):
         flash('success', 'success')
         return redirect(url_for('/u/tokens'))
 
-
-
     def delete(self, token_id):
         if not session['admin']:
             return redirect('/u/login', code=401)

@@ -8,8 +8,7 @@ import textwrap
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 
-from flask import Flask, request, session, redirect, url_for, render_template, _request_ctx_stack, send_from_directory, g
-#from flask.ext.session import Session
+from flask import Flask, request, session, redirect, url_for, render_template, _request_ctx_stack, send_from_directory, g, jsonify
 from flask_limiter import Limiter
 from flask_cors import CORS
 from flask_limiter.util import get_remote_address
@@ -28,7 +27,7 @@ from .views.tokens import TokensAPI
 from .views.indicators import IndicatorsAPI
 from .views.feed import FeedAPI
 from .views.confidence import ConfidenceAPI
-from .views.u.indicators import IndicatorsUI
+from .views.u.indicators import IndicatorsUI, DataTables
 from .views.u.submit import SubmitUI
 from .views.u.tokens import TokensUI
 
@@ -100,8 +99,13 @@ limiter = Limiter(
 
 @app.route('/favicon.ico')
 def favicon():
-   return send_from_directory(os.path.join(app.root_path, 'static'),
+    return send_from_directory(os.path.join(app.root_path, 'static'),
                               'favicon.ico', mimetype='image/vnd.microsoft.icon')
+
+
+@app.route('/u/indicators_get_data')
+def get_results():
+    return jsonify({"data": DataTables()})
 
 
 app.add_url_rule('/u', view_func=IndicatorsUI.as_view('/u'))
@@ -113,7 +117,6 @@ app.add_url_rule('/u/tokens/<string:token_id>', view_func=tokens_view, methods=[
 app.add_url_rule('/u/tokens/new', view_func=tokens_view, methods=['PUT'])
 app.add_url_rule('/u/tokens/', view_func=tokens_view, defaults={'token_id': None}, methods=['GET', ])
 
-
 app.add_url_rule('/', view_func=HelpAPI.as_view('/'))
 app.add_url_rule('/help', view_func=HelpAPI.as_view('help'))
 app.add_url_rule('/health', view_func=HealthAPI.as_view('health'))
@@ -123,6 +126,7 @@ app.add_url_rule('/indicators', view_func=IndicatorsAPI.as_view('indicators'))
 app.add_url_rule('/search', view_func=IndicatorsAPI.as_view('search'))
 app.add_url_rule('/feed', view_func=FeedAPI.as_view('feed'))
 app.add_url_rule('/help/confidence', view_func=ConfidenceAPI.as_view('confidence'))
+
 
 @app.teardown_request
 def teardown_request(exception):
@@ -172,7 +176,6 @@ def process_response(response):
 def before_request():
     """
     Grab the API token from headers
-
     :return: 401 if no token is present
     """
 
@@ -227,13 +230,13 @@ def login():
 
         user = rv[0]
 
-        if user['revoked']:
+        if user.get('revoked'):
             return render_template('login.html', code=401)
 
         for e in ['username', 'token', 'admin', 'read', 'write', 'groups']:
             session[e] = user[e]
-
-        return redirect(url_for('/u/search'))
+        return redirect(url_for('/u'))
+    return render_template('login.html')
 
 
 @app.route('/u/logout')
