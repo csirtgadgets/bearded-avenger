@@ -39,6 +39,28 @@ if sys.argv[-1] == 'install':
         print('')
         raise SystemError
 
+token_files = [
+    'cif/httpd/templates/tokens/edit.html',
+    'cif/httpd/templates/tokens/form.html',
+    'cif/httpd/templates/tokens/index.html',
+    'cif/httpd/templates/tokens/show.html'
+]
+
+template_files = [
+    'cif/httpd/templates/application.html',
+    'cif/httpd/templates/base.html',
+    'cif/httpd/templates/flash.html',
+    'cif/httpd/templates/indicators.html',
+    'cif/httpd/templates/layout.html',
+    'cif/httpd/templates/login.html',
+    'cif/httpd/templates/nav.html',
+    'cif/httpd/templates/submit.html'
+]
+
+static_files = [
+    'cif/httpd/static/favicon.ico'
+]
+
 setup(
     name="cif",
     version=versioneer.get_version(),
@@ -58,6 +80,9 @@ setup(
     author="Wes Young",
     author_email="wes@csirtgadgets.org",
     packages=find_packages(),
+    data_files=[('cif/httpd/static/', static_files),
+                ('cif/httpd/templates/', template_files),
+                ('cif/httpd/templates/tokens/', token_files)],
     install_requires=[
         'html5lib',
         'Flask-Limiter',
