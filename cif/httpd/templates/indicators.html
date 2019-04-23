@@ -1,13 +1,5 @@
 
 {%- extends "layout.html" %}
-{%- block head %}
-    {{super()}}
-    <script src="https://code.jquery.com/jquery-3.3.1.js"></script>
-    <script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/1.5.6/css/buttons.bootstrap.min.css"></script>
-
-{%- endblock head %}>
-
 
 {% block content %}
   <table id="search_results" class="display" style="width:100%">
@@ -42,13 +34,15 @@
 <script>
 function setupData() {
     $(document).ready(function () {
-        $('#search_results').DataTable({
+        var table = $('#search_results').DataTable({
             "ajax": {
                 "url": "/u/indicators_get_data",
                 "dataType": "json",
                 "dataSrc": "data",
                 "contentType":"application/json"
             },
+            "dom": 'Bfrtip',
+            "buttons": [ 'colvis' ],
             "columns": [
                 {"data": "lasttime", "defaultContent": ""},
                 {"data": "group", "defaultContent": ""},
@@ -61,6 +55,14 @@ function setupData() {
                 {"data": "portlist", "defaultContent": ""}
             ]
         });
+
+        new $.fn.dataTable.Buttons( table, {
+            buttons: [ 'csvHtml5' ]
+        });
+
+        table.buttons( 1, null ).container().appendTo(
+            table.table().container()
+        );
     });
 }
 $( window ).on( "load", setupData );
