@@ -9,6 +9,7 @@ import csv
 from csirtg_indicator import Indicator
 from csirtg_indicator.constants import COLUMNS
 from csirtg_indicator.format import FORMATS
+import arrow
 
 remote = ROUTER_ADDR
 
@@ -18,6 +19,7 @@ logger = logging.getLogger('cif-httpd')
 class IndicatorsUI(MethodView):
     def get(self):
         session['filters'] = {}
+        now = arrow.utcnow()
 
         if request.args.get('q'):
             session['filters']['q'] = request.args.get('q')
@@ -29,11 +31,17 @@ class IndicatorsUI(MethodView):
             session['filters']['group'] = request.args.get('group')
         if request.args.get('tags'):
             session['filters']['tags'] = request.args.get('tags')
-        if request.args.get('lasttime'):
-            session['filters']['lasttime'] = request.args.get('lasttime')
+        if request.args.get('starttime') or request.args.get('endtime'):
+            if request.args.get('starttime'):
+                starttime = request.args.get('starttime') + 'T00:00:00Z'
+            else:
+                starttime = '1900-01-01T00:00:00Z'
+            if request.args.get('endtime'):
+                endtime = request.args.get('endtime') + 'T23:59:59Z'
+            else:
+                endtime = '{0}Z'.format(now.format('YYYY-MM-DDT23:59:59'))
 
-        if not session['filters']:
-            session['filters'] = {}
+            session['filters']['reporttime'] = '%s,%s' % (starttime, endtime)
 
         response = render_template('indicators.html')
 
@@ -61,8 +69,8 @@ def DataTables():
         filters['group'] = session['filters'].get('group')
     if session['filters'].get('tags'):
         filters['tags'] = session['filters'].get('tags')
-    if session['filters'].get('lasttime'):
-        filters['lasttime'] = session['filters'].get('lasttime')
+    if session['filters'].get('reporttime'):
+        filters['reporttime'] = session['filters'].get('reporttime')
 
     if not session['filters']:
         return []
