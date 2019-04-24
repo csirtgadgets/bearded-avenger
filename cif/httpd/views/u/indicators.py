@@ -19,6 +19,7 @@ logger = logging.getLogger('cif-httpd')
 class IndicatorsUI(MethodView):
     def get(self):
         session['filters'] = {}
+        now = arrow.utcnow()
 
         if request.args.get('q'):
             session['filters']['q'] = request.args.get('q')
@@ -30,14 +31,11 @@ class IndicatorsUI(MethodView):
             session['filters']['group'] = request.args.get('group')
         if request.args.get('tags'):
             session['filters']['tags'] = request.args.get('tags')
-
-        now = arrow.utcnow()
         if request.args.get('starttime') or request.args.get('endtime'):
             if request.args.get('starttime'):
                 starttime = request.args.get('starttime') + 'T00:00:00Z'
             else:
                 starttime = '1900-01-01T00:00:00Z'
-
             if request.args.get('endtime'):
                 endtime = request.args.get('endtime') + 'T23:59:59Z'
             else:
@@ -73,8 +71,6 @@ def DataTables():
         filters['tags'] = session['filters'].get('tags')
     if session['filters'].get('reporttime'):
         filters['reporttime'] = session['filters'].get('reporttime')
-    logger.error(session['filters'])
-    logger.error(filters)
 
     if not session['filters']:
         return []
