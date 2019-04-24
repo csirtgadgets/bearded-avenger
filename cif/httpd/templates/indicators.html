@@ -2,10 +2,11 @@
 {%- extends "layout.html" %}
 
 {% block content %}
+<div id="results_table">
   <table id="search_results" class="display" style="width:100%">
     <thead>
       <tr>
-        <th>LastTime</th>
+        <th>ReportTime</th>
         <th>Group</th>
         <th>TLP</th>
         <th>Indicator</th>
@@ -18,7 +19,7 @@
     </thead>
     <tfoot>
       <tr>
-        <th>LastTime</th>
+        <th>ReportTime</th>
         <th>Group</th>
         <th>TLP</th>
         <th>Indicator</th>
@@ -30,7 +31,9 @@
       </tr>
     </tfoot>
   </table>
-
+</div>
+<div id="export_buttons">
+</div>
 <script>
 function setupData() {
     $(document).ready(function () {
@@ -44,7 +47,7 @@ function setupData() {
             "dom": 'Bfrtip',
             "buttons": [ 'colvis' ],
             "columns": [
-                {"data": "lasttime", "defaultContent": ""},
+                {"data": "reporttime", "defaultContent": ""},
                 {"data": "group", "defaultContent": ""},
                 {"data": "tlp", "defaultContent": ""},
                 {"data": "indicator", "defaultContent": ""},
@@ -57,12 +60,22 @@ function setupData() {
         });
 
         new $.fn.dataTable.Buttons( table, {
-            buttons: [ 'csvHtml5' ]
+            buttons: [ 'csvHtml5',
+                {
+                    text: 'JSON',
+                    action: function (e, dt, button, config) {
+                        var data = dt.buttons.exportData();
+
+                        $.fn.dataTable.fileSave(
+                            new Blob([JSON.stringify(data)]),
+                            'Export.json'
+                        );
+                    }
+                }
+            ]
         });
 
-        table.buttons( 1, null ).container().appendTo(
-            table.table().container()
-        );
+        table.buttons( 1, null ).container().appendTo('#export_buttons');
     });
 }
 $( window ).on( "load", setupData );
