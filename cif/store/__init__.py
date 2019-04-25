@@ -377,6 +377,21 @@ class Store(multiprocessing.Process):
                 if isinstance(data['indicator'], str):
                     data['indicator'] = unicode(data['indicator'])
 
+        # verify group filter matches token permissions
+        if data.get('groups'):
+            q_groups = [g.strip() for g in data['groups'].split(',')]
+
+            gg = []
+            for g in q_groups:
+                if g in t['groups']:
+                    gg.append(g)
+
+            if gg:
+                data['groups'] = gg
+            else:
+                data['groups'] = '{}'
+
+
         if not data.get('reporttime'):
             if data.get('days'):
                 now = arrow.utcnow()
