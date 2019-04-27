@@ -66,7 +66,7 @@ def DataTables():
     if session['filters'].get('provider'):
         filters['provider'] = session['filters'].get('provider')
     if session['filters'].get('group'):
-        filters['group'] = session['filters'].get('group')
+        filters['groups'] = session['filters'].get('group')
     if session['filters'].get('tags'):
         filters['tags'] = session['filters'].get('tags')
     if session['filters'].get('reporttime'):
@@ -77,7 +77,6 @@ def DataTables():
 
     try:
         r = Client(remote, session['token']).indicators_search(filters)
-
     except Exception as e:
         logger.error(e)
         flash(e, 'error')
