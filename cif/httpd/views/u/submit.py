@@ -2,7 +2,7 @@ from flask.views import MethodView
 from flask import request, render_template, session, redirect, flash
 from cif.constants import ROUTER_ADDR
 import logging
-from csirtg_indicator import Indicator
+from csirtg_indicator import Indicator, InvalidIndicator
 from cifsdk.client.zeromq import ZMQ as Client
 
 remote = ROUTER_ADDR
@@ -25,7 +25,13 @@ class SubmitUI(MethodView):
 
         i['provider'] = session['username']
 
-        i = Indicator(**i)
+        try:
+            i = Indicator(**i)
+
+        except InvalidIndicator as e:
+            logger.error(e)
+            flash(e, 'error')
+            return render_template('submit.html', error='Invalid itype')
 
         logger.debug(i)
 
