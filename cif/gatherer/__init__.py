@@ -9,7 +9,7 @@ from cifsdk.msg import Msg
 import os
 import cif.gatherer
 from cif.constants import GATHERER_ADDR, GATHERER_SINK_ADDR
-from csirtg_indicator import Indicator
+from csirtg_indicator import Indicator, InvalidIndicator
 import time
 
 SNDTIMEO = 30000
@@ -84,7 +84,16 @@ class Gatherer(multiprocessing.Process):
                 rv = []
                 start = time.time()
                 for d in data:
-                    i = Indicator(**d)
+                    try:
+                        i = Indicator(**d)
+
+                    except InvalidIndicator as e:
+                        from pprint import pprint
+                        pprint(i)
+
+                        logger.error('gatherer failed: %s' % g)
+                        logger.error(e)
+                        traceback.print_exc()
 
                     for g in self.gatherers:
                         try:
