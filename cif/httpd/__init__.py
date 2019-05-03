@@ -239,12 +239,6 @@ def login():
     return render_template('login.html')
 
 
-@app.route('/u/dashboard', methods=['GET'])
-def dashboard():
-    if request.method == 'GET':
-        return render_template('dashboard.html')
-
-
 @app.route('/u/logout')
 def logout():
     session.pop('token', None)

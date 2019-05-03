@@ -49,7 +49,6 @@ token_files = [
 template_files = [
     'cif/httpd/templates/application.html',
     'cif/httpd/templates/base.html',
-    'cif/httpd/templates/dashboard.html',
     'cif/httpd/templates/flash.html',
     'cif/httpd/templates/indicators.html',
     'cif/httpd/templates/layout.html',
