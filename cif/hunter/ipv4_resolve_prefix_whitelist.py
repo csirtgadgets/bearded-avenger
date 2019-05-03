@@ -1,5 +1,5 @@
 import logging
-from csirtg_indicator import Indicator
+from csirtg_indicator import Indicator, InvalidIndicator
 import arrow
 
 
@@ -21,7 +21,12 @@ class Ipv4ResolvePrefixWhitelist(object):
         prefix.append('0/24')
         prefix = '.'.join(prefix)
 
-        ii = Indicator(**i.__dict__())
+        try:
+            ii = Indicator(**i.__dict__())
+        except InvalidIndicator as e:
+            self.logger.error(e)
+            return
+
         ii.lasttime = arrow.utcnow()
 
         ii.indicator = prefix

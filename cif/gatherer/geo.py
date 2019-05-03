@@ -4,7 +4,7 @@ import geoip2.database
 import pygeoip
 from geoip2.errors import AddressNotFoundError
 import re
-from csirtg_indicator import Indicator
+from csirtg_indicator import Indicator, InvalidIndicator
 from cif.constants import PYVERSION
 from pprint import pprint
 if PYVERSION > 2:
@@ -24,6 +24,7 @@ ENABLE_FQDN = os.getenv('CIF_GATHERER_GEO_FQDN')
 DB_FILE = 'GeoLite2-City.mmdb'
 ASN_DB_PATH = os.getenv('CIF_GEO_ASN_PATH', 'GeoLite2-ASN.mmdb')
 DB_PATH = os.environ.get('CIF_GEO_PATH')
+logger = logging.getLogger(__name__)
 
 
 class Geo(object):
@@ -172,7 +173,12 @@ def main():
     g = Geo()
     i = sys.argv[1]
 
-    i = Indicator(i)
+    try:
+        i = Indicator(i)
+    except InvalidIndicator as e:
+        logger.error(e)
+        return
+
     i = g.process(i)
 
     pprint(i)
