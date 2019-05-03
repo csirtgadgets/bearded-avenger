@@ -48,6 +48,7 @@
                 <option value="9">High - 9</option>
                 <option value="8">Medium - 8</option>
                 <option value="7">Low - 7</option>
+                <option value="1">All - 1</option>
               </select>
           <input type="text" placeholder="provider" class="form-control" name="provider" id="provider" style="width: 100px;">
           <input type="text" placeholder="group" class="form-control" name="group" id="group" style="width: 100px;">
@@ -62,6 +63,7 @@
       {% endif %}
 
       <ul class="nav navbar-nav navbar-right">
+        <li><a href="/u/dashboard">Dashboard<span class="sr-only">(current)</span></a></li>
         <li><a href="/u/logout">Logout ({{ session['username'] }})</a></li>
       </ul>
     </div><!-- /.navbar-collapse -->
