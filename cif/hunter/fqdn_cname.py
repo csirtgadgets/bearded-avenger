@@ -16,6 +16,9 @@ class FqdnCname(object):
         if i.itype != 'fqdn':
             return
 
+        if 'search' in i.tags:
+            return
+
         try:
             r = resolve_ns(i.indicator, t='CNAME')
         except Timeout:

@@ -21,6 +21,9 @@ class Url(object):
         if i.itype != 'url':
             return
 
+        if 'search' in i.tags:
+            return
+
         u = urlparse(i.indicator)
         if not u.hostname:
             return

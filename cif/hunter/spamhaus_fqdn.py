@@ -68,6 +68,9 @@ class SpamhausFqdn(object):
             return data[0]
 
     def process(self, i, router):
+        if 'search' in i.tags:
+            return
+
         if i.itype == 'fqdn' and i.provider != 'spamhaus.org':
             try:
                 r = self._resolve(i.indicator)
