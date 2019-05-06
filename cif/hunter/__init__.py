@@ -67,7 +67,7 @@ class Hunter(multiprocessing.Process):
         self.exit.set()
 
     def start(self):
-        router = Client(remote=self.router, token=self.token, nowait=True)
+        router = Client(remote=self.router, token=self.token, nowait=True, autoclose=False)
         plugins = self._load_plugins()
         socket = zmq.Context().socket(zmq.PULL)
 
