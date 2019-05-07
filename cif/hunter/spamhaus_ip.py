@@ -54,6 +54,9 @@ class SpamhausIp(object):
             return data[0]
 
     def process(self, i, router):
+        if 'search' in i.tags:
+            return
+
         if i.itype != 'ipv4' and i.itype != 'ipv6':
             return
 

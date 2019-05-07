@@ -16,6 +16,9 @@ class FqdnCname(object):
         if i.itype != 'fqdn':
             return
 
+        if 'search' in i.tags:
+            return
+
         try:
             r = resolve_ns(i.indicator, t='CNAME')
         except Timeout:
@@ -25,7 +28,7 @@ class FqdnCname(object):
         for rr in r:
             # http://serverfault.com/questions/44618/is-a-wildcard-cname-dns-record-valid
             rr = str(rr).rstrip('.').lstrip('*.')
-            if rr in ['', 'localhost']:
+            if rr in ['', 'localhost', '0.0.0.0']:
                 continue
 
             fqdn = Indicator(**i.__dict__())

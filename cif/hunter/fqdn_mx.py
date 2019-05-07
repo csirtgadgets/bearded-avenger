@@ -32,7 +32,7 @@ class FqdnMx(object):
             rr = re.sub(r'^\d+ ', '', str(rr))
             rr = str(rr).rstrip('.')
 
-            if rr in ["", 'localhost']:
+            if rr in ["", 'localhost', '0.0.0.0']:
                 continue
 
             fqdn = Indicator(**i.__dict__())
