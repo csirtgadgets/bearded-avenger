@@ -37,7 +37,7 @@ class Fqdn(object):
 
         for rr in r:
             rr = str(rr)
-            if rr in ["", 'localhost']:
+            if rr in ["", 'localhost', '0.0.0.0']:
                 continue
 
             ip = Indicator(**i.__dict__())

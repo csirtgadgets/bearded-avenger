@@ -28,7 +28,7 @@ class FqdnCname(object):
         for rr in r:
             # http://serverfault.com/questions/44618/is-a-wildcard-cname-dns-record-valid
             rr = str(rr).rstrip('.').lstrip('*.')
-            if rr in ['', 'localhost']:
+            if rr in ['', 'localhost', '0.0.0.0']:
                 continue
 
             fqdn = Indicator(**i.__dict__())
