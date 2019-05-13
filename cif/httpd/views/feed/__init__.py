@@ -51,6 +51,7 @@ FEED_DAYS = {
     'md5': DAYS_MEDIUM,
     'sha1': DAYS_MEDIUM,
     'sha256': DAYS_MEDIUM,
+    'sha512': DAYS_MEDIUM,
 }
 
 
