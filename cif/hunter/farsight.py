@@ -2,7 +2,7 @@ import logging
 from csirtg_dnsdb.client import Client
 from csirtg_dnsdb.exceptions import QuotaLimit
 import os
-from csirtg_indicator import Indicator
+from csirtg_indicator import Indicator, InvalidIndicator
 import arrow
 import re
 from pprint import pprint
@@ -51,19 +51,23 @@ class Farsight(object):
 
                 r['rrname'] = r['rrname'].rstrip('.')
 
-                ii = Indicator(
-                    indicator=r['rdata'],
-                    rdata=r['rrname'].rstrip('.'),
-                    count=r['count'],
-                    tags='pdns',
-                    confidence=10,
-                    firsttime=first,
-                    lasttime=last,
-                    reporttime=reporttime,
-                    provider=PROVIDER,
-                    tlp='amber',
-                    group='everyone'
-                )
+                try:
+                    ii = Indicator(
+                        indicator=r['rdata'],
+                        rdata=r['rrname'].rstrip('.'),
+                        count=r['count'],
+                        tags='pdns',
+                        confidence=10,
+                        firsttime=first,
+                        lasttime=last,
+                        reporttime=reporttime,
+                        provider=PROVIDER,
+                        tlp='amber',
+                        group='everyone'
+                    )
+                except InvalidIndicator as e:
+                    self.logger.error(e)
+                    return
 
                 router.indicators_create(ii)
                 max -= 1
