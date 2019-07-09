@@ -11,7 +11,7 @@ import logging
 import json
 from .helpers import expand_ip_idx, i_to_id
 from .filters import filter_build
-from .constants import LIMIT, WINDOW_LIMIT, TIMEOUT, UPSERT_MODE, PARTITION
+from .constants import LIMIT, WINDOW_LIMIT, TIMEOUT, UPSERT_MODE, PARTITION, DELETE_FILTERS
 from .locks import LockManager
 from .schema import Indicator
 import arrow
@@ -98,15 +98,25 @@ class IndicatorManager(IndicatorManagerPlugin):
         try:
             es = connections.get_connection(s._using)
             old_serializer = es.transport.deserializer
-            es.transport.deserializer = self.Deserializer()
-            rv = es.search(
-                index=s._index,
-                doc_type=s._doc_type,
-                body=s.to_dict(),
-                filter_path=['hits.hits._source'],
-                **s._params)
-            # transport caches this, so the tokens mis-fire
-            es.transport.deserializer = old_serializer
+
+            if raw:
+                rv = es.search(
+                    index=s._index,
+                    doc_type=s._doc_type,
+                    body=s.to_dict(),
+                    **s._params)
+            else:
+                es.transport.deserializer = self.Deserializer()
+
+                rv = es.search(
+                    index=s._index,
+                    doc_type=s._doc_type,
+                    body=s.to_dict(),
+                    filter_path=['hits.hits._source'],
+                    **s._params)
+                # transport caches this, so the tokens mis-fire
+                es.transport.deserializer = old_serializer
+
         except elasticsearch.exceptions.RequestError as e:
             logger.error(e)
             es.transport.deserializer = old_serializer
@@ -300,3 +310,50 @@ class IndicatorManager(IndicatorManagerPlugin):
 
         #self.lockm.lock_release()
         return count
+
+
+    def delete(self, token, data, id=None, flush=True):
+
+        q_filters = {}
+        for x in DELETE_FILTERS:
+            if data.get(x):
+                q_filters[x] = data[x]
+
+        logger.debug(q_filters)
+
+        if len(q_filters) == 0:
+            return '0, must specify valid filter. valid filters: {}'.format(DELETE_FILTERS)
+
+        try:
+           rv = self.search(token, q_filters, sort='reporttime', raw=True)
+           rv = rv['hits']['hits']
+        except Exception as e:
+            raise CIFException(e)
+
+        logger.debug('delete match: {}'.format(rv))
+
+        # docs matched
+        if len(rv) > 0:
+            actions = []
+            for i in rv:
+                actions.append({
+                    '_op_type': 'delete',
+                    '_index': i['_index'],
+                    '_type': 'indicator',
+                    '_id': i['_id']
+                })
+
+            try:
+                helpers.bulk(self.handle, actions)
+            except Exception as e:
+                raise CIFException(e)
+
+            if flush:
+                self.flush()
+
+            logger.info('{} deleted {} indicators'.format(token['username'], len(rv)))
+            return len(rv)
+
+
+        # no matches, return 0
+        return 0

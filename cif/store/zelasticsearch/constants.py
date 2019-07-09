@@ -20,3 +20,8 @@ if UPSERT_MODE == '1':
     UPSERT_MODE = True
 
 PARTITION = os.getenv('CIF_STORE_ES_PARTITION', 'month')
+
+DELETE_FILTERS = [
+            'id',
+            'indicator'
+        ]
