@@ -1,0 +1,51 @@
+# This config is for the commercial Bambenek Consulting Feeds.
+# Please contact sales@bambenekconsulting.com for credentials.
+parser: csv
+username: 'username'
+password: 'password'
+defaults:
+  provider: faf.bambenekconsulting.com
+  tlp: white
+  altid_tlp: white
+  tags: botnet
+
+feeds:
+  c2_domain_masterlist_high:
+    remote: https://faf.bambenekconsulting.com/feeds/dga/c2-dommasterlist-high.txt
+    defaults:
+      confidence: 9
+      values:
+      - indicator
+      - description
+      - lasttime
+      - altid
+
+  c2_ip_masterlist_high:
+    remote: https://faf.bambenekconsulting.com/feeds/dga/c2-ipmasterlist-high.txt
+    defaults:
+      confidence: 9
+      values:
+      - indicator
+      - description
+      - lasttime
+      - altid
+
+#  c2_domain_masterlist:
+#    remote: https://faf.bambenekconsulting.com/feeds/dga/c2-dommasterlist.txt
+#    defaults:
+#      confidence: 8
+#      values:
+#      - indicator
+#      - description
+#      - lasttime
+#      - altid
+
+#  c2_ip_masterlist:
+#    remote: https://faf.bambenekconsulting.com/feeds/dga/c2-ipmasterlist.txt
+#    defaults:
+#      confidence: 8
+#      values:
+#      - indicator
+#      - description
+#      - lasttime
+#      - altid
