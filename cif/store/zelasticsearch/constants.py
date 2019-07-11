@@ -21,7 +21,6 @@ if UPSERT_MODE == '1':
 
 PARTITION = os.getenv('CIF_STORE_ES_PARTITION', 'month')
 
-DELETE_FILTERS = [
-            'id',
-            'indicator'
-        ]
+DELETE_FILTERS = os.getenv('CIF_STORE_ES_DELETE_FILTERS', 'id, indicator, provider')
+DELETE_FILTERS = DELETE_FILTERS.split(',')
+DELETE_FILTERS = list(set((x.strip() for x in DELETE_FILTERS)))
