@@ -157,6 +157,15 @@ def filter_groups(s, q_filters, token=None):
 
     return s
 
+def filter_id(s, q_filters):
+    if not q_filters.get('id'):
+        return s
+
+    id = q_filters.pop('id')
+
+    s.query = Q('match_phrase', uuid=id)
+
+    return s
 
 def filter_build(s, filters, token=None):
     q_filters = {}
@@ -166,6 +175,8 @@ def filter_build(s, filters, token=None):
 
     # treat indicator as special, transform into Search
     s = filter_indicator(s, q_filters)
+
+    s = filter_id(s, q_filters)
 
     s = filter_confidence(s, q_filters)
 
