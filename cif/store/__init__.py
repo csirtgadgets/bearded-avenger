@@ -396,13 +396,13 @@ class Store(multiprocessing.Process):
             if data.get('days'):
                 now = arrow.utcnow()
                 data['reporttimeend'] = '{0}Z'.format(now.format('YYYY-MM-DDTHH:mm:ss'))
-                now = now.replace(days=-int(data['days']))
+                now = now.shift(days=-int(data['days']))
                 data['reporttime'] = '{0}Z'.format(now.format('YYYY-MM-DDTHH:mm:ss'))
 
             if data.get('hours'):
                 now = arrow.utcnow()
                 data['reporttimeend'] = '{0}Z'.format(now.format('YYYY-MM-DDTHH:mm:ss'))
-                now = now.replace(hours=-int(data['hours']))
+                now = now.shift(hours=-int(data['hours']))
                 data['reporttime'] = '{0}Z'.format(now.format('YYYY-MM-DDTHH:mm:ss'))
 
         s = time.time()
