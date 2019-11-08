@@ -16,6 +16,7 @@ redhat=0
 rhel_user=ENV['RHEL_USER']
 rhel_pass=ENV['RHEL_PASSWORD']
 es_tests=ENV.fetch('CIF_ELASTICSEARCH_TEST', '0')
+es_upsert=ENV.fetch('CIF_STORE_ES_UPSERT_MODE', '0')
 
 redhat=1 if distro == 'redhat'
 
@@ -31,6 +32,7 @@ $script = <<SCRIPT
 export CIF_ANSIBLE_SDIST=#{sdist}
 export CIF_ANSIBLE_ES=#{es}
 export CIF_ELASTICSEARCH_TEST=#{es_tests}
+export CIF_STORE_ES_UPSERT_MODE=#{es_upsert}
 export CIF_HUNTER_THREADS=#{hunter_threads}
 export CIF_HUNTER_ADVANCED=#{hunter_advanced}
 export CIF_GATHERER_GEO_FQDN=#{geo_fqdn}
