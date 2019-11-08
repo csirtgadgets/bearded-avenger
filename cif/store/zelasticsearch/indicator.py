@@ -11,16 +11,18 @@ import logging
 import json
 from .helpers import expand_ip_idx, i_to_id
 from .filters import filter_build
-from .constants import LIMIT, WINDOW_LIMIT, TIMEOUT, UPSERT_MODE, PARTITION, DELETE_FILTERS
+from .constants import LIMIT, WINDOW_LIMIT, TIMEOUT, UPSERT_MODE, PARTITION, DELETE_FILTERS, UPSERT_MATCH, REQUEST_TIMEOUT
 from .locks import LockManager
 from .schema import Indicator
 import arrow
 import time
+import os
 
 logger = logging.getLogger('cif.store.zelasticsearch')
 if PYVERSION > 2:
     basestring = (str, bytes)
 
+UPSERT_TRACE = os.environ.get('CIF_STORE_ES_UPSERT_TRACE')
 
 class IndicatorManager(IndicatorManagerPlugin):
     class Deserializer(object):
@@ -83,16 +85,21 @@ class IndicatorManager(IndicatorManagerPlugin):
         self.last_index_value = idx
         return idx
 
-    def search(self, token, filters, sort='reporttime', raw=False, timeout=TIMEOUT):
+    def search(self, token, filters, sort='reporttime', raw=False, sindex=False, timeout=TIMEOUT):
         limit = filters.get('limit', LIMIT)
 
-        s = Indicator.search(index='{}-*'.format(self.indicators_prefix))
-        s = s.params(size=limit, timeout=timeout)
+        # search a given index - used in upserts
+        if sindex:
+            s = Indicator.search(index=sindex)
+        else:
+            s = Indicator.search(index='{}-*'.format(self.indicators_prefix))
+
+        s = s.params(size=limit, timeout=timeout, request_timeout=REQUEST_TIMEOUT)
         s = s.sort('-reporttime', '-lasttime')
 
         s = filter_build(s, filters, token=token)
 
-        logger.debug(s.to_dict())
+        #logger.debug(s.to_dict())
 
         start = time.time()
         try:
@@ -105,6 +112,7 @@ class IndicatorManager(IndicatorManagerPlugin):
                     doc_type=s._doc_type,
                     body=s.to_dict(),
                     **s._params)
+
             else:
                 es.transport.deserializer = self.Deserializer()
 
@@ -121,11 +129,12 @@ class IndicatorManager(IndicatorManagerPlugin):
             logger.error(e)
             es.transport.deserializer = old_serializer
             return
+
         # catch all other es errors
         except elasticsearch.ElasticsearchException as e:
             logger.error(e)
             es.transport.deserializer = old_serializer
-            raise CIFException
+            return
 
         logger.debug('query took: %0.2f' % (time.time() - start))
 
@@ -139,15 +148,6 @@ class IndicatorManager(IndicatorManagerPlugin):
 
         if data.get('group') and type(data['group']) != list:
             data['group'] = [data['group']]
-
-        if not data.get('lasttime'):
-            data['lasttime'] = arrow.utcnow().datetime.replace(tzinfo=None)
-
-        if not data.get('firsttime'):
-            data['firsttime'] = data['lasttime']
-
-        if not data.get('reporttime'):
-            data['reporttime'] = data['lasttime']
 
         if bulk:
             d = {
@@ -192,26 +192,54 @@ class IndicatorManager(IndicatorManagerPlugin):
         if not UPSERT_MODE:
             return self.create_bulk(token, indicators, flush=flush)
 
+        # Create current index if needed
+        index = self._create_index()
+
         count = 0
-        was_added = {}  # to deal with es flushing
 
         # http://stackoverflow.com/questions/30111258/elasticsearch-in-equivalent-operator-in-elasticsearch
 
-        sorted(indicators, key=lambda k: k['reporttime'], reverse=True)
+        # aggregate indicators based on dedup criteria
+        agg = {}
+        for d in sorted(indicators, key=lambda k: k['lasttime'], reverse=True):
+            key = []
+
+            for v in UPSERT_MATCH:
+
+                if d.get(v) and isinstance(d[v], basestring):
+                    key.append(d[v])
+
+                if d.get(v) and isinstance(d[v], int):
+                    key.append(str(d[v]))
+
+                if d.get(v) and isinstance(d[v], list):
+                    for k in d[v]:
+                        key.append(k)
+
+            key = "_".join(key)
+
+            # already seen in batch
+            if key in agg:
+                # look for older first times
+                if d.get('firsttime') < agg[key].get('firsttime'):
+                    agg[key]['firsttime'] = d['firsttime']
+                    if d.get('count'):
+                        agg[key]['count'] = agg[key].get('count') + d.get('count')
+
+            # haven't yet seen in batch
+            else:
+                agg[key] = d
+
         actions = []
 
         #self.lockm.lock_aquire()
-        for d in indicators:
-            if was_added.get(d['indicator']):
-                for first in was_added[d['indicator']]: break
-                if d.get('reporttime') and d['reporttime'] < first:
-                    continue
+        for d in agg:
+            d = agg[d]
 
-            filters = {
-                'indicator': d['indicator'],
-                'provider': d['provider'],
-                'limit': 1
-            }
+            filters = {'limit': 1}
+            for x in UPSERT_MATCH:
+                if d.get(x):
+                    filters[x] = d[x]
 
             if d.get('tags'):
                 filters['tags'] = d['tags']
@@ -219,84 +247,121 @@ class IndicatorManager(IndicatorManagerPlugin):
             if d.get('rdata'):
                 filters['rdata'] = d['rdata']
 
-            rv = list(self.search(token, filters, sort='reporttime', raw=True))
+            # search for existing, return latest record
+            try:
+                # search the current index only
+                rv = self.search(token, filters, sort='reporttime', raw=True, sindex=index)
+            except Exception as e:
+                logger.error(e)
+                raise e
 
+            rv = rv['hits']['hits']
+
+            # Indicator does not exist in results
             if len(rv) == 0:
-                if was_added.get(d['indicator']):
-                    if d.get('lasttime') in was_added[d['indicator']]:
-                        logger.debug('skipping: %s' % d['indicator'])
-                        continue
-                else:
-                    was_added[d['indicator']] = set()
-
                 if not d.get('count'):
                     d['count'] = 1
 
                 if d.get('group') and type(d['group']) != list:
                     d['group'] = [d['group']]
 
+                # is this redundant to store init code? no harm in leaving it
                 self._timestamps_fix(d)
                 expand_ip_idx(d)
 
+                # append create to create set
+                if UPSERT_TRACE:
+                    logger.debug('upsert: creating new {}'.format(d['indicator']))
                 actions.append({
-                    '_index': self._current_index(),
+                    '_index': index,
                     '_type': 'indicator',
                     '_source': d,
                 })
 
-                was_added[d['indicator']].add(d['reporttime'])
                 count += 1
                 continue
 
-            i = rv[0]
-            if not self._is_newer(d, i['_source']):
-                logger.debug('skipping...')
-                continue
+            # Indicator exists in results
+            else:
+                if UPSERT_TRACE:
+                    logger.debug('upsert: match indicator {}'.format(rv[0]['_id']))
 
-            # carry the index'd data forward and remove the old index
-            # TODO- don't we already have this via the search?
-            #i = self.handle.get(index=r['_index'], doc_type='indicator', id=r['_id'])
-            i = i['_source']
+                # map result
+                i = rv[0]
 
-            # we're working within the same index
-            if rv[0]['_index'] == self._current_index():
-                i['count'] += 1
-                i['lasttime'] = d['lasttime']
-                i['reporttime'] = d['lasttime']
+                # skip older indicators
+                if not self._is_newer(d, i['_source']):
+                    logger.debug('skipping...')
+                    continue
 
-                if d.get('message'):
-                    if not i.get('message'):
-                        i['message'] = []
+                # map existing indicator
+                i = i['_source']
 
-                    i['message'].append(d['message'])
+                # we're working within the same index
+                if rv[0]['_index'] == self._current_index():
 
-                actions.append({
-                    '_op_type': 'update',
-                    '_index': rv[0]['_index'],
-                    '_type': 'indicator',
-                    '_id': rv[0]['_id'],
-                    '_body': {'doc': i}
-                })
-                continue
+                    # update fields
+                    i['count'] += 1
+                    i['lasttime'] = d['lasttime']
+                    i['reporttime'] = d['lasttime']
 
-            # carry the information forward into the next month's index
-            d['count'] = i['count'] + 1
-            i['lasttime'] = d['lasttime']
-            i['reporttime'] = d['lasttime']
+                    if d.get('message'):
+                        if not i.get('message'):
+                            i['message'] = []
 
-            if d.get('message'):
-                if not i.get('message'):
-                    i['message'] = []
+                        i['message'].append(d['message'])
 
-                i['message'].append(d['message'])
+                    # append update to create set
+                    if UPSERT_TRACE:
+                        logger.debug('upsert: updating same index {}, {}'.format(d['indicator'], rv[0]['_id']))
+                    actions.append({
+                        '_op_type': 'update',
+                        '_index': rv[0]['_index'],
+                        '_type': 'indicator',
+                        '_id': rv[0]['_id'],
+                        '_body': {'doc': i}
+                    })
 
-            # delete the old document
-            actions.append({
-                '_op_type': 'delete',
-                '_index': rv[0]['_index'],
-                '_type': 'indicator',
-                '_id': rv[0]['_id']
-            })
+                    count += 1
+                    continue
+
+                # if we aren't in the same index
+                else:
+
+                    # update fields
+                    i['count'] = i['count'] + 1
+                    i['lasttime'] = d['lasttime']
+                    i['reporttime'] = d['lasttime']
+
+                    if d.get('message'):
+                        if not i.get('message'):
+                            i['message'] = []
+
+                        i['message'].append(d['message'])
+
+                    # append create to create set
+                    if UPSERT_TRACE:
+                        logger.debug('upsert: updating across index {}'.format(d['indicator']))
+                    actions.append({
+                        '_index': index,
+                        '_type': 'indicator',
+                        '_source': i,
+                    })
+
+                    # delete the old document
+                    if UPSERT_TRACE:
+                        logger.debug('upsert: deleting old index {}, {}'.format(d['indicator'], rv[0]['_id']))
+
+                    actions.append({
+                        '_op_type': 'delete',
+                        '_index': rv[0]['_index'],
+                        '_type': 'indicator',
+                        '_id': rv[0]['_id']
+                    })
+
+                    count += 1
+                    continue
+
 
         if len(actions) > 0:
             try:
