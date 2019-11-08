@@ -250,6 +250,15 @@ class Store(multiprocessing.Process):
                         except (TypeError, binascii.Error) as e:
                             pass
 
+                    if not i.get('lasttime'):
+                        i['lasttime'] = arrow.utcnow().datetime.replace(tzinfo=None)
+
+                    if not i.get('firsttime'):
+                        i['firsttime'] = i['lasttime']
+
+                    if not i.get('reporttime'):
+                        i['reporttime'] = i['lasttime']
+                        
                 n = self.store.indicators.upsert(_t, data)
 
                 t_time = time.time() - start_time
@@ -312,6 +321,15 @@ class Store(multiprocessing.Process):
                         i['message'] = str(b64decode(data['message']))
                     except (TypeError, binascii.Error) as e:
                         pass
+
+                if not i.get('lasttime'):
+                    i['lasttime'] = arrow.utcnow().datetime.replace(tzinfo=None)
+
+                if not i.get('firsttime'):
+                    i['firsttime'] = i['lasttime']
+
+                if not i.get('reporttime'):
+                    i['reporttime'] = i['lasttime']
 
             n = self.store.indicators.upsert(t, data, flush=flush)
 

@@ -13,7 +13,8 @@ python:
     - 3.6
 
 env:
-    - CIF_ELASTICSEARCH_TEST=1
+    - CIF_ELASTICSEARCH_TEST=1 CIF_STORE_ES_UPSERT_MODE=0
+    - CIF_ELASTICSEARCH_TEST=1 CIF_STORE_ES_UPSERT_MODE=1
 
 before_install:
     - docker pull elasticsearch:5

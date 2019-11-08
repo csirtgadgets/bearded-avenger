@@ -16,19 +16,21 @@ if os.environ.get('CIF_ELASTICSEARCH_TEST'):
 
 @pytest.yield_fixture
 def store():
+    try:
+        connections.get_connection().indices.delete(index='indicators-*')
+        connections.get_connection().indices.delete(index='tokens')
+    except Exception as e:
+        pass
 
     with Store(store_type='elasticsearch', nodes='127.0.0.1:9200') as s:
         s._load_plugin(nodes='127.0.0.1:9200')
-        try:
-            connections.get_connection().indices.delete(index='indicators-*')
-            connections.get_connection().indices.delete(index='tokens')
-        except Exception as e:
-            pass
         yield s
 
-    assert connections.get_connection().indices.delete(index='indicators-*')
-    assert connections.get_connection().indices.delete(index='tokens')
-
+    try:
+        assert connections.get_connection().indices.delete(index='indicators-*')
+        assert connections.get_connection().indices.delete(index='tokens')
+    except Exception:
+        pass
 
 @pytest.yield_fixture
 def token(store):
