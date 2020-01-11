@@ -92,18 +92,18 @@ class IndicatorsAPI(MethodView):
 
         except RuntimeError as e:
             logger.error(e)
-            return jsonify_unknown(msg='submission failed, check logs for more information', code=422)
+            return jsonify_unknown(msg='submission had a runtime error, check logs for more information', code=422)
 
         except TimeoutError as e:
             logger.error(e)
-            return jsonify_unknown('submission failed, check logs for more information', 408)
+            return jsonify_unknown('submission timed out, check logs for more information', 408)
 
         except CIFBusy:
             return jsonify_busy()
 
         except Exception as e:
             logger.error(e)
-            return jsonify_unknown('submission failed, check logs for more information', 422)
+            return jsonify_unknown('submission failed with generic exception, check logs for more information', 422)
 
         except AuthError:
             return jsonify_unauth()

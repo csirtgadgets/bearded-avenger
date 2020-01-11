@@ -16,11 +16,9 @@ SNDTIMEO = 30000
 LINGER = 0
 
 logger = logging.getLogger(__name__)
-TRACE = os.environ.get('CIF_GATHERER_TRACE')
-
-logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
 
+TRACE = os.environ.get('CIF_GATHERER_TRACE')
 if TRACE:
     logger.setLevel(logging.DEBUG)
 
@@ -71,13 +69,18 @@ class Gatherer(multiprocessing.Process):
             try:
                 s = dict(poller.poll(1000))
             except Exception as e:
-                self.logger.error(e)
+                logger.error(e)
                 break
 
             if pull_s in s:
                 id, token, mtype, data = Msg().recv(pull_s)
 
-                data = json.loads(data)
+                try:
+                    data = json.loads(data)
+                except Exception as e:
+                    logger.error('malformed data send to gatherer: {}'.format(e))
+                    break
+
                 if isinstance(data, dict):
                     data = [data]
 
@@ -91,7 +94,7 @@ class Gatherer(multiprocessing.Process):
                         from pprint import pprint
                         pprint(i)
 
-                        logger.error('gatherer failed: %s' % g)
+                        logger.error('gatherer failed: %s'.format(g))
                         logger.error(e)
                         traceback.print_exc()
 
@@ -102,7 +105,7 @@ class Gatherer(multiprocessing.Process):
                             from pprint import pprint
                             pprint(i)
 
-                            logger.error('gatherer failed: %s' % g)
+                            logger.error('gatherer failed: %s'.format(g))
                             logger.error(e)
                             traceback.print_exc()
 
