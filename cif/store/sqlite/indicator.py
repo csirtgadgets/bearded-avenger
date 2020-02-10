@@ -342,7 +342,7 @@ class IndicatorManager(IndicatorManagerPlugin):
                 if ',' in filters[k]:
                     start, end = filters[k].split(',')
                     s = s.filter(Indicator.reporttime >= arrow.get(start).datetime)
-                    s = s.filter(Indicator.reporttime <= arrow.get(end).datettime)
+                    s = s.filter(Indicator.reporttime <= arrow.get(end).datetime)
                 else:
                     s = s.filter(Indicator.reporttime >= arrow.get(filters[k]).datetime)
 
