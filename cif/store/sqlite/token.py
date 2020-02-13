@@ -151,10 +151,10 @@ class TokenManager(TokenManagerPlugin):
 
         s = self.handle()
         rv = s.query(Token).filter_by(token=data['token'])
-        if not rv.first():
+        t = rv.first()
+        if not t:
             return 'token not found'
 
-        t = rv.first()
         groups = [g.group for g in t.groups]
 
         for g in data['groups']:
@@ -175,7 +175,7 @@ class TokenManager(TokenManagerPlugin):
             if g in data['groups']:
                 continue
 
-            rv = q.filter_by(group=g)
+            rv = q.filter_by(group=g, token=t)
             if not rv.count():
                 continue
 
