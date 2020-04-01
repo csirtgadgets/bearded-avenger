@@ -15,7 +15,6 @@ PyYAML>=4.2b1
 SQLAlchemy>=1.0.14,<1.1
 elasticsearch>=5.3,<5.5
 elasticsearch-dsl>=5.3,<5.5
-ujson>=1.35
 html5lib==1.0b8 # bug in csirtg-smrt upstream
 msgpack-python>=0.4.8,<0.5.0
 apwgsdk==0.0.0a6
@@ -27,3 +26,6 @@ Flask-Bootstrap==3.3.6.0
 gevent==1.2.1
 gunicorn==19.7.1
 urllib3<1.25,>=1.21.1
+requests==2.22.0
+ujson==1.35
+zipp==0.6.0
