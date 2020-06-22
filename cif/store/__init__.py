@@ -177,7 +177,7 @@ class Store(multiprocessing.Process):
             err = 'unauthorized'
 
         except InvalidSearch as e:
-            err = 'invalid search'
+            err = 'invalid search {}'.format(e)
 
         except InvalidIndicator as e:
             logger.error(data)
@@ -436,7 +436,7 @@ class Store(multiprocessing.Process):
             if logger.getEffectiveLevel() == logging.DEBUG:
                 logger.error(traceback.print_exc())
 
-            raise InvalidSearch('invalid search')
+            raise InvalidSearch(': {}'.format(e))
 
         logger.debug('%s' % (time.time() - s))
 
