@@ -170,7 +170,7 @@ def filter_id(s, q_filters):
 
 def filter_build(s, filters, token=None):
     limit = filters.get('limit')
-    if limit and limit > WINDOW_LIMIT:
+    if limit and int(limit) > WINDOW_LIMIT:
         raise InvalidSearch('request limit should be <= server threshold of {} but was set to {}'.format(WINDOW_LIMIT, limit))
         
     q_filters = {}
