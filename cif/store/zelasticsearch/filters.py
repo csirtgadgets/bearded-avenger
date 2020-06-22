@@ -8,6 +8,7 @@ from elasticsearch_dsl import Q
 import ipaddress
 import arrow
 
+from cif.store.zelasticsearch.constants import WINDOW_LIMIT
 from cif.httpd.common import VALID_FILTERS
 
 
@@ -168,6 +169,10 @@ def filter_id(s, q_filters):
     return s
 
 def filter_build(s, filters, token=None):
+    limit = filters.get('limit')
+    if limit and limit > WINDOW_LIMIT:
+        raise InvalidSearch('request limit should be <= server threshold of {} but was set to {}'.format(WINDOW_LIMIT, limit))
+        
     q_filters = {}
     for f in VALID_FILTERS:
         if filters.get(f):
