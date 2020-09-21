@@ -59,6 +59,18 @@ def indicator():
 
 
 @pytest.fixture
+def indicator_alt_provider():
+    return Indicator(
+        indicator='example2.com',
+        tags='phishing',
+        provider='notcsirtg.io',
+        group='everyone',
+        lasttime=arrow.utcnow().datetime,
+        reporttime=arrow.utcnow().datetime
+    )
+
+
+@pytest.fixture
 def indicator_email():
     return Indicator(
         indicator='user.12.3@example.net',
@@ -232,3 +244,89 @@ def test_store_elasticsearch_indicators_malware(store, token, indicator_malware)
     assert (x[0]['reporttime'])
 
     assert x[0]['indicator'] == indicator_malware.indicator
+
+
+## test returning a list of providers
+@pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
+def test_store_elasticsearch_indicators_provider_list(store, token, indicator, indicator_alt_provider):
+    x = store.handle_indicators_create(token, indicator.__dict__(), flush=True)
+    assert x == 1
+    
+    y = store.handle_indicators_create(token, indicator_alt_provider.__dict__(), flush=True)
+    assert y == 1
+
+    x = store.handle_indicators_search(token, {
+        'provider': '{}, {}'.format(indicator.provider, indicator_alt_provider.provider)
+    })
+
+    x = json.loads(x)
+    pprint(x)
+    
+    x = [i['_source'] for i in x['hits']['hits']]
+    
+    assert len(x) == 2
+
+
+## test provider negation
+@pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
+def test_store_elasticsearch_indicators_provider_negation(store, token, indicator, indicator_alt_provider):
+    x = store.handle_indicators_create(token, indicator.__dict__(), flush=True)
+    assert x == 1
+    
+    y = store.handle_indicators_create(token, indicator_alt_provider.__dict__(), flush=True)
+    assert y == 1
+
+    x = store.handle_indicators_search(token, {
+        'provider': '!{}'.format(indicator.provider)
+    })
+
+    x = json.loads(x)
+    pprint(x)
+    
+    x = [i['_source'] for i in x['hits']['hits']]
+    
+    assert len(x) == 1
+    
+    assert x[0]['provider'] == indicator_alt_provider.provider
+    
+    
+## test tags negation
+@pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
+def test_store_elasticsearch_indicators_tags_negation(store, token, indicator, indicator_alt_provider):
+    x = store.handle_indicators_create(token, indicator.__dict__(), flush=True)
+    assert x == 1
+    
+    y = store.handle_indicators_create(token, indicator_alt_provider.__dict__(), flush=True)
+    assert y == 1
+
+    x = store.handle_indicators_search(token, {
+        'tags': '!{}'.format(indicator_alt_provider.tags[0])
+    })
+
+    x = json.loads(x)
+    pprint(x)
+    
+    x = [i['_source'] for i in x['hits']['hits']]
+    
+    assert len(x) == 1
+    
+    assert x[0]['tags'] == indicator.tags
+
+
+## test multi-tags negation
+@pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
+def test_store_elasticsearch_indicators_multi_tags_negation(store, token, indicator, indicator_alt_provider):
+    x = store.handle_indicators_create(token, indicator.__dict__(), flush=True)
+    assert x == 1
+    
+    y = store.handle_indicators_create(token, indicator_alt_provider.__dict__(), flush=True)
+    assert y == 1
+
+    x = store.handle_indicators_search(token, {
+        'tags': '!{},!{}'.format(indicator.tags[0], indicator_alt_provider.tags[0])
+    })
+
+    x = json.loads(x)
+    pprint(x)
+    
+    assert len(x) == 0
