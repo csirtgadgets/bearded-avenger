@@ -74,6 +74,7 @@ class IndicatorManager(IndicatorManagerPlugin):
         idx = self._current_index()
 
         if not self.handle.indices.exists(idx):
+            logger.info('Creating new index')
             index = Index(idx)
             index.aliases(live={})
             index.doc_type(Indicator)
@@ -206,15 +207,14 @@ class IndicatorManager(IndicatorManagerPlugin):
 
             for v in UPSERT_MATCH:
 
-                if d.get(v) and isinstance(d[v], basestring):
-                    key.append(d[v])
-
-                if d.get(v) and isinstance(d[v], int):
-                    key.append(str(d[v]))
-
-                if d.get(v) and isinstance(d[v], list):
-                    for k in d[v]:
-                        key.append(k)
+                if d.get(v):
+                    if isinstance(d[v], basestring):
+                        key.append(d[v])
+                    elif isinstance(d[v], float) or isinstance(d[v], int):
+                        key.append(str(d[v]))
+                    elif isinstance(d[v], list):
+                        for k in d[v]:
+                            key.append(k)
 
             key = "_".join(key)
 
@@ -265,8 +265,6 @@ class IndicatorManager(IndicatorManagerPlugin):
                 if d.get('group') and type(d['group']) != list:
                     d['group'] = [d['group']]
 
-                # is this redundant to store init code? no harm in leaving it
-                self._timestamps_fix(d)
                 expand_ip_idx(d)
 
                 # append create to create set
@@ -289,7 +287,7 @@ class IndicatorManager(IndicatorManagerPlugin):
                 # map result
                 i = rv[0]
 
-                # skip older indicators
+                # skip new indicators that don't have a more recent lasttime
                 if not self._is_newer(d, i['_source']):
                     logger.debug('skipping...')
                     continue

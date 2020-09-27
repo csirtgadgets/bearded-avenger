@@ -2,6 +2,7 @@
 
 import inspect
 import logging
+import datetime
 import os
 import pkgutil
 import textwrap
@@ -101,6 +102,25 @@ class Store(multiprocessing.Process):
                 logger.debug('Loading plugin: {0}'.format(modname))
                 self.store = loader.find_module(modname).load_module(modname)
                 self.store = self.store.Plugin(**kwargs)
+
+    def _timestamps_fix(self, i):
+        # if we have it all, short-circuit
+        if i.get('reporttime') and i.get('firsttime') and i.get('lasttime'):
+            return
+
+        # format as str since this used at indicator creation whereupon values have been deserialized from json
+        if not i.get('reporttime'):
+            i['reporttime'] = arrow.utcnow().format('YYYY-MM-DDTHH:mm:ss.SSZ')
+
+        # if neither are set
+        if not i.get('lasttime') and not i.get('firsttime'):
+            i['firsttime'] = i['lasttime'] = i.get('reporttime')
+        # xor firsttime and lasttime (if one is set but not the other)
+        elif (not i.get('lasttime')) != (not i.get('firsttime')):
+            if i.get('firsttime'):
+                i['lasttime'] = i.get('firsttime')
+            else:
+                i['firsttime'] = i.get('lasttime')
 
     def start(self):
         self._load_plugin(**self.kwargs)
@@ -250,15 +270,8 @@ class Store(multiprocessing.Process):
                         except (TypeError, binascii.Error) as e:
                             pass
 
-                    if not i.get('lasttime'):
-                        i['lasttime'] = arrow.utcnow().datetime.replace(tzinfo=None)
+                    self._timestamps_fix(i)
 
-                    if not i.get('firsttime'):
-                        i['firsttime'] = i['lasttime']
-
-                    if not i.get('reporttime'):
-                        i['reporttime'] = i['lasttime']
-                        
                 n = self.store.indicators.upsert(_t, data)
 
                 t_time = time.time() - start_time
@@ -322,14 +335,7 @@ class Store(multiprocessing.Process):
                     except (TypeError, binascii.Error) as e:
                         pass
 
-                if not i.get('lasttime'):
-                    i['lasttime'] = arrow.utcnow().datetime.replace(tzinfo=None)
-
-                if not i.get('firsttime'):
-                    i['firsttime'] = i['lasttime']
-
-                if not i.get('reporttime'):
-                    i['reporttime'] = i['lasttime']
+                self._timestamps_fix(i)
 
             n = self.store.indicators.upsert(t, data, flush=flush)
 
