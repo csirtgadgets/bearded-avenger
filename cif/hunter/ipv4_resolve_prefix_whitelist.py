@@ -10,10 +10,13 @@ class Ipv4ResolvePrefixWhitelist(object):
         self.is_advanced = False
 
     def process(self, i, router):
-        if i.itype not in ['ipv4', 'ipv6']:
+        if i.itype != 'ipv4':
             return
 
         if 'whitelist' not in i.tags:
+            return
+        
+        if i.indicator.endswith('/24'):
             return
 
         prefix = i.indicator.split('.')
