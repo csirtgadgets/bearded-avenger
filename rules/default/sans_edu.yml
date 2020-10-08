@@ -8,21 +8,6 @@ defaults:
   tags: suspicious
 
 feeds:
-  02_domains_low:
-    defaults:
-      confidence: 7
-    remote: https://isc.sans.edu/feeds/suspiciousdomains_Low.txt
-
-  01_domains_medium:
-    defaults:
-      confidence: 8
-    remote:  https://isc.sans.edu/feeds/suspiciousdomains_Medium.txt
-
-  00_domains_high:
-    defaults:
-      confidence: 9
-    remote: https://isc.sans.edu/feeds/suspiciousdomains_High.txt
-
   block:
     remote: https://isc.sans.edu/feeds/block.txt
     defaults:
