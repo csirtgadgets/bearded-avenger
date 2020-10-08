@@ -32,8 +32,8 @@ def _filter_ipv4(s, i):
 def _filter_ipv6(s, i):
     ip = ipaddress.IPv6Network(i)
     mask = ip.prefixlen
-    if mask < 32:
-        raise InvalidSearch('prefix needs to be greater than or equal to 32')
+    if mask < 28:
+        raise InvalidSearch('prefix needs to be greater than or equal to 28')
 
     start = binascii.b2a_hex(socket.inet_pton(
         socket.AF_INET6, str(ip.network_address))).decode('utf-8')
