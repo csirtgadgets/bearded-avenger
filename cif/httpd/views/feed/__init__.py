@@ -95,6 +95,10 @@ class FeedAPI(MethodView):
 
         if 'itype' not in filters:
             return jsonify_unknown('missing itype filter (ipv4, fqdn, url, etc...)', 400)
+        
+        if filters.get('tags') and 'whitelist' in filters.get('tags'):
+            return jsonify_unknown('Invalid filter: tag "whitelist" is invalid for a feed. To find safelisted indicators, perform a regular search rather than a feed pull', 
+            400)
 
         # test to make sure feed type exists
         feed_type = feed_factory(filters['itype'])
