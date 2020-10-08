@@ -157,6 +157,9 @@ class FeedAPI(MethodView):
 
         wl_filters['nolog'] = True
         wl_filters['limit'] = FEEDS_WHITELIST_LIMIT
+        
+        # remove provider from wl_filters if exists (we don't want to narrow wl scope)
+        wl_filters.pop('provider', None)
 
         logger.debug('gathering whitelist..')
         if current_app.config.get('feed') and current_app.config.get('feed').get('wl'):
