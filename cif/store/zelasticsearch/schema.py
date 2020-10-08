@@ -19,7 +19,7 @@ class Indicator(DocType):
     reporttime = Date()
     lasttime = Date()
     firsttime = Date()
-    confidence = Integer()
+    confidence = Float()
     timezone = Text()
     city = Text(fields={'raw': Keyword()})
     description = Keyword()
