@@ -110,7 +110,7 @@ class Store(multiprocessing.Process):
 
         # format as str since this used at indicator creation whereupon values have been deserialized from json
         if not i.get('reporttime'):
-            i['reporttime'] = arrow.utcnow().format('YYYY-MM-DDTHH:mm:ss.SSZ')
+            i['reporttime'] = arrow.utcnow().format('YYYY-MM-DDTHH:mm:ss') + 'Z'
 
         # if neither are set
         if not i.get('lasttime') and not i.get('firsttime'):
