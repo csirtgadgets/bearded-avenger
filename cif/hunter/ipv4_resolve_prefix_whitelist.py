@@ -1,7 +1,7 @@
 import logging
 from csirtg_indicator import Indicator, InvalidIndicator
 import arrow
-
+import ipaddress
 
 class Ipv4ResolvePrefixWhitelist(object):
 
@@ -16,7 +16,8 @@ class Ipv4ResolvePrefixWhitelist(object):
         if 'whitelist' not in i.tags:
             return
         
-        if i.indicator.endswith('/24'):
+        # only run this hunter if it's a single address (no CIDRs)
+        if ipaddress.IPv4Network(i.indicator).prefixlen != 32:
             return
 
         prefix = i.indicator.split('.')
@@ -33,7 +34,7 @@ class Ipv4ResolvePrefixWhitelist(object):
         ii.lasttime = arrow.utcnow()
 
         ii.indicator = prefix
-        ii.tags = ['whitelist']
+        ii.tags = ['whitelist', 'hunter']
         ii.confidence = (ii.confidence - 2) if ii.confidence >= 2 else 0
         router.indicators_create(ii)
 
