@@ -150,7 +150,8 @@ def decompress():
 
 @app.after_request
 def process_response(response):
-    if '/u/' in request.path:
+    # Return early if we don't have the start time (which means request failed)
+    if '/u/' in request.path or not hasattr(g, 'request_start_time'):
         return response
 
     if request.headers.get('Accept-Encoding') and request.headers['Accept-Encoding'] == 'deflate':

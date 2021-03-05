@@ -41,7 +41,7 @@ class Fqdn(object):
                 continue
 
             ip = Indicator(**i.__dict__())
-            ip.lasttime = arrow.utcnow()
+            ip.lasttime = ip.reporttime = arrow.utcnow()
 
             ip.indicator = rr
             try:
@@ -56,7 +56,7 @@ class Fqdn(object):
                 router.indicators_create(ip)
 
                 # also create a passive dns tag
-                ip.tags = 'pdns'
+                ip.tags = ['pdns', 'hunter']
                 ip.confidence = 10
                 router.indicators_create(ip)
 

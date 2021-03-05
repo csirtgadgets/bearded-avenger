@@ -5,7 +5,8 @@ import gzip
 from base64 import b64encode
 
 VALID_FILTERS = ['indicator', 'itype', 'confidence', 'provider', 'limit', 'application', 'nolog', 'tags', 'days',
-                 'hours', 'groups', 'reporttime', 'cc', 'asn', 'asn_desc', 'rdata', 'firsttime', 'lasttime', 'region', 'id']
+                 'hours', 'groups', 'reporttime', 'cc', 'asn', 'asn_desc', 'rdata', 'firsttime', 'lasttime', 'region', 'id',
+                 'portlist', 'protocol', 'tlp']
 TOKEN_FILTERS = ['username', 'token']
 
 

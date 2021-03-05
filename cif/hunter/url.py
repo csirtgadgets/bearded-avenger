@@ -35,13 +35,15 @@ class Url(object):
             self.logger.error(e)
         else:
             fqdn = Indicator(**i.__dict__())
-            fqdn.lasttime = arrow.utcnow()
+            fqdn.lasttime = fqdn.reporttime = arrow.utcnow()
             fqdn.indicator = u.hostname
             fqdn.itype = 'fqdn'
+            if 'hunter' not in fqdn.tags:
+                fqdn.tags.append('hunter')
             fqdn.confidence = (int(fqdn.confidence) / 2)
             fqdn.rdata = i.indicator
 
-            self.logger.debug('sending to router: {}'.format(fqdn))
+            self.logger.debug('[Hunter: Url] sending to router: {}'.format(fqdn))
             router.indicators_create(fqdn)
 
 

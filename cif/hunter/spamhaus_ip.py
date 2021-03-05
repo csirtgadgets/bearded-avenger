@@ -77,16 +77,18 @@ class SpamhausIp(object):
                 f = Indicator(**i.__dict__())
 
                 f.tags = [r['tags']]
+                if 'hunter' not in f.tags:
+                    f.tags.append('hunter')
                 f.description = r['description']
                 f.confidence = CONFIDENCE
                 f.provider = PROVIDER
                 f.reference_tlp = 'white'
                 f.reference = 'http://www.spamhaus.org/query/bl?ip={}'.format(f.indicator)
-                f.lasttime = arrow.utcnow()
+                f.lasttime = f.reporttime = arrow.utcnow()
                 x = router.indicators_create(f)
 
         except Exception as e:
-            self.logger.error(e)
+            self.logger.error('[Hunter: SpamhausIp] {}: giving up on indicator {}'.format(e, i))
             import traceback
             traceback.print_exc()
 

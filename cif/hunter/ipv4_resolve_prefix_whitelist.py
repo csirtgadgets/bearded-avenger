@@ -31,7 +31,7 @@ class Ipv4ResolvePrefixWhitelist(object):
             self.logger.error(e)
             return
 
-        ii.lasttime = arrow.utcnow()
+        ii.lasttime = ii.reporttime = arrow.utcnow()
 
         ii.indicator = prefix
         ii.tags = ['whitelist', 'hunter']

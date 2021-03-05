@@ -22,7 +22,7 @@ class FqdnSubdomain(object):
 
         fqdn = Indicator(**i.__dict__())
         fqdn.indicator = i.is_subdomain()
-        fqdn.lasttime = arrow.utcnow()
+        fqdn.lasttime = fqdn.reporttime = arrow.utcnow()
 
         try:
             resolve_itype(fqdn.indicator)
@@ -31,6 +31,8 @@ class FqdnSubdomain(object):
             self.logger.error(e)
         else:
             fqdn.confidence = (fqdn.confidence - 3) if fqdn.confidence >= 3 else 0
+            if 'hunter' not in fqdn.tags:
+                fqdn.tags.append('hunter')
             router.indicators_create(fqdn)
 
 Plugin = FqdnSubdomain

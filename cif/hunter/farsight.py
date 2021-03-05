@@ -56,7 +56,7 @@ class Farsight(object):
                         indicator=r['rdata'],
                         rdata=r['rrname'].rstrip('.'),
                         count=r['count'],
-                        tags='pdns',
+                        tags=['pdns', 'hunter'],
                         confidence=10,
                         firsttime=first,
                         lasttime=last,
