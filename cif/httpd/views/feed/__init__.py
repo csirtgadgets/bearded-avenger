@@ -97,7 +97,7 @@ class FeedAPI(MethodView):
             return jsonify_unknown('missing itype filter (ipv4, fqdn, url, etc...)', 400)
         
         if filters.get('tags') and 'whitelist' in filters.get('tags'):
-            return jsonify_unknown('Invalid filter: tag "whitelist" is invalid for a feed. To find safelisted indicators, perform a regular search rather than a feed pull', 
+            return jsonify_unknown('Invalid filter: tag "whitelist" is invalid for a feed. To find allow-listed indicators, perform a regular search rather than a feed pull', 
             400)
 
         # test to make sure feed type exists
@@ -162,7 +162,7 @@ class FeedAPI(MethodView):
         wl_filters['nolog'] = True
         wl_filters['limit'] = FEEDS_WHITELIST_LIMIT
         
-        # remove provider from wl_filters if exists (we don't want to narrow wl scope)
+        # remove provider from wl_filters if exists (we don't want to narrow wl scope by provider)
         wl_filters.pop('provider', None)
 
         logger.debug('gathering whitelist..')

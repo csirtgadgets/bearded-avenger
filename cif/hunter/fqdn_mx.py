@@ -28,31 +28,36 @@ class FqdnMx(object):
             self.logger.info('timeout trying to resolve MX for: {}'.format(i.indicator))
             return
 
-        for rr in r:
-            rr = re.sub(r'^\d+ ', '', str(rr))
-            rr = str(rr).rstrip('.')
+        try:
+            for rr in r:
+                rr = re.sub(r'^\d+ ', '', str(rr))
+                rr = str(rr).rstrip('.')
 
-            if rr in ["", 'localhost', '0.0.0.0']:
-                continue
+                if rr in ["", 'localhost', '0.0.0.0']:
+                    continue
 
-            fqdn = Indicator(**i.__dict__())
-            fqdn.indicator = rr.rstrip('.')
-            fqdn.lasttime = arrow.utcnow()
+                fqdn = Indicator(**i.__dict__())
+                fqdn.indicator = rr.rstrip('.')
+                fqdn.lasttime = fqdn.reporttime = arrow.utcnow()
 
-            # 10
-            if re.match('^\d+$', rr):
-                return
+                # 10
+                if re.match('^\d+$', rr):
+                    return
 
-            try:
-                resolve_itype(fqdn.indicator)
-            except InvalidIndicator as e:
-                self.logger.info(fqdn)
-                self.logger.info(e)
-            else:
-                fqdn.itype = 'fqdn'
-                fqdn.rdata = i.indicator
-                fqdn.confidence = (fqdn.confidence - 5) if fqdn.confidence >= 5 else 0
-                router.indicators_create(fqdn)
-
+                try:
+                    resolve_itype(fqdn.indicator)
+                except InvalidIndicator as e:
+                    self.logger.info(fqdn)
+                    self.logger.info(e)
+                else:
+                    fqdn.itype = 'fqdn'
+                    if 'hunter' not in fqdn.tags:
+                        fqdn.tags.append('hunter')
+                    fqdn.rdata = i.indicator
+                    fqdn.confidence = (fqdn.confidence - 5) if fqdn.confidence >= 5 else 0
+                    router.indicators_create(fqdn)
+        
+        except Exception as e:
+            self.logger.error('[Hunter: FqdnMx] {}: giving up on indicator {}'.format(e, rr))
 
 Plugin = FqdnMx

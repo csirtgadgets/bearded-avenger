@@ -1,0 +1,31 @@
+parser: csv
+defaults:
+  values:
+    - rank
+    - null
+    - indicator
+  description: 'eval("majestic million #{rank}".format(**obs))'
+  tags: whitelist
+  application:
+      - http
+      - https
+  protocol: tcp
+  altid: 'eval("https://majestic.com/reports/majestic-million?domain={indicator}".format(**obs))'
+  provider: majestic.com
+  tlp: green
+  altid_tlp: white
+  lasttime: 'month'
+  confidence: |
+    eval(max(0, min(
+        12.5 - 2.5 * math.ceil(
+            math.log10(
+                int(obs['rank'])
+            )
+        ),
+    10)))
+
+feeds:
+  top-1000:
+    remote: https://downloads.majesticseo.com/majestic_million.csv
+    skip_first: true
+    limit: 1000

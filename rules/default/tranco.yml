@@ -3,14 +3,14 @@ defaults:
   values:
     - rank
     - indicator
-  description: 'eval("alexa #{rank}".format(**obs))'
+  description: 'eval("tranco list #{rank}".format(**obs))'
   tags: whitelist
   application:
       - http
       - https
   protocol: tcp
-  altid: 'eval("http://www.alexa.com/siteinfo/{indicator}".format(**obs))'
-  provider: alexa.com
+  altid: 'eval("https://tranco-list.eu/api/ranks/domain/{indicator}".format(**obs))'
+  provider: tranco-list.eu
   tlp: green
   altid_tlp: white
   lasttime: 'month'
@@ -25,5 +25,5 @@ defaults:
 
 feeds:
   top-1000:
-    remote: http://s3.amazonaws.com/alexa-static/top-1m.csv.zip
+    remote: https://tranco-list.eu/top-1m.csv.zip
     limit: 1000

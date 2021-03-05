@@ -239,7 +239,10 @@ class IndicatorManager(IndicatorManagerPlugin):
             filters = {'limit': 1}
             for x in UPSERT_MATCH:
                 if d.get(x):
-                    filters[x] = d[x]
+                    if x == 'confidence':
+                        filters[x] = '{},{}'.format(d[x], d[x])
+                    else:
+                        filters[x] = d[x]
 
             if d.get('tags'):
                 filters['tags'] = d['tags']
@@ -254,8 +257,11 @@ class IndicatorManager(IndicatorManagerPlugin):
             except Exception as e:
                 logger.error(e)
                 raise e
-
-            rv = rv['hits']['hits']
+            
+            try:
+                rv = rv['hits']['hits']
+            except Exception as e:
+                raise CIFException(e)
 
             # Indicator does not exist in results
             if len(rv) == 0:
@@ -301,17 +307,22 @@ class IndicatorManager(IndicatorManagerPlugin):
                     # update fields
                     i['count'] += 1
                     i['lasttime'] = d['lasttime']
-                    i['reporttime'] = d['lasttime']
+                    i['reporttime'] = d['reporttime']
 
+                    # if existing indicator doesn't have message field but new indicator does, add new message to upsert
                     if d.get('message'):
                         if not i.get('message'):
                             i['message'] = []
 
                         i['message'].append(d['message'])
 
+                    # always update description if it exists
+                    if d.get('description'):
+                        i['description'] = d['description']
+
                     # append update to create set
                     if UPSERT_TRACE:
-                        logger.debug('upsert: updating same index {}, {}'.format(d['indicator'], rv[0]['_id']))
+                        logger.debug('upsert: updating same index {}, {}'.format(d.get('indicator'), rv[0]['_id']))
                     actions.append({
                         '_op_type': 'update',
                         '_index': rv[0]['_index'],
@@ -329,13 +340,18 @@ class IndicatorManager(IndicatorManagerPlugin):
                     # update fields
                     i['count'] = i['count'] + 1
                     i['lasttime'] = d['lasttime']
-                    i['reporttime'] = d['lasttime']
+                    i['reporttime'] = d['reporttime']
 
+                    # if existing indicator doesn't have message field but new indicator does, add new message to upsert
                     if d.get('message'):
                         if not i.get('message'):
                             i['message'] = []
 
                         i['message'].append(d['message'])
+
+                    # always update description if exists
+                    if d.get('description'):
+                        i['description'] = d['description']
 
                     # append create to create set
                     if UPSERT_TRACE:

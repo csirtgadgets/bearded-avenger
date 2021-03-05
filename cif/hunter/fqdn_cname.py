@@ -33,7 +33,7 @@ class FqdnCname(object):
 
             fqdn = Indicator(**i.__dict__())
             fqdn.indicator = rr
-            fqdn.lasttime = arrow.utcnow()
+            fqdn.lasttime = fqdn.reporttime = arrow.utcnow()
 
             try:
                 resolve_itype(fqdn.indicator)
@@ -43,7 +43,12 @@ class FqdnCname(object):
                 return
 
             fqdn.itype = 'fqdn'
-            fqdn.confidence = (fqdn.confidence - 1)
+            if 'hunter' not in fqdn.tags:
+                fqdn.tags.append('hunter')
+            if fqdn.confidence < 8:
+                fqdn.confidence -= 1
+            else:
+                fqdn.confidence = 7
             router.indicators_create(fqdn)
 
 Plugin = FqdnCname

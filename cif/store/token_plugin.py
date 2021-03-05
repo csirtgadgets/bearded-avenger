@@ -11,7 +11,7 @@ class TokenManagerPlugin(object):
 
     def __init__(self, *args, **kwargs):
         self._cache = {}
-        self._cache_check_next = arrow.utcnow().timestamp + TOKEN_CACHE_DELAY
+        self._cache_check_next = arrow.utcnow().int_timestamp + TOKEN_CACHE_DELAY
 
     @abc.abstractmethod
     def create(self, data):
@@ -37,9 +37,9 @@ class TokenManagerPlugin(object):
         return binascii.b2a_hex(os.urandom(TOKEN_LENGTH)).decode('utf-8')
 
     def _flush_cache(self):
-        if arrow.utcnow().timestamp > self._cache_check_next:
+        if arrow.utcnow().int_timestamp > self._cache_check_next:
             self._cache = {}
-            self._cache_check_next = arrow.utcnow().timestamp + TOKEN_CACHE_DELAY
+            self._cache_check_next = arrow.utcnow().int_timestamp + TOKEN_CACHE_DELAY
 
     def _cache_check(self, token, k=None):
         self._flush_cache()

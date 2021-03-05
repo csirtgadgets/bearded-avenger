@@ -30,6 +30,6 @@ DELETE_FILTERS = os.getenv('CIF_STORE_ES_DELETE_FILTERS', 'id, indicator, provid
 DELETE_FILTERS = DELETE_FILTERS.split(',')
 DELETE_FILTERS = list(set((x.strip() for x in DELETE_FILTERS)))
 
-UPSERT_MATCH = os.getenv('CIF_STORE_ES_UPSERT_MATCH', 'indicator, provider, confidence, tags, group, tlp, rdata')
+UPSERT_MATCH = os.getenv('CIF_STORE_ES_UPSERT_MATCH', 'indicator, provider, confidence, tags, group, tlp, rdata, portlist, protocol')
 UPSERT_MATCH = UPSERT_MATCH.split(',')
 UPSERT_MATCH = set((x.strip() for x in UPSERT_MATCH))

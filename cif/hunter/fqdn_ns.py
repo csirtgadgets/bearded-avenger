@@ -32,7 +32,7 @@ class FqdnNs(object):
 
             ip = Indicator(**i.__dict__())
             ip.indicator = str(rr)
-            ip.lasttime = arrow.utcnow()
+            ip.lasttime = ip.reporttime = arrow.utcnow()
 
             try:
                 resolve_itype(ip.indicator)
@@ -42,6 +42,8 @@ class FqdnNs(object):
             else:
                 ip.itype = 'ipv4'
                 ip.rdata = i.indicator
+                if 'hunter' not in ip.tags:
+                    ip.tags.append('hunter')
                 ip.confidence = (ip.confidence - 4) if ip.confidence >= 4 else 0
                 router.indicators_create(ip)
 

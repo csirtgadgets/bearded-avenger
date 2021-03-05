@@ -2,7 +2,7 @@
 
 import inspect
 import logging
-import datetime
+from datetime import datetime
 import os
 import pkgutil
 import textwrap
@@ -104,23 +104,49 @@ class Store(multiprocessing.Process):
                 self.store = self.store.Plugin(**kwargs)
 
     def _timestamps_fix(self, i):
-        # if we have it all, short-circuit
-        if i.get('reporttime') and i.get('firsttime') and i.get('lasttime'):
-            return
+        now_str = arrow.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ') # RFC 3339 format str
+        timestamp_count = 0
+
+        # convert any datetime timestamp fields to str (this is mostly for pytest)
+        for timestamp in [ x for x in i if x.endswith('time') ]:
+            timestamp_count += 1
+            if isinstance(i.get(timestamp), datetime):
+                i[timestamp] = i[timestamp].strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+
+        # if we have all 3 timestamps and the times are sane, short-circuit
+        if timestamp_count == 3:
+            # rfc 3339 strs in python are directly comparable; if times aren't sane, fix them
+            if now_str >= i['reporttime'] >= i['lasttime'] >= i['firsttime']:
+                return
+
+            if i['reporttime'] > now_str:
+                i['reporttime'] = now_str
+            if i['lasttime'] > i['reporttime']:
+                i['lasttime'] = i['reporttime']
+            if i['firsttime'] > i['lasttime']:
+                i['firsttime'] = i['lasttime']
+
+        logger.debug('Timestamps fix: Indicator {}/{} has odd timestamps. Fixing...'.format(i['provider'], i['indicator']))
 
         # format as str since this used at indicator creation whereupon values have been deserialized from json
         if not i.get('reporttime'):
-            i['reporttime'] = arrow.utcnow().format('YYYY-MM-DDTHH:mm:ss') + 'Z'
+            i['reporttime'] = now_str
 
         # if neither are set
         if not i.get('lasttime') and not i.get('firsttime'):
-            i['firsttime'] = i['lasttime'] = i.get('reporttime')
+            i['firsttime'] = i['lasttime'] = i['reporttime']
         # xor firsttime and lasttime (if one is set but not the other)
         elif (not i.get('lasttime')) != (not i.get('firsttime')):
-            if i.get('firsttime'):
-                i['lasttime'] = i.get('firsttime')
+            if i.get('lasttime'):
+                # if lasttime gt reporttime, we got bad data; correct it
+                if i['lasttime'] > i['reporttime']:
+                    i['lasttime'] = i['reporttime']
+                i['firsttime'] = i['lasttime']
             else:
-                i['firsttime'] = i.get('lasttime')
+                # if firsttime gt reporttime, then bad data; fix
+                if i['firsttime'] > i['reporttime']:
+                    i['firsttime'] = i['reporttime']
+                i['lasttime'] = i['firsttime']
 
     def start(self):
         self._load_plugin(**self.kwargs)
@@ -263,6 +289,8 @@ class Store(multiprocessing.Process):
 
                     if not i.get('tags'):
                         i['tags'] = ['suspicious']
+                    elif isinstance(i['tags'], list):
+                        i['tags'] = [ x.strip() for x in i['tags'] ]
 
                     if i.get('message'):
                         try:
@@ -328,6 +356,8 @@ class Store(multiprocessing.Process):
 
                 if not i.get('tags'):
                     i['tags'] = ['suspicious']
+                elif isinstance(i['tags'], list):
+                    i['tags'] = [ x.strip() for x in i['tags'] ]
 
                 if i.get('message'):
                     try:

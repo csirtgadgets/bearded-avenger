@@ -20,7 +20,6 @@ from cifsdk.utils import setup_logging
 from pprint import pprint
 import os
 
-CONFIDENCE = 50
 MONTHS = 12
 LIMIT = 5000
 
