@@ -25,13 +25,13 @@ def _router_stop():
     thread.join()
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def router():
     yield _router_start()
     _router_stop()
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def client():
     from cif.client.zeromq import ZMQ as Client
 

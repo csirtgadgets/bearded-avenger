@@ -13,7 +13,7 @@ if os.environ.get('CIF_ELASTICSEARCH_TEST'):
         DISABLE_TESTS = False
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def store():
     try:
         connections.get_connection().indices.delete(index='indicators-*')
@@ -32,7 +32,7 @@ def store():
         pass
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def token(store):
     t = store.store.tokens.create({
         'username': u'test_admin',
@@ -54,7 +54,10 @@ def indicator():
         provider='csirtg.io',
         group='everyone',
         lasttime=arrow.utcnow().datetime,
-        reporttime=arrow.utcnow().datetime
+        reporttime=arrow.utcnow().datetime,
+        tlp='amber',
+        protocol='udp',
+        portlist='25,5060'
     )
 
 
@@ -66,7 +69,10 @@ def indicator_alt_provider():
         provider='notcsirtg.io',
         group='everyone',
         lasttime=arrow.utcnow().datetime,
-        reporttime=arrow.utcnow().datetime
+        reporttime=arrow.utcnow().datetime,
+        tlp='green',
+        protocol='tcp',
+        portlist='25'
     )
 
 
@@ -78,7 +84,8 @@ def indicator_email():
         provider='csirtg.io',
         group='everyone',
         lasttime=arrow.utcnow().datetime,
-        reporttime=arrow.utcnow().datetime
+        reporttime=arrow.utcnow().datetime,
+        tlp='green'
     )
 
 
@@ -101,7 +108,9 @@ def indicator_url():
         provider='csirtg.io',
         group='everyone',
         lasttime=arrow.utcnow().datetime,
-        reporttime=arrow.utcnow().datetime
+        reporttime=arrow.utcnow().datetime,
+        protocol='tcp',
+        portlist='80,443'
     )
 
 @pytest.fixture
@@ -330,3 +339,108 @@ def test_store_elasticsearch_indicators_multi_tags_negation(store, token, indica
     pprint(x)
     
     assert len(x) == 0
+
+
+## test TLP search
+@pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
+def test_store_elasticsearch_indicators_search_tlp(store, token, indicator, indicator_alt_provider, indicator_email):
+    x = store.handle_indicators_create(token, indicator.__dict__(), flush=True)
+    assert x == 1
+
+    y = store.handle_indicators_create(token, indicator_alt_provider.__dict__(), flush=True)
+    assert y == 1
+
+    z = store.handle_indicators_create(token, indicator_email.__dict__(), flush=True)
+    assert z == 1
+
+    x = store.handle_indicators_search(token, {
+        'tlp': 'green'
+    })
+
+    x = json.loads(x)
+    pprint(x)
+
+    x = [i['_source'] for i in x['hits']['hits']]
+
+    assert len(x) == 2
+
+    x = store.handle_indicators_search(token, {
+        'tlp': 'amber'
+    })
+
+    x = json.loads(x)
+    pprint(x)
+
+    x = [i['_source'] for i in x['hits']['hits']]
+
+    assert len(x) == 1
+
+
+## test protocol search
+@pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
+def test_store_elasticsearch_indicators_search_protocol(store, token, indicator, indicator_alt_provider, indicator_url):
+    x = store.handle_indicators_create(token, indicator.__dict__(), flush=True)
+    assert x == 1
+
+    y = store.handle_indicators_create(token, indicator_alt_provider.__dict__(), flush=True)
+    assert y == 1
+
+    z = store.handle_indicators_create(token, indicator_url.__dict__(), flush=True)
+    assert z == 1
+
+    x = store.handle_indicators_search(token, {
+        'protocol': 'tcp'
+    })
+
+    x = json.loads(x)
+    pprint(x)
+
+    x = [i['_source'] for i in x['hits']['hits']]
+
+    assert len(x) == 2
+
+    x = store.handle_indicators_search(token, {
+        'protocol': 'udp'
+    })
+
+    x = json.loads(x)
+    pprint(x)
+
+    x = [i['_source'] for i in x['hits']['hits']]
+
+    assert len(x) == 1
+
+
+## test portlist search
+@pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
+def test_store_elasticsearch_indicators_search_portlist(store, token, indicator, indicator_alt_provider, indicator_url):
+    x = store.handle_indicators_create(token, indicator.__dict__(), flush=True)
+    assert x == 1
+
+    y = store.handle_indicators_create(token, indicator_alt_provider.__dict__(), flush=True)
+    assert y == 1
+
+    z = store.handle_indicators_create(token, indicator_url.__dict__(), flush=True)
+    assert z == 1
+
+    x = store.handle_indicators_search(token, {
+        'portlist': '25'
+    })
+
+    x = json.loads(x)
+    pprint(x)
+
+    x = [i['_source'] for i in x['hits']['hits']]
+
+    assert len(x) == 1
+
+    x = store.handle_indicators_search(token, {
+        'portlist': '80,443'
+    })
+
+    x = json.loads(x)
+    pprint(x)
+
+    x = [i['_source'] for i in x['hits']['hits']]
+
+    assert len(x) == 1

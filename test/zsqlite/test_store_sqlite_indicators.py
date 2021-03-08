@@ -18,7 +18,7 @@ setup_logging(args)
 logger = logging.getLogger(__name__)
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def store():
     dbfile = tempfile.mktemp()
     with Store(store_type='sqlite', dbfile=dbfile) as s:
