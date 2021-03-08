@@ -14,7 +14,7 @@ if os.environ.get('CIF_ELASTICSEARCH_TEST'):
         DISABLE_TESTS = False
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def store():
     try:
         connections.get_connection().indices.delete(index='indicators-*')
@@ -32,7 +32,7 @@ def store():
     except Exception:
         pass
 
-@pytest.yield_fixture
+@pytest.fixture
 def token(store):
     t = store.store.tokens.create({
         'username': u'test_admin',
@@ -173,6 +173,10 @@ def test_store_elasticsearch_tokens_groups3(store, indicator):
     assert len(i) == 0
 
     i = store.handle_indicators_search(t2['token'], {'indicator': 'example.com'})
+    i = json.loads(i)
+    assert len(i) == 0
+
+    i = store.handle_indicators_search(t2['token'], {'indicator': 'example.com', 'groups': 'staff'})
     i = json.loads(i)
     assert len(i) == 0
 

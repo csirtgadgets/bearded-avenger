@@ -20,7 +20,7 @@ def client(request):
     return httpd.app.test_client()
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def store():
     dbfile = tempfile.mktemp()
     with Store(store_type='sqlite', dbfile=dbfile) as s:
