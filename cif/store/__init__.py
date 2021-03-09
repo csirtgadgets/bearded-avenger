@@ -431,6 +431,14 @@ class Store(multiprocessing.Process):
                 if isinstance(data['indicator'], str):
                     data['indicator'] = unicode(data['indicator'])
 
+        # token acl check
+        if t.get('acl') and t.get('acl') != ['']:
+            if data.get('itype') and data.get('itype') not in t['acl']:
+                raise AuthError('unauthorized to access itype {}'.format(data['itype']))
+
+            if not data.get('itype'):
+                data['itype'] = t['acl']
+        
         # verify group filter matches token permissions
         if data.get('groups'):
             q_groups = [g.strip() for g in data['groups'].split(',')]
