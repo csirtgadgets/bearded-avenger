@@ -119,12 +119,17 @@ class TokenManager(TokenManagerPlugin):
 
         d = list(self.search({'token': data['token']}, raw=True))
         if not d:
-            return 'token not found'
+            logger.error('token update: unknown token')
+            return False
 
+        t = d[0]['_source']
         d = Token.get(d[0]['_id'])
 
+        for f in data:
+            t[f] = data[f]
+
         try:
-            d.update(groups=data['groups'])
+            d.update(**t)
 
         except Exception as e:
             import traceback
