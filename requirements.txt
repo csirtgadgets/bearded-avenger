@@ -23,7 +23,7 @@ csirtg_dnsdb==0.0.0a4
 tornado>=5.1.0
 faker==0.7.10
 Flask-Bootstrap==3.3.6.0
-gevent==1.2.1
+gevent~=21.1.2
 gunicorn==19.7.1
 urllib3<1.25,>=1.21.1
 requests==2.22.0
