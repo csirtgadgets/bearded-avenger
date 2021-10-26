@@ -10,7 +10,7 @@ class FqdnSubdomain(object):
         self.logger = logging.getLogger(__name__)
         self.is_advanced = False
 
-    def process(self, i, router):
+    def process(self, i, router, **kwargs):
         if i.itype != 'fqdn':
             return
 
@@ -31,8 +31,11 @@ class FqdnSubdomain(object):
             self.logger.error(e)
         else:
             fqdn.confidence = (fqdn.confidence - 3) if fqdn.confidence >= 3 else 0
+            fqdn.rdata = '{} subdomain'.format(i.indicator)
             if 'hunter' not in fqdn.tags:
                 fqdn.tags.append('hunter')
             router.indicators_create(fqdn)
+            self.logger.debug("FQDN Subdomain Hunter: {}".format(fqdn))
+
 
 Plugin = FqdnSubdomain

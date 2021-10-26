@@ -4,8 +4,9 @@ import ujson as json
 import logging
 import zmq
 import cif.hunter
+from cifsdk.msg import Msg
 from cifsdk.client.zeromq import ZMQ as Client
-from cif.constants import HUNTER_ADDR, ROUTER_ADDR, HUNTER_SINK_ADDR
+from cif.constants import HUNTER_ADDR, HUNTER_SINK_ADDR
 from csirtg_indicator import Indicator
 from csirtg_indicator.exceptions import InvalidIndicator
 import multiprocessing
@@ -17,6 +18,8 @@ SNDTIMEO = 15000
 ZMQ_HWM = 1000000
 EXCLUDE = os.environ.get('CIF_HUNTER_EXCLUDE', None)
 HUNTER_ADVANCED = os.getenv('CIF_HUNTER_ADVANCED', 0)
+HUNTER_MIN_CONFIDENCE = 4
+HUNTER_RECURSION = os.getenv('CIF_HUNTER_RECURSION', 0)
 
 TRACE = os.environ.get('CIF_HUNTER_TRACE', False)
 
@@ -34,7 +37,7 @@ class Hunter(multiprocessing.Process):
     def __exit__(self, type, value, traceback):
         return self
 
-    def __init__(self, remote=HUNTER_ADDR, router=ROUTER_ADDR, token=None):
+    def __init__(self, remote=HUNTER_ADDR, token=None):
         multiprocessing.Process.__init__(self)
         self.hunters = remote
         self.router = HUNTER_SINK_ADDR
@@ -90,10 +93,9 @@ class Hunter(multiprocessing.Process):
             if socket not in s:
                 continue
 
-            data = socket.recv_multipart()
+            id, token, mtype, data = Msg().recv(socket)
 
-            logger.debug(data)
-            data = json.loads(data[0])
+            data = json.loads(data)
 
             if isinstance(data, dict):
                 if not data.get('indicator'):
@@ -117,8 +119,17 @@ class Hunter(multiprocessing.Process):
 
                 data = [data]
 
+            token = json.loads(token)
+
             for d in data:
                 d = Indicator(**d)
+
+                if d.confidence < HUNTER_MIN_CONFIDENCE:
+                    continue
+
+                # prevent hunter recursion if disabled
+                if not HUNTER_RECURSION and d.tags and 'hunter' in d.tags:
+                    continue
 
                 if d.indicator in ["", 'localhost', 'example.com']:
                     continue
@@ -134,7 +145,7 @@ class Hunter(multiprocessing.Process):
                         if not HUNTER_ADVANCED:
                             continue
                     try:
-                        p.process(d, router)
+                        p.process(i=d, router=router, user_token=token)
                     except Exception as e:
                         logger.error(e)
                         logger.error('[{}] giving up on: {}'.format(p, d))

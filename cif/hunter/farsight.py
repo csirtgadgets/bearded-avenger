@@ -22,7 +22,7 @@ class Farsight(object):
         self.token = kwargs.get('token', TOKEN)
         self.is_advanced = True
 
-    def process(self, i, router):
+    def process(self, i, router, **kwargs):
         if not self.token:
             return
 

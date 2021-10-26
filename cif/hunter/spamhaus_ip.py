@@ -53,7 +53,7 @@ class SpamhausIp(object):
         if data and data[0]:
             return data[0]
 
-    def process(self, i, router):
+    def process(self, i, router, **kwargs):
         if 'search' in i.tags:
             return
 
@@ -86,9 +86,10 @@ class SpamhausIp(object):
                 f.reference = 'http://www.spamhaus.org/query/bl?ip={}'.format(f.indicator)
                 f.lasttime = f.reporttime = arrow.utcnow()
                 x = router.indicators_create(f)
+                self.logger.debug("Spamhaus IP: {}".format(x))
 
         except Exception as e:
-            self.logger.error('[Hunter: SpamhausIp] {}: giving up on indicator {}'.format(e, i))
+            self.logger.error("[Hunter: SpamhausIp] {}: giving up on indicator {}".format(e, i))
             import traceback
             traceback.print_exc()
 

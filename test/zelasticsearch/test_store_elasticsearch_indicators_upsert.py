@@ -43,7 +43,7 @@ def token(store):
     })
 
     assert t
-    yield t['token']
+    yield t
 
 
 @pytest.fixture

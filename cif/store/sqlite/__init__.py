@@ -91,8 +91,7 @@ class SQLite(Store):
         self.tokens = TokenManager(self.handle, self.engine)
         self.indicators = IndicatorManager(self.handle, self.engine)
 
-    def ping(self, token):
-        if self.tokens.read(token) or self.tokens.write(token):
-            return True
+    def ping(self):
+        return True
 
 Plugin = SQLite

@@ -77,14 +77,13 @@ class _ElasticSearch(Store):
         logger.info('ES cluster is: %s' % x['status'])
         return x
 
-    def ping(self, token):
+    def ping(self):
         s = self._health_check()
 
         if s is None or s['status'] == 'red':
             raise CIFException('ES Cluster Issue')
 
-        if self.tokens.read(token) or self.tokens.write(token):
-            return True
+        return True
 
 
 Plugin = _ElasticSearch

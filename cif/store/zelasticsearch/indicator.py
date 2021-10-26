@@ -3,12 +3,10 @@ from elasticsearch import helpers
 import elasticsearch.exceptions
 from elasticsearch_dsl.connections import connections
 from cif.store.indicator_plugin import IndicatorManagerPlugin
-from pprint import pprint
 from cifsdk.exceptions import AuthError, CIFException
 from datetime import datetime, timedelta
 from cifsdk.constants import PYVERSION
 import logging
-import json
 from .helpers import expand_ip_idx, i_to_id
 from .filters import filter_build
 from .constants import LIMIT, WINDOW_LIMIT, TIMEOUT, UPSERT_MODE, PARTITION, DELETE_FILTERS, UPSERT_MATCH, REQUEST_TIMEOUT
@@ -79,7 +77,17 @@ class IndicatorManager(IndicatorManagerPlugin):
             index.aliases(live={})
             index.doc_type(Indicator)
             index.settings(max_result_window=WINDOW_LIMIT)
-            index.create()
+            try:
+                index.create()
+            # after implementing auth to use cif_store, there appears to sometimes be a race condition
+            # where both the normal store and the auth store don't see the index and then try to create simultaneously.
+            # gracefully handle if that happens
+            except elasticsearch.exceptions.TransportError as e:
+                if (e.error.startswith('IndexAlreadyExistsException') or
+                    e.error.startswith('index_already_exists_exception')):
+                    pass
+                else:
+                    raise
             self.handle.indices.flush(idx)
 
         self.last_index_check = datetime.utcnow()
@@ -248,7 +256,10 @@ class IndicatorManager(IndicatorManagerPlugin):
                 filters['tags'] = d['tags']
 
             if d.get('rdata'):
-                filters['rdata'] = d['rdata']
+                # if wildcard in rdata, don't add it to upsert search; urls can contain asterisks, 
+                # and complex wildcard queries can create ES timeouts
+                if '*' not in d['rdata']:
+                    filters['rdata'] = d['rdata']
 
             # search for existing, return latest record
             try:
@@ -380,6 +391,12 @@ class IndicatorManager(IndicatorManagerPlugin):
         if len(actions) > 0:
             try:
                 helpers.bulk(self.handle, actions)
+            except helpers.BulkIndexError as e:
+                if e.errors[0]['index']['status'] == 409:
+                    # version conflict error, prob just modified by another mp process
+                    logger.error(e)
+                else:
+                    raise e
             except Exception as e:
                 #self.lockm.lock_release()
                 raise e

@@ -13,7 +13,7 @@ class FqdnNs(object):
         self.logger = logging.getLogger(__name__)
         self.is_advanced = True
 
-    def process(self, i, router):
+    def process(self, i, router, **kwargs):
         if i.itype != 'fqdn':
             return
 
@@ -21,30 +21,32 @@ class FqdnNs(object):
             return
 
         try:
-            r = resolve_ns(i.indicator)
+            r = resolve_ns(i.indicator, t='NS')
         except Timeout:
             self.logger.info('timeout trying to resolve: {}'.format(i.indicator))
             return
 
         for rr in r:
-            if str(rr).rstrip('.') in ["", 'localhost', '0.0.0.0']:
+            rr = str(rr).rstrip('.')
+            if rr in ["", 'localhost', '0.0.0.0']:
                 continue
 
-            ip = Indicator(**i.__dict__())
-            ip.indicator = str(rr)
-            ip.lasttime = ip.reporttime = arrow.utcnow()
+            i_ns = Indicator(**i.__dict__())
+            i_ns.indicator = rr
 
             try:
-                resolve_itype(ip.indicator)
+                i_ns_itype = resolve_itype(i_ns.indicator)
             except InvalidIndicator as e:
-                self.logger.error(ip)
+                self.logger.error(i_ns)
                 self.logger.error(e)
             else:
-                ip.itype = 'ipv4'
-                ip.rdata = i.indicator
-                if 'hunter' not in ip.tags:
-                    ip.tags.append('hunter')
-                ip.confidence = (ip.confidence - 4) if ip.confidence >= 4 else 0
-                router.indicators_create(ip)
+                i_ns.lasttime = i_ns.reporttime = arrow.utcnow()
+                i_ns.itype = i_ns_itype
+                i_ns.rdata = "{} nameserver".format(i.indicator)
+                if 'hunter' not in i_ns.tags:
+                    i_ns.tags.append('hunter')
+                i_ns.confidence = (i_ns.confidence - 4) if i_ns.confidence >= 4 else 0
+                router.indicators_create(i_ns)
+                self.logger.debug("FQDN NS Hunter: {}".format(i_ns))
 
 Plugin = FqdnNs

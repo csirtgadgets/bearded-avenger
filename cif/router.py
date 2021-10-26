@@ -9,8 +9,8 @@ from argparse import RawDescriptionHelpFormatter
 from time import sleep
 import zmq
 import os
-import sys
-from cif.constants import ROUTER_ADDR, STORE_ADDR, HUNTER_ADDR, GATHERER_ADDR, GATHERER_SINK_ADDR, HUNTER_SINK_ADDR, RUNTIME_PATH
+from cif.constants import ROUTER_ADDR, STORE_ADDR, HUNTER_ADDR, GATHERER_ADDR, GATHERER_SINK_ADDR, HUNTER_SINK_ADDR, \
+            RUNTIME_PATH, AUTH_ENABLED, AUTH_ADDR, CTRL_ADDR
 from cifsdk.constants import CONFIG_PATH
 from cifsdk.utils import setup_logging, get_argument_parser, setup_signals, setup_runtime_path, read_config
 from cif.hunter import Hunter
@@ -19,9 +19,13 @@ from cif.gatherer import Gatherer
 import time
 import multiprocessing as mp
 from cifsdk.msg import Msg
+from cif.auth import Auth
 
+AUTH_TYPE = 'cif_store'
+AUTH_PLUGINS = ['cif.auth.cif_store']
+if AUTH_ENABLED not in [1, '1', 'True', True]:
+    AUTH_ENABLED = False
 
-HUNTER_MIN_CONFIDENCE = 4
 HUNTER_THREADS = os.getenv('CIF_HUNTER_THREADS', 0)
 HUNTER_ADVANCED = os.getenv('CIF_HUNTER_ADVANCED', 0)
 GATHERER_THREADS = os.getenv('CIF_GATHERER_THREADS', 2)
@@ -64,7 +68,8 @@ class Router(object):
 
     def __init__(self, listen=ROUTER_ADDR, hunter=HUNTER_ADDR, store_type=STORE_DEFAULT, store_address=STORE_ADDR,
                  store_nodes=None, hunter_token=HUNTER_TOKEN, hunter_threads=HUNTER_THREADS,
-                 gatherer_threads=GATHERER_THREADS, test=False):
+                 gatherer_threads=GATHERER_THREADS, auth_required=AUTH_ENABLED, auth_address=AUTH_ADDR, 
+                 auth_type=AUTH_TYPE, test=False):
 
         self.logger = logging.getLogger(__name__)
 
@@ -86,16 +91,33 @@ class Router(object):
         self.gatherers = []
         self._init_gatherers(gatherer_threads)
 
+        self.auth_required = auth_required
+
         self.hunter_sink_s = self.context.socket(zmq.ROUTER)
         self.hunter_sink_s.bind(HUNTER_SINK_ADDR)
+
+        self.hunter_token_dict = None
+        self.hunter_token_dict_as_str = ''
+        self.ctrl_sink_s = self.context.socket(zmq.PULL)
+        self.ctrl_sink_s.SNDTIMEO = ZMQ_SNDTIMEO
+        self.ctrl_sink_s.set_hwm(ZMQ_HWM)
+        self.ctrl_sink_s.connect(CTRL_ADDR)
 
         self.hunters = []
         self.hunters_s = None
         if hunter_threads and int(hunter_threads):
             self.hunters_s = self.context.socket(zmq.PUSH)
-            self.logger.debug('binding hunter: {}'.format(hunter))
+            self.logger.debug('binding hunter from router: {}'.format(hunter))
             self.hunters_s.bind(hunter)
             self._init_hunters(hunter_threads, hunter_token)
+
+        self.auth_s = None
+        self.auth_p = None
+        self.logger.info('auth required is set to {}'.format(auth_required))
+        if self.auth_required:
+            self.auth_s = self.context.socket(zmq.DEALER)
+            self.auth_s.bind(auth_address)
+            self._init_auth(auth_address, auth_type)
 
         self.logger.info('launching frontend...')
         self.frontend_s = self.context.socket(zmq.ROUTER)
@@ -130,6 +152,12 @@ class Router(object):
         p.start()
         self.store_p = p
 
+    def _init_auth(self, auth_address, auth_type):
+        self.logger.info('launching auth...')
+        p = mp.Process(target=Auth(auth_address=auth_address, auth_type=auth_type).start)
+        p.start()
+        self.auth_p = p
+
     def stop(self):
         self.terminate = True
         self.logger.info('stopping hunters..')
@@ -140,6 +168,9 @@ class Router(object):
         for g in self.gatherers:
             g.terminate()
 
+        self.logger.info('stopping auth..')
+        self.auth_p.terminate()
+
         self.logger.info('stopping store..')
         self.store_p.terminate()
 
@@ -148,30 +179,49 @@ class Router(object):
     def start(self):
         self.logger.debug('starting loop')
 
+        self.poller_backend.register(self.ctrl_sink_s, zmq.POLLIN)
         self.poller_backend.register(self.hunter_sink_s, zmq.POLLIN)
         self.poller_backend.register(self.gatherer_sink_s, zmq.POLLIN)
         self.poller.register(self.store_s, zmq.POLLIN)
+        if self.auth_required:
+            self.poller.register(self.auth_s, zmq.POLLIN)
         self.poller.register(self.frontend_s, zmq.POLLIN)
 
         # we use this instead of a loop so we can make sure to get front end queries as they come in
         # that way hunters don't over burden the store, think of it like QoS
         # it's weighted so front end has a higher chance of getting a faster response
         while not self.terminate:
-            items = dict(self.poller.poll(FRONTEND_TIMEOUT))
-
-            if self.frontend_s in items and items[self.frontend_s] == zmq.POLLIN:
-                self.handle_message(self.frontend_s)
-
-            if self.store_s in items and items[self.store_s] == zmq.POLLIN:
-                self.handle_message_store(self.store_s)
-
             items = dict(self.poller_backend.poll(BACKEND_TIMEOUT))
 
             if self.gatherer_sink_s in items and items[self.gatherer_sink_s] == zmq.POLLIN:
                 self.handle_message_gatherer(self.gatherer_sink_s)
 
             if self.hunter_sink_s in items and items[self.hunter_sink_s] == zmq.POLLIN:
-                self.handle_message(self.hunter_sink_s)
+                self.handle_message_backend_request(self.hunter_sink_s)
+
+            # handle recv hunter token as data one time, then save/shutdown this sink
+            if not self.hunter_token_dict and self.ctrl_sink_s and self.ctrl_sink_s in items and items[self.ctrl_sink_s] == zmq.POLLIN:
+                self.logger.debug('Recving hunter token from store...')
+                self.hunter_token_dict_as_str = self.ctrl_sink_s.recv_string()
+                self.hunter_token_dict = json.loads(self.hunter_token_dict_as_str)
+                self.ctrl_sink_s.close()
+                self.poller_backend.unregister(self.ctrl_sink_s)
+                self.ctrl_sink_s = None
+
+            items = dict(self.poller.poll(FRONTEND_TIMEOUT))
+
+            if self.frontend_s in items and items[self.frontend_s] == zmq.POLLIN:
+                if self.auth_required:
+                    self.handle_message_auth_request(self.frontend_s)
+                else:
+                    self.handle_message_backend_request(self.frontend_s)
+
+            if self.auth_required and self.auth_s in items and items[self.auth_s] == zmq.POLLIN:
+                self.handle_message_auth_response(self.auth_s)
+
+            if self.store_s in items and items[self.store_s] == zmq.POLLIN:
+                self.handle_message_response(self.store_s)
+
 
     def _log_counter(self):
         self.count += 1
@@ -182,11 +232,22 @@ class Router(object):
             self.count = 0
             self.count_start = time.time()
 
-    def handle_message(self, s):
+    def handle_message_backend_request(self, s):
+        # if something comes directly to the backend, that implies it was an internal request
+        # such as from a hunter (or no auth enabled). therefore, use hunter token for request
+        if not self.hunter_token_dict:
+            # this is just needed at startup hopefully in case we get a backend request
+            # before ctrl_sink has received hunter token. if this msg keeps appearing
+            # 5-10 secs after startup, there may be an issue
+            self.logger.info('Got backend request before hunter token was ready. Skipping...')
+            return
         id, token, mtype, data = Msg().recv(s)
+        token = self.hunter_token_dict_as_str
+        self.handle_message_request(id, token, mtype, data)
 
+    def handle_message_request(self, id, token, mtype, data):
         handler = self.handle_message_default
-        if mtype in ['indicators_create', 'indicators_search']:
+        if mtype in ['indicators_create', 'indicators_search', 'ping_write']:
             handler = getattr(self, "handle_" + mtype)
 
         try:
@@ -199,37 +260,65 @@ class Router(object):
     def handle_message_default(self, id, mtype, token, data='[]'):
         Msg(id=id, mtype=mtype, token=token, data=data).send(self.store_s)
 
-    def handle_message_store(self, s):
-        # re-routing from store to front end
-        id, mtype, token, data = Msg().recv(s)
+    def handle_ping_write(self, id, mtype, token, data):
+        # format the token as is expected by cifsdk for a data field resp
+        token = json.loads(token)
+        data = json.dumps({ 'status': 'success', 'data': token })
+        # respond to appropriate socket
+        if token.get('username') == self.hunter_token_dict.get('username'):
+            Msg(id=id, mtype=mtype, data=data).send(self.hunter_sink_s)
+        else:
+            Msg(id=id, mtype=mtype, data=data).send(self.frontend_s)
 
-        Msg(id=id, mtype=mtype, token=token, data=data).send(self.frontend_s)
+    def handle_indicators_search(self, id, mtype, token, data):
+        self.handle_message_default(id, mtype, token, data)
+
+        if self.hunters:
+            Msg(id=id, mtype=mtype, token=token, data=data).send(self.hunters_s)
+
+    def handle_indicators_create(self, id, mtype, token, data):
+        Msg(id=id, mtype=mtype, token=token, data=data).send(self.gatherer_s)
+
+    def handle_message_response(self, s):
+        # re-routing from store to frontend or hunter_sink (as based on the username for a source)
+        id, token, mtype, data = Msg().recv(s)
+        token = json.loads(token)
+        if token.get('username') == self.hunter_token_dict.get('username'):
+            Msg(id=id, mtype=mtype, data=data).send(self.hunter_sink_s)
+        else:
+            Msg(id=id, mtype=mtype, data=data).send(self.frontend_s)
 
     def handle_message_gatherer(self, s):
         id, token, mtype, data = Msg().recv(s)
 
         Msg(id=id, mtype=mtype, token=token, data=data).send(self.store_s)
 
-        if len(self.hunters) == 0:
-            return
-
-        data = json.loads(data)
-        if isinstance(data, dict):
-            data = [data]
-
-        for d in data:
-            if d.get('confidence', 0) >= HUNTER_MIN_CONFIDENCE:
-                self.hunters_s.send_string(json.dumps(d))
-
-    def handle_indicators_search(self, id, mtype, token, data):
-        self.handle_message_default(id, mtype, token, data)
-
         if self.hunters:
-            self.hunters_s.send_string(data)
+            Msg(id=id, mtype=mtype, token=token, data=data).send(self.hunters_s)
 
-    def handle_indicators_create(self, id, mtype, token, data):
-        Msg(id=id, mtype=mtype, token=token, data=data).send(self.gatherer_s)
+    def handle_message_auth_request(self, s):
+        id, token, mtype, data = Msg().recv(s)
+        Msg(id=id, mtype=mtype, token=token, data=data).send(self.auth_s)
 
+    def handle_message_auth_response(self, s):
+        id, token, mtype, data = Msg().recv(s)
+
+        try:
+            data_dict = json.loads(data)
+        except Exception as e:
+            # this can happen if invalid json passed in request
+            # e.g., PATCH to /tokens with { "token": "longtokenhere_followedbymissingdblquote, "groups": ["everyone"] }
+            data_dict = { 'status': 'failed', 'message': 'invalid JSON'}
+            logger.error('Could not decode auth resp data {}. Error {}'.format(data, e))
+            data = json.dumps(data_dict)
+
+        # route based on resp
+        if isinstance(data_dict, dict) and data_dict.get('status') == 'failed':
+            # route auth failure back to frontend
+            Msg(id=id, mtype=mtype, data=data).send(self.frontend_s)
+        else:
+            # if we get here, authN/authZ succeeded
+            self.handle_message_request(id, token, mtype, data)
 
 def main():
     p = get_argument_parser()

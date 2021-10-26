@@ -101,12 +101,12 @@ class IndicatorsAPI(MethodView):
         except CIFBusy:
             return jsonify_busy()
 
+        except AuthError:
+            return jsonify_unauth()
+
         except Exception as e:
             logger.error(e)
             return jsonify_unknown('submission failed with generic exception, check logs for more information', 422)
-
-        except AuthError:
-            return jsonify_unauth()
 
         return jsonify_success(r, code=201)
 
@@ -124,11 +124,11 @@ class IndicatorsAPI(MethodView):
             logger.error(e)
             return jsonify_unknown('submission failed, check logs for more information', 408)
 
+        except AuthError:
+            return jsonify_unauth()
+
         except Exception as e:
             logger.error(e)
             return jsonify_unknown('submission failed, check logs for more information', 422)
-
-        except AuthError:
-            return jsonify_unauth()
 
         return jsonify_success(r)

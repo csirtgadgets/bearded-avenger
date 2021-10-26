@@ -51,7 +51,7 @@ def test_store_sqlite_indicators(store, indicator):
     t = list(store.store.tokens.search({'token': t}))
     assert len(t) > 0
 
-    t = t[0]['token']
+    t = t[0]
 
     assert store.store.tokens.update_last_activity_at(t, datetime.now())
     assert store.store.tokens.check(t, 'read')

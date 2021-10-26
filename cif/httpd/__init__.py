@@ -154,7 +154,7 @@ def process_response(response):
     if '/u/' in request.path or not hasattr(g, 'request_start_time'):
         return response
 
-    if request.headers.get('Accept-Encoding') and request.headers['Accept-Encoding'] == 'deflate':
+    if request.headers.get('Accept-Encoding') == 'deflate':
         logger.debug('compressing resp: %d' % len(response.data))
         response.data = zlib.compress(response.data)
         response.headers['Content-Encoding'] = 'deflate'

@@ -9,7 +9,7 @@ class Ipv4ResolvePrefixWhitelist(object):
         self.logger = logging.getLogger(__name__)
         self.is_advanced = False
 
-    def process(self, i, router):
+    def process(self, i, router, **kwargs):
         if i.itype != 'ipv4':
             return
 

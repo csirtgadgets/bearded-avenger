@@ -1,6 +1,6 @@
 from flask import current_app
 from cifsdk.client.zeromq import ZMQ as Client
-from cif.constants import ROUTER_ADDR
+from cif.constants import HUNTER_SINK_ADDR
 from cifsdk.exceptions import TimeoutError, AuthError
 from ..common import jsonify_unauth, jsonify_unknown, jsonify_success
 from flask.views import MethodView
@@ -24,7 +24,7 @@ class HealthAPI(MethodView):
         if not HTTPD_TOKEN:
             return jsonify_success()
 
-        remote = ROUTER_ADDR
+        remote = HUNTER_SINK_ADDR
         if current_app.config.get('CIF_ROUTER_ADDR'):
             remote = current_app.config['CIF_ROUTER_ADDR']
 

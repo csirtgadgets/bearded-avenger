@@ -67,7 +67,7 @@ class SpamhausFqdn(object):
         if data and data[0]:
             return data[0]
 
-    def process(self, i, router):
+    def process(self, i, router, **kwargs):
         if 'search' in i.tags:
             return
 

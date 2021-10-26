@@ -42,7 +42,7 @@ def token(store):
     })
 
     assert t
-    yield t['token']
+    yield t
 
 @pytest.fixture
 def indicator():
@@ -58,7 +58,7 @@ def indicator():
 @pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
 def test_store_elasticsearch_tokens_edit_groups(store, token):
 
-    x = store.handle_tokens_search(token, {'token': token})
+    x = store.handle_tokens_search(token, {'token': token['token']})
     x = list(x)
 
     pprint(x)
@@ -66,7 +66,7 @@ def test_store_elasticsearch_tokens_edit_groups(store, token):
     assert x[0]['groups'] == ['everyone']
 
     u = {
-        'token': token,
+        'token': token['token'],
         'groups': ['staff', 'everyone']
     }
 
@@ -74,7 +74,7 @@ def test_store_elasticsearch_tokens_edit_groups(store, token):
 
     assert x
 
-    x = store.handle_tokens_search(token, {'token': token})
+    x = store.handle_tokens_search(token, {'token': token['token']})
     x = list(x)
 
     pprint(x)
@@ -87,7 +87,7 @@ def test_store_elasticsearch_tokens_edit_groups(store, token):
 @pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
 def test_store_elasticsearch_tokens_edit_rw_perms(store, token):
 
-    x = store.handle_tokens_search(token, {'token': token})
+    x = store.handle_tokens_search(token, {'token': token['token']})
     x = list(x)
 
     pprint(x)
@@ -96,7 +96,7 @@ def test_store_elasticsearch_tokens_edit_rw_perms(store, token):
     assert x[0]['write']
 
     u = {
-        'token': token,
+        'token': token['token'],
         'write': False
     }
 
@@ -104,7 +104,7 @@ def test_store_elasticsearch_tokens_edit_rw_perms(store, token):
 
     assert x
 
-    x = store.handle_tokens_search(token, {'token': token})
+    x = store.handle_tokens_search(token, {'token': token['token']})
     x = list(x)
 
     pprint(x)

@@ -15,7 +15,7 @@ class FqdnMx(object):
         self.logger = logging.getLogger(__name__)
         self.is_advanced = True
 
-    def process(self, i, router):
+    def process(self, i, router, **kwargs):
         if i.itype != 'fqdn':
             return
 
@@ -35,14 +35,13 @@ class FqdnMx(object):
 
                 if rr in ["", 'localhost', '0.0.0.0']:
                     continue
+                elif re.match('^\d+$', rr) or re.match(r'^.{0,3}$', rr):
+                    # exclude spurious entries like those too short to be real
+                    continue
 
                 fqdn = Indicator(**i.__dict__())
                 fqdn.indicator = rr.rstrip('.')
                 fqdn.lasttime = fqdn.reporttime = arrow.utcnow()
-
-                # 10
-                if re.match('^\d+$', rr):
-                    return
 
                 try:
                     resolve_itype(fqdn.indicator)
@@ -53,11 +52,12 @@ class FqdnMx(object):
                     fqdn.itype = 'fqdn'
                     if 'hunter' not in fqdn.tags:
                         fqdn.tags.append('hunter')
-                    fqdn.rdata = i.indicator
+                    fqdn.rdata = '{} mx'.format(i.indicator)
                     fqdn.confidence = (fqdn.confidence - 5) if fqdn.confidence >= 5 else 0
                     router.indicators_create(fqdn)
+                    self.logger.debug("FQDN MX Hunter: {}".format(fqdn))
         
         except Exception as e:
-            self.logger.error('[Hunter: FqdnMx] {}: giving up on indicator {}'.format(e, rr))
+            self.logger.error('[Hunter: FqdnMx] {}: giving up on rr {} from indicator {}'.format(e, rr, i))
 
 Plugin = FqdnMx

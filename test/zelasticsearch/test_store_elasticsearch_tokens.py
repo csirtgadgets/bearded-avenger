@@ -32,6 +32,7 @@ def store():
     except Exception:
         pass
 
+
 @pytest.fixture
 def token(store):
     t = store.store.tokens.create({
@@ -43,7 +44,7 @@ def token(store):
     })
 
     assert t
-    yield t['token']
+    yield t
 
 @pytest.fixture
 def indicator():
@@ -65,13 +66,13 @@ def test_store_elasticsearch_tokens(store, token):
     assert store.store.tokens.write(token)
     assert store.store.tokens.admin(token)
     assert store.store.tokens.last_activity_at(token) is not None
-    assert store.store.tokens._cache_check(token)
+    assert store.store.tokens._cache_check(token['token'])
     assert store.store.tokens.update_last_activity_at(token, datetime.now())
 
 
 @pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
 def test_store_elasticsearch_tokens_advanced(store, token):
-    x = store.handle_tokens_search(token, {'token': token})
+    x = store.handle_tokens_search(token, {'token': token['token']})
     assert len(list(x)) > 0
 
     x = store.handle_tokens_search(token, {'admin': True})

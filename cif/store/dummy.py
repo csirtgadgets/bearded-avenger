@@ -28,9 +28,6 @@ class Dummy(Store):
     def token_read(self, token):
         return True
 
-    def token_write(self, token):
-        return True
-
     def indicators_search(self, token, data):
         return [data]
 

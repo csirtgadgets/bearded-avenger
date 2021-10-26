@@ -48,7 +48,7 @@ def test_store_sqlite_tokens(store):
     t = list(store.store.tokens.search({'token': t}))
     assert len(t) > 0
 
-    t = t[0]['token']
+    t = t[0]
 
     assert store.store.tokens.update_last_activity_at(t, datetime.now())
     assert store.store.tokens.check(t, 'read')
@@ -204,5 +204,5 @@ def test_store_sqlite_tokens_groups4(store, indicator):
 
     assert i
 
-    i = store.store.indicators.search(t['token'], {'itype': 'fqdn', 'groups': 'staff'})
+    i = store.store.indicators.search(t, {'itype': 'fqdn', 'groups': 'staff'})
     assert len(list(i)) == 1

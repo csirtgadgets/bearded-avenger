@@ -87,6 +87,13 @@ class TokenManager(TokenManagerPlugin):
 
             yield self._cache[x.token]
 
+    def auth_search(self, token):
+        rv = list(self.search(token))
+        if rv:
+            self.update_last_activity_at(rv[0], arrow.utcnow().datetime)
+
+        return rv
+
     def create(self, data):
         s = self.handle()
 
@@ -189,15 +196,17 @@ class TokenManager(TokenManagerPlugin):
         if isinstance(timestamp, str):
             timestamp = arrow.get(timestamp).datetime
 
-        if self._cache_check(token):
-            if self._cache[token].get('last_activity_at'):
-                return self._cache[token]['last_activity_at']
+        token_str = token['token']
 
-            self._cache[token]['last_activity_at'] = timestamp
+        if self._cache_check(token_str):
+            if self._cache[token_str].get('last_activity_at'):
+                return self._cache[token_str]['last_activity_at']
+
+            self._cache[token_str]['last_activity_at'] = timestamp
             return timestamp
 
         s = self.handle()
-        s.query(Token).filter_by(token=token).update({Token.last_activity_at: timestamp})
+        s.query(Token).filter_by(token=token_str).update({Token.last_activity_at: timestamp})
 
         try:
             s.commit()
@@ -206,8 +215,8 @@ class TokenManager(TokenManagerPlugin):
             logger.debug('rolling back transaction..')
             s.rollback()
 
-        t = list(self.search({'token': token}))
+        t = list(self.search({'token': token_str}))
 
-        self._cache[token] = t[0]
-        self._cache[token]['last_activity_at'] = timestamp
+        self._cache[token_str] = t[0]
+        self._cache[token_str]['last_activity_at'] = timestamp
         return timestamp

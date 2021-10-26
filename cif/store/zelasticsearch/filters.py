@@ -131,6 +131,20 @@ def filter_indicator(s, q_filters):
     return s
 
 
+def filter_rdata(s, q_filters):
+    if not q_filters.get('rdata'):
+        return s
+
+    r = q_filters.pop('rdata')
+
+    # limit number of wildcards that can be used to mitigate ES query performance degradation
+    if '*' in r and r.count('*') <= 2:
+        return s.query("wildcard", rdata=r)
+
+    s = s.filter("term", rdata=r)
+    return s
+
+
 def filter_terms(s, q_filters):
     for f in q_filters:
         if f in ['nolog', 'days', 'hours', 'groups', 'limit', 'provider', 'reporttime', 'tags']:
@@ -254,6 +268,8 @@ def filter_build(s, filters, token=None):
 
     s = filter_id(s, q_filters)
 
+    s = filter_rdata(s, q_filters)
+
     # treat indicator as special, transform into Search
     s = filter_indicator(s, q_filters)
 
@@ -265,7 +281,7 @@ def filter_build(s, filters, token=None):
     if q_filters.get('groups'):
         s = filter_groups(s, q_filters)
     else:
-        if token:
+        if token and (not token.get('admin') or token.get('admin') == ''):
             s = filter_groups(s, {}, token=token)
 
     if q_filters.get('tags'):
