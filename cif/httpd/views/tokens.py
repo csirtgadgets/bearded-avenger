@@ -67,6 +67,9 @@ class TokensAPI(MethodView):
         except AuthError:
             return jsonify_unauth()
 
+        except RuntimeError as e:
+            return jsonify_unknown(msg=str(e))
+
         except Exception as e:
             logger.error(e)
             return jsonify_unknown()
