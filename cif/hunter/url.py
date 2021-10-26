@@ -2,7 +2,6 @@ from cifsdk.constants import PYVERSION
 import logging
 from csirtg_indicator import Indicator, resolve_itype
 from csirtg_indicator.exceptions import InvalidIndicator
-import json
 import arrow
 
 if PYVERSION > 2:
@@ -17,11 +16,15 @@ class Url(object):
         self.logger = logging.getLogger(__name__)
         self.is_advanced = False
 
-    def process(self, i, router):
+    def process(self, i, router, **kwargs):
         if i.itype != 'url':
             return
 
         if 'search' in i.tags:
+            return
+
+        # prevent recursion with fqdn_wl hunter
+        if ('whitelist') in i.tags and (i.rdata is not None or i.rdata != ''):
             return
 
         u = urlparse(i.indicator)
@@ -43,7 +46,7 @@ class Url(object):
             fqdn.confidence = (int(fqdn.confidence) / 2)
             fqdn.rdata = i.indicator
 
-            self.logger.debug('[Hunter: Url] sending to router: {}'.format(fqdn))
+            self.logger.debug('[Hunter: Url] sending to router {}'.format(fqdn))
             router.indicators_create(fqdn)
 
 
