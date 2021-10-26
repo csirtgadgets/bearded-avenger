@@ -3,7 +3,6 @@ from flask import flash
 from flask import request, render_template, session
 from cifsdk.client.zeromq import ZMQ as Client
 from cif.constants import ROUTER_ADDR
-import json
 import logging
 import csv
 from csirtg_indicator import Indicator
