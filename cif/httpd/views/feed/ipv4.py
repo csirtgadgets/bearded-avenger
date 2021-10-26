@@ -1,10 +1,6 @@
-
 import pytricia
-import logging
 import ipaddress
 import sys
-
-from pprint import pprint
 
 PERM_WHITELIST = [
     "0.0.0.0/8",
@@ -19,12 +15,6 @@ PERM_WHITELIST = [
 ]
 
 LARGEST_PREFIX = '8'
-
-
-def tag_contains_whitelist(data):
-    for d in data:
-        if d == 'whitelist':
-            return True
 
 
 def _normalize(i):
@@ -60,9 +50,6 @@ class Ipv4(object):
         rv = []
 
         for y in data:
-            if tag_contains_whitelist(y['tags']):
-                continue
-
             y['indicator'] = _normalize(y['indicator'])
             try:
                 if sys.version_info.major < 3:

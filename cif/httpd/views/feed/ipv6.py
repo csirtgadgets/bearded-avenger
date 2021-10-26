@@ -1,6 +1,5 @@
 import pytricia
 import logging
-from pprint import pprint
 
 PERM_WHITELIST = [
     ## TODO -- more
@@ -9,12 +8,6 @@ PERM_WHITELIST = [
     'FF01:0:0:0:0:0:0:1',
     'FF01:0:0:0:0:0:0:2',
 ]
-
-
-def tag_contains_whitelist(data):
-    for d in data:
-        if d == 'whitelist':
-            return True
 
 
 class Ipv6(object):
@@ -32,9 +25,6 @@ class Ipv6(object):
 
         rv = []
         for y in data:
-            if tag_contains_whitelist(y['tags']):
-                continue
-
             if str(y['indicator']) not in wl:
                 rv.append(y)
 
