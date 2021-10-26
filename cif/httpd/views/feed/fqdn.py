@@ -1,6 +1,3 @@
-
-from pprint import pprint
-
 PERM_WHITELIST = [
     'google.com',
     'yahoo.com',
