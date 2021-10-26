@@ -5,7 +5,7 @@ from cifsdk.client.zeromq import ZMQ as Client
 from cif.constants import ROUTER_ADDR
 import logging
 import os
-import json
+import ujson as json
 
 remote = ROUTER_ADDR
 HTTPD_TOKEN = os.getenv('CIF_HTTPD_TOKEN')
