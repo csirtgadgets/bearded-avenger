@@ -19,7 +19,7 @@ CONFLICT_RETRIES = int(CONFLICT_RETRIES)
 class ReIndexError(Exception):
     def __init__(self, value):
         self.value = value
-        
+
     def __str__(self):
         return repr(self.value)
 
@@ -82,6 +82,28 @@ class TokenManager(TokenManagerPlugin):
             else:
                 yield x['_source']
 
+    def auth_search(self, token):
+        """Take in a str token and return a dict of token attribs containing:
+            .id (str): unique db id of token record
+            .token (str): the api token that was passed in
+            .groups (list): list of groups for which the token is authorized
+            .read (bool): present and True if token has read perms
+            .write (bool): present and True if token has write perms
+            .admin (bool): present and True if token has admin perms
+            .last_activity_at (str): RFC3339 str present if token has had activity
+        """
+        rv = list(self.search(token, raw=True))
+        final = []
+        # standardize all token dicts to contain an "id" field w/ the id of the record
+        for x in rv:
+            y = x['_source']
+            y['id'] = x['_id']
+            final.append(y)
+        if final:
+            # if successful auth, update token activity here rather than in store
+            self.update_last_activity_at(final[0], arrow.utcnow().datetime)
+        return final
+
     def create(self, data):
         logger.debug(data)
         for v in ['admin', 'read', 'write']:
@@ -95,7 +117,9 @@ class TokenManager(TokenManagerPlugin):
 
         if t.save():
             connections.get_connection().indices.flush(index='tokens')
-            return t.to_dict()
+            res = t.to_dict()
+            res['id'] = t.to_dict(include_meta=True)['_id']
+            return res
 
     def delete(self, data):
         if not (data.get('token') or data.get('username')):
@@ -120,7 +144,7 @@ class TokenManager(TokenManagerPlugin):
         d = list(self.search({'token': data['token']}, raw=True))
         if not d:
             logger.error('token update: unknown token')
-            return False
+            return 'token not found'
 
         t = d[0]['_source']
         d = Token.get(d[0]['_id'])
@@ -143,21 +167,22 @@ class TokenManager(TokenManagerPlugin):
         if isinstance(timestamp, str):
             timestamp = arrow.get(timestamp).datetime
 
-        if self._cache_check(token):
+        timestamp = timestamp.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        token_str = token['token']
+        if self._cache_check(token_str):
 
-            if self._cache[token].get('last_activity_at'):
-                return self._cache[token]['last_activity_at']
+            if self._cache[token_str].get('last_activity_at'):
+                return self._cache[token_str]['last_activity_at']
 
-            self._cache[token]['last_activity_at'] = timestamp
+            self._cache[token_str]['last_activity_at'] = timestamp
             return timestamp
 
-        rv = list(self.search({'token': token}, raw=True))
-        rv = Token.get(rv[0]['_id'])
+        rv = Token.get(token['id'])
 
         try:
             rv.update(last_activity_at=timestamp, retry_on_conflict=CONFLICT_RETRIES)
-            self._cache[token] = rv.to_dict()
-            self._cache[token]['last_activity_at'] = timestamp
+            self._cache[token_str] = rv.to_dict()
+            self._cache[token_str]['last_activity_at'] = timestamp
         except Exception as e:
             import traceback
             logger.error(traceback.print_exc())

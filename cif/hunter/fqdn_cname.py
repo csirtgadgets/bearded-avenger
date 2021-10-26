@@ -12,7 +12,7 @@ class FqdnCname(object):
         self.logger = logging.getLogger(__name__)
         self.is_advanced = True
 
-    def process(self, i, router):
+    def process(self, i, router, **kwargs):
         if i.itype != 'fqdn':
             return
 
@@ -43,6 +43,7 @@ class FqdnCname(object):
                 return
 
             fqdn.itype = 'fqdn'
+            fqdn.rdata = '{} cname'.format(i.indicator)
             if 'hunter' not in fqdn.tags:
                 fqdn.tags.append('hunter')
             if fqdn.confidence < 8:
@@ -50,5 +51,7 @@ class FqdnCname(object):
             else:
                 fqdn.confidence = 7
             router.indicators_create(fqdn)
+            self.logger.debug("FQDN CNAME Hunter: {}".format(fqdn))
+
 
 Plugin = FqdnCname

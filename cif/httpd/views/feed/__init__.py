@@ -2,16 +2,17 @@ from ...common import pull_token, jsonify_success, jsonify_unauth, jsonify_unkno
     aggregate, VALID_FILTERS
 from pprint import pprint
 from flask.views import MethodView
-from flask import request, current_app, jsonify, g
+from flask import request, current_app, jsonify, g, make_response
 from cifsdk.client.zeromq import ZMQ as Client
 from cifsdk.client.dummy import Dummy as DummyClient
-from cif.constants import ROUTER_ADDR, FEEDS_DAYS, FEEDS_LIMIT, FEEDS_WHITELIST_LIMIT, HTTPD_FEED_WHITELIST_CONFIDENCE
+from cif.constants import ROUTER_ADDR, HUNTER_SINK_ADDR, FEEDS_DAYS, FEEDS_LIMIT, FEEDS_WHITELIST_LIMIT, HTTPD_FEED_WHITELIST_CONFIDENCE
 from cifsdk.exceptions import InvalidSearch, AuthError
 import logging
 import copy
 import os
 import time
 import uuid
+import ujson as json
 
 from .fqdn import Fqdn
 from .ipv4 import Ipv4
@@ -79,7 +80,7 @@ logging.getLogger('gunicorn.error').addHandler(console)
 logger = logging.getLogger('gunicorn.error')
 
 remote = ROUTER_ADDR
-
+internal_remote = HUNTER_SINK_ADDR
 
 class FeedAPI(MethodView):
     def get(self):
@@ -96,9 +97,15 @@ class FeedAPI(MethodView):
         if 'itype' not in filters:
             return jsonify_unknown('missing itype filter (ipv4, fqdn, url, etc...)', 400)
         
-        if filters.get('tags') and 'whitelist' in filters.get('tags'):
-            return jsonify_unknown('Invalid filter: tag "whitelist" is invalid for a feed. To find allow-listed indicators, perform a regular search rather than a feed pull', 
+        if filters.get('tags'):
+            if 'whitelist' in filters.get('tags'):
+                return jsonify_unknown('Invalid filter: tag "whitelist" is invalid for a feed. To find allow-listed indicators, perform a regular search rather than a feed pull', 
             400)
+            else:
+                # add a negation to ensure our search doesn't include allowlisted items
+                filters['tags'] += ',!whitelist'
+        else:
+            filters['tags'] = '!whitelist'
 
         # test to make sure feed type exists
         feed_type = feed_factory(filters['itype'])
@@ -170,7 +177,7 @@ class FeedAPI(MethodView):
             wl = current_app.config.get('feed').get('wl')
         else:
             try:
-                wl = Client(remote, pull_token()).indicators_search(wl_filters)
+                wl = Client(internal_remote, pull_token()).indicators_search(wl_filters)
             except Exception as e:
                 logger.error(e)
                 return jsonify_unknown('feed query failed', 503)
@@ -184,11 +191,14 @@ class FeedAPI(MethodView):
         r = f().process(r, wl)
 
         logger.debug('%s done: %s' % (id, str((time.time() - start))))
-        response = jsonify({
+        # manually make flask Response obj rather than use jsonify
+        # to take advantage of ujson speed for large str
+        response = make_response(json.dumps({
             "message": "success",
             "data": r
-        })
+        }))
 
+        response.headers['Content-Type'] = 'application/json'
         response.status_code = 200
 
         return response

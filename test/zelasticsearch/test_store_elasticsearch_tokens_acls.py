@@ -43,7 +43,7 @@ def token(store):
     })
 
     assert t
-    yield t['token']
+    yield t
 
 @pytest.fixture
 def indicator():
@@ -84,8 +84,6 @@ def test_store_elasticsearch_tokens_acls1(store, token, indicator):
     assert t
     assert t['acl'] == ['fqdn']
 
-    t = t['token']
-
     i = None
     try:
         i = store.handle_indicators_search(t, {
@@ -118,8 +116,6 @@ def test_store_elasticsearch_tokens_acls2(store, token, indicator):
     assert t
     assert t['acl'] == ['ipv4']
 
-    t = t['token']
-
     i = None
     try:
         i = store.handle_indicators_search(t, {
@@ -149,8 +145,6 @@ def test_store_elasticsearch_tokens_acls3(store, token, indicator, indicator_ipv
 
     assert t
     assert t['acl'] == ['fqdn', 'ipv4']
-
-    t = t['token']
 
     i = None
 
@@ -186,8 +180,6 @@ def test_store_elasticsearch_tokens_acls4(store, token, indicator):
     assert t
     assert t['acl'] == ['fqdn']
 
-    t = t['token']
-
     i = None
 
     try:
@@ -219,8 +211,6 @@ def test_store_elasticsearch_tokens_acls5(store, indicator):
     assert t
     assert t['acl'] == ['ipv4']
 
-    t = t['token']
-
     i = None
     with pytest.raises(AuthError):
         try:
@@ -247,8 +237,6 @@ def test_store_elasticsearch_tokens_acls6(store, token, indicator):
 
     assert t
     assert t['acl'] == ['']
-
-    t = t['token']
 
     i = None
 
@@ -282,8 +270,6 @@ def test_store_elasticsearch_tokens_acls7(store, token, indicator):
 
     assert t
     assert t.get('acl') == None
-
-    t = t['token']
 
     i = None
 

@@ -43,7 +43,7 @@ def token(store):
     })
 
     assert t
-    yield t['token']
+    yield t
 
 
 @pytest.fixture
@@ -122,6 +122,31 @@ def indicator_malware():
         group='everyone',
         lasttime=arrow.utcnow().datetime,
         reporttime=arrow.utcnow().datetime
+    )
+
+@pytest.fixture
+def indicator_broken_multi_tag_el():
+    return Indicator(
+        indicator='d52380918a07322c50f1bfa2b43af3bb54cb33db',
+        tags=['malware,exploit'], # this is intentionally bad for the test
+        provider='csirtg.io',
+        group='everyone',
+        lasttime=arrow.utcnow().datetime,
+        reporttime=arrow.utcnow().datetime
+    )
+
+@pytest.fixture
+def indicator_good_multi_tag():
+    return Indicator(
+        indicator='example3.com',
+        tags='phishing,malware',
+        provider='notcsirtg.io',
+        group='everyone',
+        lasttime=arrow.utcnow().datetime,
+        reporttime=arrow.utcnow().datetime,
+        tlp='green',
+        protocol='tcp',
+        portlist='25'
     )
 
 
@@ -444,3 +469,49 @@ def test_store_elasticsearch_indicators_search_portlist(store, token, indicator,
     x = [i['_source'] for i in x['hits']['hits']]
 
     assert len(x) == 1
+
+
+## test multi, comma-delimited tag in single str element getting split out
+@pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
+def test_store_elasticsearch_indicators_bad_multi_tag_el(store, token, indicator_broken_multi_tag_el):
+    x = store.handle_indicators_create(token, indicator_broken_multi_tag_el.__dict__(), flush=True)
+    assert x == 1
+    
+    x = store.handle_indicators_search(token, {
+        'tags': '{}'.format(indicator_broken_multi_tag_el.tags[0].split(',')[1]) # should grab the item after the 1st comma, aka, "exploit"
+    })
+
+    x = json.loads(x)
+    pprint(x)
+    
+    x = [i['_source'] for i in x['hits']['hits']]
+    
+    assert len(x) == 1
+    
+    assert x[0]['indicator'] == indicator_broken_multi_tag_el.indicator
+    
+    assert len(x[0]['tags']) == 2
+    
+## test good multi, comma-delimited tag creation/search
+@pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
+def test_store_elasticsearch_indicators_good_multi_tag_el(store, token, indicator_good_multi_tag):
+    x = store.handle_indicators_create(token, indicator_good_multi_tag.__dict__(), flush=True)
+    assert x == 1
+    
+    x = store.handle_indicators_search(token, {
+        'tags': '{}'.format(indicator_good_multi_tag.tags[1]) # should grab the 2nd list item
+    })
+
+    x = json.loads(x)
+    pprint(x)
+    
+    x = [i['_source'] for i in x['hits']['hits']]
+    
+    assert len(x) == 1
+    
+    assert x[0]['indicator'] == indicator_good_multi_tag.indicator
+    
+    assert len(x[0]['tags']) == 2
+    
+    assert indicator_good_multi_tag.tags[1] in x[0]['tags']
+    

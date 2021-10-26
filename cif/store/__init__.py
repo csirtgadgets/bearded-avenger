@@ -21,7 +21,7 @@ from base64 import b64encode
 
 from cifsdk.msg import Msg
 import cif.store
-from cif.constants import STORE_ADDR, PYVERSION
+from cif.constants import STORE_ADDR, PYVERSION, AUTH_ENABLED, CTRL_ADDR
 from cifsdk.constants import REMOTE_ADDR, CONFIG_PATH
 from cifsdk.exceptions import AuthError, InvalidSearch
 from cif.exceptions import StoreLockError
@@ -79,7 +79,7 @@ class Store(multiprocessing.Process):
     def __exit__(self, type, value, traceback):
         return False
 
-    def __init__(self, store_type=STORE_DEFAULT, store_address=STORE_ADDR, **kwargs):
+    def __init__(self, store_type=STORE_DEFAULT, store_address=STORE_ADDR, hunter_token=None, **kwargs):
         multiprocessing.Process.__init__(self)
 
         self.store_addr = store_address
@@ -92,6 +92,7 @@ class Store(multiprocessing.Process):
         self.create_queue_wait = CREATE_QUEUE_TIMEOUT
         self.create_queue_max = CREATE_QUEUE_MAX
         self.create_queue_count = 0
+        self.hunter_token = hunter_token
 
     def _load_plugin(self, **kwargs):
         # TODO replace with cif.utils.load_plugin
@@ -155,12 +156,20 @@ class Store(multiprocessing.Process):
 
         self.token_create_admin()
 
+        # one time push of this info to router
+        self.ctrl_sink_s = self.context.socket(zmq.PUSH)
+        self.ctrl_sink_s.setsockopt(zmq.LINGER, -1)
+        self.ctrl_sink_s.bind(CTRL_ADDR)
+        hunter_token_dict = self.token_create_hunter()
+        self.ctrl_sink_s.send_string(json.dumps(hunter_token_dict))
+        hunter_token_dict = None
+
         logger.debug('connecting to router: {}'.format(self.store_addr))
         self.router.connect(self.store_addr)
 
         logger.info('connected')
 
-        logger.debug('staring loop')
+        logger.debug('starting loop')
 
         poller = zmq.Poller()
         poller.register(self.router, zmq.POLLIN)
@@ -200,10 +209,23 @@ class Store(multiprocessing.Process):
         if isinstance(data, basestring):
             try:
                 data = json.loads(data)
+                if AUTH_ENABLED:
+                    try:
+                        token = json.loads(token)
+                    except ValueError as e:
+                        # in the event we only have a token str, i.e., being run from a hunter
+                        token = list(self.handle_tokens_search('', {'token': token}))[0]
+                else:
+                    token = {'username': 'noauth',
+                              'read': True, 'write': True, 'admin': True, 
+                              'groups': ['everyone'],
+                              'token': 'noauth'
+                            }
             except ValueError as e:
                 logger.error(e)
                 data = json.dumps({"status": "failed"})
-                Msg(id=id, client_id=client_id, mtype=mtype, data=data).send(self.router)
+                token = json.dumps(token)
+                Msg(id=id, client_id=client_id, mtype=mtype, token=token, data=data).send(self.router)
                 return
 
         handler = getattr(self, "handle_" + mtype)
@@ -214,7 +236,7 @@ class Store(multiprocessing.Process):
         try:
             rv = handler(token, data, id=id, client_id=client_id)
             if rv == MORE_DATA_NEEDED:
-                rv = {"status": "success", "data": '1'}
+                rv = {"status": "success", "data": 1}
             else:
                 rv = {"status": "success", "data": rv}
 
@@ -251,10 +273,8 @@ class Store(multiprocessing.Process):
             traceback.print_exc()
             data = json.dumps({'status': 'failed', 'message': 'feed to large, retry the query'})
 
-        Msg(id=id, client_id=client_id, mtype=mtype, data=data).send(self.router)
-
-        if not err:
-            self.store.tokens.update_last_activity_at(token, arrow.utcnow().datetime)
+        token = json.dumps(token)
+        Msg(id=id, client_id=client_id, mtype=mtype, token=token, data=data).send(self.router)
 
     def _flush_create_queue(self):
         for t in self.create_queue:
@@ -263,13 +283,12 @@ class Store(multiprocessing.Process):
 
             logger.debug('flushing queue...')
             data = [msg[0] for _, _, msg in self.create_queue[t]['messages']]
-            _t = self.store.tokens.write(t)
+            _t = self.create_queue[t]
 
             try:
                 start_time = time.time()
                 logger.info('attempting to insert %d indicators..', len(data))
 
-                # this will raise AuthError if the groups don't match
                 if isinstance(data, dict):
                     data = [data]
 
@@ -284,13 +303,19 @@ class Store(multiprocessing.Process):
                     if not i.get('provider') or i['provider'] == '':
                         i['provider'] = _t['username']
 
-                    if i['group'] not in _t['groups']:
-                        raise AuthError('unable to write to %s' % i['group'])
-
                     if not i.get('tags'):
                         i['tags'] = ['suspicious']
                     elif isinstance(i['tags'], list):
-                        i['tags'] = [ x.strip() for x in i['tags'] ]
+                        tmp_tags = []
+                        for x in i['tags']:
+                            # handle issue of single element containing multiple comma-delimited tags (e.g.: ["malware,phishing"] )
+                            if ',' in x:
+                                tmp_tags.extend([y.strip() for y in x.split(',') if y])
+                            else:
+                                tmp_tags.append(x.strip())
+                        i['tags'] = tmp_tags
+                    elif isinstance(i['tags'], basestring):
+                        i['tags'] = [x.strip() for x in i['tags'].split(',')]
 
                     if i.get('message'):
                         try:
@@ -319,24 +344,18 @@ class Store(multiprocessing.Process):
             for id, client_id, _ in self.create_queue[t]['messages']:
                 Msg(id=id, client_id=client_id, mtype=Msg.INDICATORS_CREATE, data=rv)
 
-            if rv['status'] == 'success':
-                self.store.tokens.update_last_activity_at(t, arrow.utcnow().datetime)
-
             logger.debug('queue flushed..')
 
     def handle_indicators_delete(self, token, data=None, id=None, client_id=None):
-        t = self.store.tokens.admin(token)
-        return self.store.indicators.delete(t, data=data, id=id)
+        return self.store.indicators.delete(token, data=data, id=id)
 
     def handle_indicators_create(self, token, data, id=None, client_id=None, flush=False):
-        # this will raise AuthError if false
-        t = self.store.tokens.write(token)
+        token_str = token['token']
 
-        if len(data) > 1 or t['username'] == 'admin':
+        if len(data) > 1 or token['username'] == 'admin':
             start_time = time.time()
             logger.info('attempting to insert %d indicators..', len(data))
 
-            # this will raise AuthError if the groups don't match
             if isinstance(data, dict):
                 data = [data]
 
@@ -345,19 +364,28 @@ class Store(multiprocessing.Process):
                     i['group'] = 'everyone'
 
                 # optionally force provider to match username with exceptions
-                if i.get('provider') and STRICT_PROVIDERS and not t['username'] in STRICT_PROVIDERS_EXCEPTIONS:
-                    i['provider'] = t['username']
+                if i.get('provider') and STRICT_PROVIDERS and not token['username'] in STRICT_PROVIDERS_EXCEPTIONS:
+                    i['provider'] = token['username']
 
                 if not i.get('provider') or i['provider'] == '':
-                    i['provider'] = t['username']
+                    i['provider'] = token['username']
 
-                if i['group'] not in t['groups']:
-                    raise AuthError('unable to write to %s' % i['group'])
+                if not i.get('tlp'):
+                    i['tlp'] = 'amber'
 
                 if not i.get('tags'):
                     i['tags'] = ['suspicious']
                 elif isinstance(i['tags'], list):
-                    i['tags'] = [ x.strip() for x in i['tags'] ]
+                    tmp_tags = []
+                    for x in i['tags']:
+                        # handle issue of single element containing multiple comma-delimited tags (e.g.: ["malware,phishing"] )
+                        if ',' in x:
+                            tmp_tags.extend([y.strip() for y in x.split(',') if y])
+                        else:
+                            tmp_tags.append(x.strip())                        
+                    i['tags'] = tmp_tags
+                elif isinstance(i['tags'], basestring):
+                    i['tags'] = [x.strip() for x in i['tags'].split(',')]
 
                 if i.get('message'):
                     try:
@@ -367,7 +395,7 @@ class Store(multiprocessing.Process):
 
                 self._timestamps_fix(i)
 
-            n = self.store.indicators.upsert(t, data, flush=flush)
+            n = self.store.indicators.upsert(token, data, flush=flush)
 
             t = time.time() - start_time
             logger.info('actually inserted %d indicators.. took %0.2f seconds (%0.2f/sec)', n, t, (n/t))
@@ -375,8 +403,6 @@ class Store(multiprocessing.Process):
             return n
 
         data = data[0]
-        if data['group'] not in t['groups']:
-            raise AuthError('unauthorized to write to group: %s' % data['group'])
 
         if data.get('message'):
             try:
@@ -384,14 +410,16 @@ class Store(multiprocessing.Process):
             except (TypeError, binascii.Error) as e:
                 pass
 
-        if not self.create_queue.get(token):
-            self.create_queue[token] = {'count': 0, "messages": []}
+        if not self.create_queue.get(token_str):
+            self.create_queue[token_str] = {'count': 0, "messages": []}
+            for k in token:
+                self.create_queue[token_str][k] = token[k]
 
-        self.create_queue[token]['count'] += 1
+        self.create_queue[token_str]['count'] += 1
         self.create_queue_count += 1
-        self.create_queue[token]['last_activity'] = time.time()
+        self.create_queue[token_str]['last_activity'] = time.time()
 
-        self.create_queue[token]['messages'].append((id, client_id, [data]))
+        self.create_queue[token_str]['messages'].append((id, client_id, [data]))
 
         return MORE_DATA_NEEDED
 
@@ -408,7 +436,7 @@ class Store(multiprocessing.Process):
         if '%' in data.get('indicator'):
             return
 
-        ts = arrow.utcnow().format('YYYY-MM-DDTHH:mm:ss.SSZ')
+        ts = arrow.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
         s = Indicator(
             indicator=data['indicator'],
             tlp='amber',
@@ -424,7 +452,6 @@ class Store(multiprocessing.Process):
         self.store.indicators.upsert(t, [s.__dict__()])
 
     def handle_indicators_search(self, token, data, **kwargs):
-        t = self.store.tokens.read(token)
 
         if PYVERSION == 2:
             if data.get('indicator'):
@@ -432,20 +459,26 @@ class Store(multiprocessing.Process):
                     data['indicator'] = unicode(data['indicator'])
 
         # token acl check
-        if t.get('acl') and t.get('acl') != ['']:
-            if data.get('itype') and data.get('itype') not in t['acl']:
+        if token.get('acl') and token.get('acl') != ['']:
+            if data.get('itype') and data.get('itype') not in token['acl']:
                 raise AuthError('unauthorized to access itype {}'.format(data['itype']))
 
             if not data.get('itype'):
-                data['itype'] = t['acl']
+                data['itype'] = token['acl']
         
         # verify group filter matches token permissions
-        if data.get('groups'):
-            q_groups = [g.strip() for g in data['groups'].split(',')]
+        if data.get('groups') and (not token.get('admin') or token.get('admin') == ''):
+            if isinstance(data['groups'], basestring):
+                q_groups = [g.strip() for g in data['groups'].split(',')]
+            elif isinstance(data['groups'], list):
+                q_groups = data['groups']
 
             gg = []
             for g in q_groups:
-                if g in t['groups']:
+                if AUTH_ENABLED:
+                    if g in token['groups']:
+                        gg.append(g)
+                else:
                     gg.append(g)
 
             if gg:
@@ -469,10 +502,10 @@ class Store(multiprocessing.Process):
 
         s = time.time()
 
-        self._log_search(t, data)
+        self._log_search(token, data)
 
         try:
-            x = self.store.indicators.search(t, data)
+            x = self.store.indicators.search(token, data)
             logger.debug('done')
         except Exception as e:
             logger.error(e)
@@ -492,40 +525,21 @@ class Store(multiprocessing.Process):
 
     def handle_ping(self, token, data='[]', **kwargs):
         logger.debug('handling ping message')
-        return self.store.ping(token)
-
-    def handle_ping_write(self, token, data='[]', **kwargs):
-        logger.debug('handling ping write')
-        return self.store.tokens.write(token)
+        return self.store.ping()
 
     def handle_tokens_search(self, token, data, **kwargs):
-        if self.store.tokens.admin(token):
-            logger.debug('tokens_search')
-            return self.store.tokens.search(data)
-
-        raise AuthError('invalid token')
+        logger.debug('tokens_search')
+        return self.store.tokens.search(data)
 
     def handle_tokens_create(self, token, data, **kwargs):
-        if self.store.tokens.admin(token):
-            logger.debug('tokens_create')
-            return self.store.tokens.create(data)
-
-        raise AuthError('invalid token')
+        logger.debug('tokens_create')
+        return self.store.tokens.create(data)
 
     def handle_tokens_delete(self, token, data, **kwargs):
-        if self.store.tokens.admin(token):
-            return self.store.tokens.delete(data)
-
-        raise AuthError('invalid token')
-
-    def handle_token_write(self, token, data=None, **kwargs):
-        return self.store.tokens.write(token)
+        return self.store.tokens.delete(data)
 
     def handle_tokens_edit(self, token, data, **kwargs):
-        if self.store.tokens.admin(token):
-            return self.store.tokens.edit(data)
-
-        raise AuthError('invalid token')
+        return self.store.tokens.edit(data)
 
     def token_create_admin(self, token=None, groups=['everyone']):
         logger.info('testing for tokens...')
@@ -556,15 +570,28 @@ class Store(multiprocessing.Process):
         return rv['token']
 
     def token_create_hunter(self, token=None, groups=['everyone']):
-        logger.info('generating hunter token')
-        rv = self.store.tokens.create({
-            'username': u'hunter',
-            'groups': groups,
-            'write': u'1',
-            'token': token
-        })
-        logger.info('hunter token created: {}'.format(rv['token']))
-        return rv['token']
+        """Returns dict of hunter token
+        """
+        logger.info('testing for hunter token...')
+        r = self.store.tokens.hunter_exists()
+        if not r:
+            logger.info('generating hunter token')
+            rv = self.store.tokens.create({
+                'username': u'hunter',
+                'groups': groups,
+                'write': u'1',
+                'read': u'1',
+                'token': token
+            })
+            logger.info('hunter token created: {}'.format(rv))
+            return rv
+        elif not r.get('read'):
+            # hunters now require read perms
+            r['read'] = u'1'
+            rv = self.store.tokens.edit(r)
+            return rv
+        else:
+            return r
 
     def token_create_httpd(self, token=None, groups=['everyone']):
         logger.info('generating httpd token')

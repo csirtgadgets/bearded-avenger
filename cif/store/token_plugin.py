@@ -26,6 +26,10 @@ class TokenManagerPlugin(object):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def auth_search(self, token):
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def edit(self, data):
         raise NotImplementedError
 
@@ -53,16 +57,22 @@ class TokenManagerPlugin(object):
         if len(t) > 0:
             return t[0]['token']
 
+    def hunter_exists(self):
+        t = list(self.search({'username': 'hunter'}))
+        if len(t) > 0:
+            return t[0]
+
     def check(self, token, k, v=True):
         self._flush_cache()
-        if token in self._cache and self._cache[token].get(k):
-            return self._cache[token]
+        token_str = token['token']
+        if token_str in self._cache and self._cache[token_str].get(k):
+            return self._cache[token_str]
 
-        rv = list(self.search({'token': token, k: v}))
+        rv = list(self.search({'token': token_str, k: v}))
         if len(rv) == 0:
             raise AuthError('unauthorized')
 
-        self._cache[token] = rv[0]
+        self._cache[token_str] = rv[0]
         return rv[0]
 
     def admin(self, token):
@@ -75,10 +85,11 @@ class TokenManagerPlugin(object):
         return self.check(token, 'write')
 
     def last_activity_at(self, token):
-        if token in self._cache and self._cache[token].get('last_activity_at'):
-            return self._cache[token].get('last_activity_at')
+        token_str = token['token']
+        if token_str in self._cache and self._cache[token_str].get('last_activity_at'):
+            return self._cache[token_str].get('last_activity_at')
 
-        rv = list(self.search({'token': token}))
+        rv = list(self.search({'token': token_str}))
 
         if not rv:
             return None
