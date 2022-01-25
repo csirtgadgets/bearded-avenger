@@ -27,5 +27,5 @@ gevent~=21.1.2
 gunicorn==19.7.1
 urllib3<1.25,>=1.21.1
 requests==2.22.0
-ujson<=4.0.2
+ujson<=5.1.0
 zipp==0.6.0
