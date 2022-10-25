@@ -27,5 +27,6 @@ gevent~=21.1.2
 gunicorn==19.7.1
 urllib3<1.25,>=1.21.1
 requests==2.22.0
-ujson<=4.0.2
+ujson<=5.4.0
 zipp==0.6.0
+nltk>=3.6.6 # not directly required, pinned by Snyk to avoid a vulnerability
