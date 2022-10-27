@@ -35,11 +35,11 @@ def store():
 @pytest.fixture
 def token(store):
     t = store.store.tokens.create({
-        'username': u'test_admin',
-        'groups': [u'everyone'],
-        'read': u'1',
-        'write': u'1',
-        'admin': u'1'
+        'username': 'test_admin',
+        'groups': ['everyone', 'everyone2'],
+        'read': '1',
+        'write': '1',
+        'admin': '1'
     })
 
     assert t
@@ -169,6 +169,18 @@ def indicator_higher_conf():
         lasttime=arrow.utcnow().datetime,
         reporttime=arrow.utcnow().datetime,
         confidence=8.0
+    )
+
+@pytest.fixture
+def indicator_diff_group():
+    return Indicator(
+        indicator='example.com',
+        tags='botnet',
+        provider='csirtg.io',
+        group='everyone2',
+        lasttime=arrow.utcnow().datetime,
+        reporttime=arrow.utcnow().datetime,
+        confidence=7.0
     )
 
 @pytest.fixture
@@ -442,3 +454,60 @@ def test_store_elasticsearch_indicators_upsert7(store, token, indicator5, indica
     pprint(x)
 
     assert len(x) == 3
+
+## test duplicate indicator submission, different groups; 
+# ensure upserts are NOT matching on diff groups
+@pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
+def test_store_elasticsearch_indicators_upsert8(store, token, indicator, indicator_diff_group):
+
+    pprint(indicator)
+
+    indicator_dict = indicator.__dict__()
+
+    x = store.handle_indicators_create(token, indicator_dict, flush=True)
+    assert x == 1
+
+    pprint(indicator_diff_group)
+
+    y = store.handle_indicators_create(token, indicator_diff_group.__dict__(), flush=True)
+    assert y == 1
+
+    x = store.handle_indicators_search(token, {
+        'indicator': 'example.com',
+        'nolog': 1
+    })
+
+    z = json.loads(x)
+    z = [i['_source'] for i in z['hits']['hits']]
+
+    pprint(z)
+
+    assert len(z) == 2
+
+    # refresh 1st indicator times and resubmit to upsert/increase count
+    # ensure it doesn't upsert into 2nd indicator (that has the same tag but one additional)
+    indicator_dict['lasttime'] = indicator_dict['reporttime'] = arrow.utcnow().datetime
+    new_observation = Indicator(**indicator_dict)
+
+    x = store.handle_indicators_create(token, new_observation.__dict__(), flush=True)
+    assert x == 1
+
+    y = store.handle_indicators_search(token, {
+        'indicator': 'example.com',
+        'nolog': 1
+    })
+
+    z = json.loads(y)
+    z = [i['_source'] for i in z['hits']['hits']]
+
+    assert len(z) == 2 # should still have 2 indicators, but should have upserted into 1st
+
+    pprint(z)
+
+    for i in z:
+        # orig indicator should have upsert matched once for a total count of 2
+        if i['group'] == 'everyone' or 'everyone' in i['group']: # group = 'everyone' or ['everyone']
+            assert i['count'] == 2
+        # the indicator with group 'everyone2' should only have a count of 1
+        else:
+            assert i['count'] == 1
