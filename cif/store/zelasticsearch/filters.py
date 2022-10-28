@@ -275,15 +275,7 @@ def filter_build(s, filters, token=None):
 
     s = filter_reporttime(s, q_filters)
 
-    # transform all other filters into term=
-    s = filter_terms(s, q_filters)
-
-    # indicator search/submit should mostly use singular 'group' field, but the cifsdk uses 
-    # groups (plural) for both indicators and tokens
-    if q_filters.get('group'):
-        q_filters['groups'] = q_filters.pop('group')
-        s = filter_groups(s, q_filters)
-    elif q_filters.get('groups'):
+    if q_filters.get('groups'):
         s = filter_groups(s, q_filters)
     else:
         if token and (not token.get('admin') or token.get('admin') == ''):
@@ -291,5 +283,8 @@ def filter_build(s, filters, token=None):
 
     if q_filters.get('tags'):
         s = filter_tags(s, q_filters)
+
+    # transform all other filters into term=
+    s = filter_terms(s, q_filters)
 
     return s
