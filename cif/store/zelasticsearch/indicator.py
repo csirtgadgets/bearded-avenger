@@ -244,22 +244,24 @@ class IndicatorManager(IndicatorManagerPlugin):
         for d in agg:
             d = agg[d]
 
+            # start assembling search filters
             filters = {'limit': 1}
             for x in UPSERT_MATCH:
                 if d.get(x):
                     if x == 'confidence':
                         filters[x] = '{},{}'.format(d[x], d[x])
+                    elif x == 'group':
+                        # indicator submit api expects 'group' (singular)
+                        # but search api expects 'groups' (plural)
+                        filters['groups'] = d[x]
+                    elif x == 'rdata':
+                        # if wildcard in rdata, don't add it to upsert search; 
+                        # urls can contain asterisks, and complex wildcard queries can 
+                        # create ES timeouts
+                        if '*' not in d['rdata']:
+                            filters[x] = d[x]
                     else:
                         filters[x] = d[x]
-
-            if d.get('tags'):
-                filters['tags'] = d['tags']
-
-            if d.get('rdata'):
-                # if wildcard in rdata, don't add it to upsert search; urls can contain asterisks, 
-                # and complex wildcard queries can create ES timeouts
-                if '*' not in d['rdata']:
-                    filters['rdata'] = d['rdata']
 
             # search for existing, return latest record
             try:
