@@ -1,4 +1,4 @@
-import py.test
+import pytest
 
 from cif.hunter import Hunter
 from zmq import Context

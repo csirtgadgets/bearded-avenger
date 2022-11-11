@@ -10,7 +10,7 @@ PYTHON = python
 all: build test
 
 test:
-	py.test --cov=cif
+	pytest --cov=cif
 
 pep8:
 	@echo "#############################################"

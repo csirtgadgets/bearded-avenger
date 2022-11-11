@@ -108,10 +108,10 @@ class TokenManager(TokenManagerPlugin):
             username=data.get('username'),
             token=data['token'],
             acl=acl,
-            read=data.get('read'),
-            write=data.get('write'),
+            read=int(data.get('read', 0)),
+            write=int(data.get('write', 0)),
             expires=data.get('expires'),
-            admin=data.get('admin')
+            admin=int(data.get('admin', 0))
         )
 
         s.add(t)

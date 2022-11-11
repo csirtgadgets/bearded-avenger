@@ -1,4 +1,4 @@
-import py.test
+import pytest
 from cif.gatherer.peers import Peer
 from csirtg_indicator import Indicator
 import warnings
@@ -17,7 +17,7 @@ data = [
     '701 1239 3549 3561 7132 | 216.90.108.0/24 | US | arin | 1998-09-25',
 ]
 
-@py.test.mark.skipif(DISABLE_TESTS, reason='need to set CIF_GATHERER_PEERS_TEST=1 to run')
+@pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_GATHERER_PEERS_TEST=1 to run')
 def test_gatherer_peer():
     a = Peer()
 

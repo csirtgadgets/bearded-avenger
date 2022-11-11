@@ -27,7 +27,7 @@ class Peer(object):
             return indicator
 
         i = str(indicator.indicator)
-        match = re.search('^(\S+)\/\d+$', i)
+        match = re.search(r'^(\S+)\/\d+$', i)
         if match:
             i = match.group(1)
 

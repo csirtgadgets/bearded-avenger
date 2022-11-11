@@ -13,7 +13,7 @@ def resolve_ns(data, t='A', timeout=HUNTER_RESOLVER_TIMEOUT):
     resolver.lifetime = timeout
     resolver.search = []
     try:
-        answers = resolver.query(data, t)
+        answers = resolver.resolve(data, t)
         resp = []
         for rdata in answers:
             resp.append(rdata)

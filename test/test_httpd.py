@@ -5,12 +5,10 @@ import tempfile
 import pytest
 from cif import httpd
 from cif.store import Store
-from zmq.eventloop import ioloop
 
 from cifsdk.constants import PYVERSION
 
 ROUTER_ADDR = 'ipc://{}'.format(tempfile.NamedTemporaryFile().name)
-router_loop = ioloop.IOLoop.instance()
 
 @pytest.fixture
 def client(request):
