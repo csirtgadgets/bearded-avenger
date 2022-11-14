@@ -492,14 +492,14 @@ class IndicatorManager(IndicatorManagerPlugin):
                 i = i.filter_by(rdata=d['rdata'])
 
             if d['itype'] == 'ipv4':
-                match = re.search('^(\S+)\/(\d+)$', d['indicator'])  # TODO -- use ipaddress
+                match = re.search(r'^(\S+)\/(\d+)$', d['indicator'])  # TODO -- use ipaddress
                 if match:
                     i = i.join(Ipv4).filter(Ipv4.ipv4 == match.group(1), Ipv4.mask == match.group(2))
                 else:
                     i = i.join(Ipv4).filter(Ipv4.ipv4 == d['indicator'])
 
             if d['itype'] == 'ipv6':
-                match = re.search('^(\S+)\/(\d+)$', d['indicator'])  # TODO -- use ipaddress
+                match = re.search(r'^(\S+)\/(\d+)$', d['indicator'])  # TODO -- use ipaddress
                 if match:
                     i = i.join(Ipv6).filter(Ipv6.ip == match.group(1), Ipv6.mask == match.group(2))
                 else:
@@ -575,8 +575,8 @@ class IndicatorManager(IndicatorManagerPlugin):
 
                 itype = resolve_itype(d['indicator'])
 
-                if itype is 'ipv4':
-                    match = re.search('^(\S+)\/(\d+)$', d['indicator'])  # TODO -- use ipaddress
+                if itype == 'ipv4':
+                    match = re.search(r'^(\S+)\/(\d+)$', d['indicator'])  # TODO -- use ipaddress
                     if match:
                         ipv4 = Ipv4(ipv4=match.group(1), mask=match.group(2), indicator=ii)
                     else:
@@ -584,8 +584,8 @@ class IndicatorManager(IndicatorManagerPlugin):
 
                     s.add(ipv4)
 
-                elif itype is 'ipv6':
-                    match = re.search('^(\S+)\/(\d+)$', d['indicator']) # TODO -- use ipaddress
+                elif itype == 'ipv6':
+                    match = re.search(r'^(\S+)\/(\d+)$', d['indicator']) # TODO -- use ipaddress
                     if match:
                         ip = Ipv6(ip=match.group(1), mask=match.group(2), indicator=ii)
                     else:
@@ -593,11 +593,11 @@ class IndicatorManager(IndicatorManagerPlugin):
 
                     s.add(ip)
 
-                if itype is 'fqdn':
+                if itype == 'fqdn':
                     fqdn = Fqdn(fqdn=d['indicator'], indicator=ii)
                     s.add(fqdn)
 
-                if itype is 'url':
+                if itype == 'url':
                     url = Url(url=d['indicator'], indicator=ii)
                     s.add(url)
 

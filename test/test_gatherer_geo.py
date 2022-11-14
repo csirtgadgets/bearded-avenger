@@ -1,4 +1,4 @@
-import py.test
+import pytest
 from cif.gatherer.geo import Geo
 from csirtg_indicator import Indicator
 from pprint import pprint

@@ -6,7 +6,6 @@ import os
 import arrow
 import json
 from pprint import pprint
-from imp import reload
 
 DISABLE_TESTS = True
 if os.environ.get('CIF_ELASTICSEARCH_TEST') and os.environ.get('CIF_STORE_ES_UPSERT_MODE'):

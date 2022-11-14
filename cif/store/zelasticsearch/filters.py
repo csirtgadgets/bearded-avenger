@@ -122,10 +122,10 @@ def filter_indicator(s, q_filters):
         s = s.filter('term', indicator=i)
         return s
 
-    if itype is 'ipv4':
+    if itype == 'ipv4':
         return _filter_ipv4(s, i)
 
-    if itype is 'ipv6':
+    if itype == 'ipv6':
         return _filter_ipv6(s, i)
 
     return s

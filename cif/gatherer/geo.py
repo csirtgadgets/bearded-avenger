@@ -1,7 +1,6 @@
 import logging
 import os
 import geoip2.database
-import pygeoip
 from geoip2.errors import AddressNotFoundError
 import re
 from csirtg_indicator import Indicator, InvalidIndicator
@@ -150,7 +149,7 @@ class Geo(object):
         tmp = indicator.indicator
 
         if indicator.itype in ['ipv4', 'ipv6']:
-            match = re.search('^(\S+)\/\d+$', i)
+            match = re.search(r'^(\S+)\/\d+$', i)
             if match:
                 indicator.indicator = match.group(1)
 
