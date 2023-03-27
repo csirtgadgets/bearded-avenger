@@ -1,7 +1,6 @@
 
 import logging
 from csirtg_indicator import Indicator
-from pprint import pprint
 from cif.utils import resolve_ns
 import arrow
 

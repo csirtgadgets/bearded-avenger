@@ -13,8 +13,8 @@ from cif.utils import strtobool
 from cifsdk.constants import PYVERSION
 
 Base = declarative_base()
-from .token import TokenManager, Token
-from .indicator import Indicator, IndicatorManager
+from .token import TokenManager
+from .indicator import IndicatorManager
 
 DATA_PATH = os.getenv('CIF_DATA_PATH')
 DB_FILE = os.path.join(RUNTIME_PATH, 'cif.sqlite')
@@ -45,8 +45,6 @@ logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 if not TRACE:
     logger.setLevel(logging.ERROR)
     logging.getLogger('sqlalchemy.engine').setLevel(logging.ERROR)
-
-VALID_FILTERS = ['indicator', 'confidence', 'provider', 'itype', 'group', 'tags']
 
 if PYVERSION > 2:
     basestring = (str, bytes)

@@ -1,12 +1,11 @@
 import pytest
 import threading
-from pprint import pprint
 from cif.router import Router
 from cif.constants import ROUTER_ADDR
-from zmq.eventloop import ioloop
+from tornado.ioloop import IOLoop
 import tempfile
 
-loop = ioloop.IOLoop.instance()
+loop = IOLoop()
 
 ROUTER_ADDR = 'ipc://{}'.format(tempfile.NamedTemporaryFile().name)
 

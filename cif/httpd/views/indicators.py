@@ -1,5 +1,5 @@
-from ..common import pull_token, jsonify_success, jsonify_unauth, jsonify_unknown, compress, response_compress, \
-    VALID_FILTERS, jsonify_busy
+from ..common import pull_token, jsonify_success, jsonify_unauth, jsonify_unknown, jsonify_busy, \
+    VALID_FILTERS
 from flask.views import MethodView
 from flask import request, current_app
 from cifsdk.client.zeromq import ZMQ as Client
@@ -28,16 +28,17 @@ class IndicatorsAPI(MethodView):
 
         if request.args.get('q'):
             filters['indicator'] = request.args.get('q')
-        if request.args.get('confidence'):
-            filters['confidence'] = request.args.get('confidence')
-        if request.args.get('provider'):
-            filters['provider'] = request.args.get('provider')
         if request.args.get('group'):
             filters['group'] = request.args.get('group')
-        if request.args.get('tags'):
-            filters['tags'] = request.args.get('tags')
-        if request.args.get('lasttime'):
-            filters['lasttime'] = request.args.get('lasttime')
+
+        # convert str values to bool if present, or default to True
+        try:
+            filters['find_relatives'] = strtobool(
+                request.args.get('find_relatives', default='true')
+            )
+        # strtobool raises ValueError if a non-truthy value is supplied
+        except ValueError:
+            filters['find_relatives'] = True
 
         if current_app.config.get('dummy'):
             r = DummyClient(remote, pull_token()).indicators_search(filters)

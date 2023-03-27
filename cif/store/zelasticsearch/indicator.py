@@ -10,7 +10,8 @@ from cifsdk.constants import PYVERSION
 import logging
 from .helpers import expand_ip_idx, i_to_id
 from .filters import filter_build
-from .constants import LIMIT, WINDOW_LIMIT, TIMEOUT, UPSERT_MODE, PARTITION, DELETE_FILTERS, UPSERT_MATCH, REQUEST_TIMEOUT
+from .constants import LIMIT, WINDOW_LIMIT, TIMEOUT, UPSERT_MODE, PARTITION, \
+    DELETE_FILTERS, UPSERT_MATCH, REQUEST_TIMEOUT, ReIndexError
 from .locks import LockManager
 from .schema import Indicator
 import time
@@ -42,6 +43,15 @@ class IndicatorManager(IndicatorManagerPlugin):
         self.lockm = LockManager(self.handle, logger)
 
         self._create_index()
+
+        # idx exists now no matter what (either just created or was already present), 
+        # but if new mappings added to Indicator schema since last startup, this will add those types to idx
+        try:
+            Indicator.init(index=self.idx)
+        except elasticsearch.exceptions.RequestError:
+            raise ReIndexError('Your Indicators index {} is using an old mapping'.format(self.idx))
+        except Exception as e:
+            raise ReIndexError('Unspecified error: {}'.format(e))
 
     def flush(self):
         self.handle.indices.flush(index=self._current_index())
@@ -94,19 +104,22 @@ class IndicatorManager(IndicatorManagerPlugin):
         self.last_index_value = idx
         return idx
 
-    def search(self, token, filters, sort='reporttime', raw=False, sindex=False, timeout=TIMEOUT):
+    def search(self, token, filters, sort='reporttime', raw=False, sindex=False, timeout=TIMEOUT, find_relatives=False):
         limit = filters.get('limit', LIMIT)
 
         # search a given index - used in upserts
         if sindex:
             s = Indicator.search(index=sindex)
+            find_relatives=False # don't find indicator relatives in upsert searches
         else:
             s = Indicator.search(index='{}-*'.format(self.indicators_prefix))
+            # in non-upsert searches, permit finding relatives
+            find_relatives = filters.get('find_relatives', False)
 
         s = s.params(size=limit, timeout=timeout, request_timeout=REQUEST_TIMEOUT)
         s = s.sort('-reporttime', '-lasttime')
 
-        s = filter_build(s, filters, token=token)
+        s = filter_build(s, filters, token=token, find_relatives=find_relatives)
 
         #logger.debug(s.to_dict())
 
@@ -269,7 +282,8 @@ class IndicatorManager(IndicatorManagerPlugin):
             # search for existing, return latest record
             try:
                 # search the current index only
-                rv = self.search(token, filters, sort='reporttime', raw=True, sindex=index)
+                filters['sort'] = '-reporttime,-lasttime'
+                rv = self.search(token, filters, raw=True, sindex=index)
             except Exception as e:
                 logger.error(e)
                 raise e
@@ -426,8 +440,9 @@ class IndicatorManager(IndicatorManagerPlugin):
             return '0, must specify valid filter. valid filters: {}'.format(DELETE_FILTERS)
 
         try:
-           rv = self.search(token, q_filters, sort='reporttime', raw=True)
-           rv = rv['hits']['hits']
+            q_filters['sort'] = '-reporttime,-lasttime'
+            rv = self.search(token, q_filters, raw=True)
+            rv = rv.get('hits').get('hits')
         except Exception as e:
             raise CIFException(e)
 

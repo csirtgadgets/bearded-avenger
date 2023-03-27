@@ -4,7 +4,7 @@ from elasticsearch_dsl.connections import connections
 from cif.store import Store
 import os
 import arrow
-import json
+import ujson as json
 from pprint import pprint
 
 DISABLE_TESTS = True

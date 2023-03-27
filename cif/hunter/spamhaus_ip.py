@@ -2,7 +2,6 @@ import logging
 from csirtg_indicator import Indicator
 from csirtg_indicator.utils import is_ipv4_net
 from cif.utils import resolve_ns
-from pprint import pprint
 import arrow
 
 CONFIDENCE = 9

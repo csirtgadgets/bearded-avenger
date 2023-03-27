@@ -3,10 +3,7 @@ from csirtg_indicator import Indicator
 from cif.store import Store
 from elasticsearch_dsl.connections import connections
 import os
-from datetime import datetime
 import arrow
-from time import sleep
-from cifsdk.exceptions import AuthError
 
 DISABLE_TESTS = True
 if os.environ.get('CIF_ELASTICSEARCH_TEST'):

@@ -5,7 +5,6 @@ from sqlalchemy.orm import class_mapper, relationship, backref
 from cifsdk.constants import PYVERSION
 from sqlalchemy.ext.declarative import declarative_base
 from cif.store.token_plugin import TokenManagerPlugin
-from pprint import pprint
 
 logger = logging.getLogger('cif.store.sqlite')
 
@@ -80,10 +79,11 @@ class TokenManager(TokenManagerPlugin):
         # update the cache
         for x in s:
             if x.token not in self._cache:
-                self._cache[x.token] = self.to_dict(x)
-                self._cache[x.token]['groups'] = []
+                token_dict = self.to_dict(x)
+                token_dict['groups'] = []
                 for g in x.groups:
-                    self._cache[x.token]['groups'].append(g.group)
+                    token_dict['groups'].append(g.group)
+                self._cache[x.token] = token_dict
 
             yield self._cache[x.token]
 

@@ -92,21 +92,17 @@ class Gatherer(multiprocessing.Process):
                         i = Indicator(**d)
 
                     except InvalidIndicator as e:
-                        from pprint import pprint
-                        pprint(d)
-
-                        logger.error('gatherer failed: {}'.format(g))
+                        logger.error('resolving failed for indicator: {}'.format(d))
                         logger.error(e)
                         traceback.print_exc()
+                        # skip failed indicator
+                        continue
 
                     for g in self.gatherers:
                         try:
                             g.process(i)
                         except Exception as e:
-                            from pprint import pprint
-                            pprint(i)
-
-                            logger.error('gatherer failed: {}'.format(g))
+                            logger.error('gatherer failed on indicator {}: {}'.format(i, g))
                             logger.error(e)
                             traceback.print_exc()
 

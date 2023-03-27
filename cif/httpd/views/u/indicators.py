@@ -4,10 +4,6 @@ from flask import request, render_template, session
 from cifsdk.client.zeromq import ZMQ as Client
 from cif.constants import ROUTER_ADDR
 import logging
-import csv
-from csirtg_indicator import Indicator
-from csirtg_indicator.constants import COLUMNS
-from csirtg_indicator.format import FORMATS
 import arrow
 
 remote = ROUTER_ADDR
@@ -70,6 +66,8 @@ def DataTables():
         filters['tags'] = session['filters'].get('tags')
     if session['filters'].get('reporttime'):
         filters['reporttime'] = session['filters'].get('reporttime')
+
+    filters['find_relatives'] = True
 
     if not session['filters']:
         return []

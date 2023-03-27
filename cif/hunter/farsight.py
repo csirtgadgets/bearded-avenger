@@ -5,7 +5,6 @@ import os
 from csirtg_indicator import Indicator, InvalidIndicator
 import arrow
 import re
-from pprint import pprint
 
 TOKEN = os.environ.get('FARSIGHT_TOKEN')
 PROVIDER = os.environ.get('FARSIGHT_PROVIDER', 'dnsdb.info')

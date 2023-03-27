@@ -5,7 +5,6 @@ from cif.utils import resolve_ns
 from csirtg_indicator import Indicator
 from dns.resolver import Timeout
 import re
-from pprint import pprint
 import arrow
 
 

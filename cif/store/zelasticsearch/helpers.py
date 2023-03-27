@@ -4,6 +4,7 @@ import binascii
 import socket
 import uuid
 from hashlib import sha256
+import ipaddress
 
 
 def expand_ip_idx(data):
@@ -16,6 +17,8 @@ def expand_ip_idx(data):
         if match:
             data['indicator_ipv4'] = match.group(1)
             data['indicator_ipv4_mask'] = match.group(2)
+            start, end, _ = cidr_to_range(data['indicator'])
+            data['indicator_iprange'] = { 'gte': start, 'lte': end }
         else:
             data['indicator_ipv4'] = data['indicator']
 
@@ -27,10 +30,24 @@ def expand_ip_idx(data):
         data['indicator_ipv6'] = binascii.b2a_hex(socket.inet_pton(socket.AF_INET6, match.group(1))).decode(
             'utf-8')
         data['indicator_ipv6_mask'] = match.group(2)
+        start, end, _ = cidr_to_range(data['indicator'])
+        data['indicator_iprange'] = { 'gte': start, 'lte': end }
     else:
         data['indicator_ipv6'] = binascii.b2a_hex(socket.inet_pton(socket.AF_INET6, data['indicator'])).decode(
             'utf-8')
 
+
+def cidr_to_range(cidr):
+    try:
+        ip = ipaddress.IPv4Network(cidr)
+    except Exception as e:
+        ip = ipaddress.IPv6Network(cidr)
+
+    start = str(ip.network_address)
+    end = str(ip.broadcast_address)
+    mask = ip.prefixlen
+
+    return start, end, mask
 
 def _id_random(i):
     id = str(uuid.uuid4())

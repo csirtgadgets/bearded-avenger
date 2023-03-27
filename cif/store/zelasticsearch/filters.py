@@ -7,8 +7,10 @@ from cifsdk.constants import PYVERSION
 from elasticsearch_dsl import Q
 import ipaddress
 import arrow
+from collections import OrderedDict
 
 from cif.store.zelasticsearch.constants import WINDOW_LIMIT
+from cif.store.zelasticsearch.helpers import cidr_to_range
 from cif.httpd.common import VALID_FILTERS
 
 
@@ -16,31 +18,49 @@ if PYVERSION > 2:
     basestring = (str, bytes)
 
 
-def _filter_ipv4(s, i):
-    ip = ipaddress.IPv4Network(i)
-    mask = ip.prefixlen
+def _filter_ipv4(s, i, find_relatives=False):
+    start, end, mask = cidr_to_range(i)
     if mask < 8:
         raise InvalidSearch('prefix needs to be greater than or equal to 8')
 
-    start = str(ip.network_address)
-    end = str(ip.broadcast_address)
+    # if doing a regular search, match only the exact CIDR or single IP provided
+    if not find_relatives:
+        return s.filter('term', indicator=i)
 
-    s = s.filter('range', indicator_ipv4={'gte': start, 'lte': end})
+    # for single IP search, find exact IP or any parent CIDRs
+    # for CIDR search, find exact CIDR, parent CIDRs, child CIDRs, or any single IPs contained within specified CIDR
+    indicator_hit = Q('range', indicator_ipv4={'gte': start, 'lte': end})
+    iprange_hit = Q('range', indicator_iprange={'gte': start, 'lte': end})
+
+    s = s.filter(indicator_hit | iprange_hit)
     return s
 
+def _filter_url(s, i):
+    # resolve_itype sees www.place.tld/* as valid url, but it was likely intended as wildcard search
+    if i.endswith('*'):
+        s = s.query('wildcard', indicator=i)
+        return s
 
-def _filter_ipv6(s, i):
-    ip = ipaddress.IPv6Network(i)
-    mask = ip.prefixlen
+    s = s.filter('term', indicator=i)
+    return s
+
+def _filter_ipv6(s, i, find_relatives=False):
+    start, end, mask = cidr_to_range(i)
     if mask < 28:
         raise InvalidSearch('prefix needs to be greater than or equal to 28')
 
-    start = binascii.b2a_hex(socket.inet_pton(
-        socket.AF_INET6, str(ip.network_address))).decode('utf-8')
-    end = binascii.b2a_hex(socket.inet_pton(
-        socket.AF_INET6, str(ip.broadcast_address))).decode('utf-8')
+    if not find_relatives:
+        return s.filter('term', indicator=i)
 
-    s = s.filter('range', indicator_ipv6={'gte': start, 'lte': end})
+    start_flattened = binascii.b2a_hex(socket.inet_pton(
+        socket.AF_INET6, start)).decode('utf-8')
+    end_flattened = binascii.b2a_hex(socket.inet_pton(
+        socket.AF_INET6, end)).decode('utf-8')
+
+    indicator_hit = Q('range', indicator_ipv6={'gte': start_flattened, 'lte': end_flattened})
+    iprange_hit = Q('range', indicator_iprange={'gte': start, 'lte': end})
+
+    s = s.filter(indicator_hit | iprange_hit)
     return s
 
 
@@ -100,7 +120,7 @@ def filter_reporttime(s, filter):
     return s
 
 
-def filter_indicator(s, q_filters):
+def filter_indicator(s, q_filters, find_relatives=False):
     if not q_filters.get('indicator'):
         return s
 
@@ -122,11 +142,14 @@ def filter_indicator(s, q_filters):
         s = s.filter('term', indicator=i)
         return s
 
-    if itype == 'ipv4':
-        return _filter_ipv4(s, i)
+    if itype is 'ipv4':
+        return _filter_ipv4(s, i, find_relatives)
 
-    if itype == 'ipv6':
-        return _filter_ipv6(s, i)
+    if itype is 'ipv6':
+        return _filter_ipv6(s, i, find_relatives)
+    
+    if itype is 'url':
+        return _filter_url(s, i)
 
     return s
 
@@ -252,7 +275,48 @@ def filter_id(s, q_filters):
 
     return s
 
-def filter_build(s, filters, token=None):
+def filter_sort(s, q_filters):
+    if not q_filters.get('sort'):
+        return s.sort('-reporttime', '-lasttime')
+
+    sort = q_filters.pop('sort')
+
+    if isinstance(sort, basestring):
+        sort = [x.strip() for x in sort.split(',')]
+    else:
+        return s.sort('-reporttime', '-lasttime')
+
+    # use ordered dict for easy column name uniqueness and asc/desc lookup later
+    filtered_sort = OrderedDict()
+
+    # only ever iterate through max 2 elements, no matter how many csvs were given
+    for col_name in sort[:2]:
+        if col_name.startswith('-'):
+            direction = '-'
+            col_name = col_name[1:]
+        else:
+            direction = ''
+
+        if col_name in VALID_FILTERS and col_name not in filtered_sort:
+            filtered_sort[col_name] = direction
+
+    if len(filtered_sort) == 0:
+        s = s.sort('-reporttime', '-lasttime')
+    elif len(filtered_sort) == 1:
+        column_name, direction = list(filtered_sort.items())[0]
+        s = s.sort('{}{}'.format(direction, column_name))
+    elif len(filtered_sort) >= 2:
+        col1, col2 = list(filtered_sort.items())[:2]
+        col1_name = col1[0]
+        col1_dir = col1[1]
+        col2_name = col2[0]
+        col2_dir = col2[1]
+        # create the final sort e.g., sort('-reporttime', 'confidence')
+        s = s.sort('{}{}'.format(col1_dir, col1_name), '{}{}'.format(col2_dir, col2_name))
+
+    return s
+
+def filter_build(s, filters, token=None, find_relatives=False):
     limit = filters.get('limit')
     if limit and int(limit) > WINDOW_LIMIT:
         raise InvalidSearch('Request limit should be <= server threshold of {} but was set to {}'.format(WINDOW_LIMIT, limit))
@@ -262,6 +326,8 @@ def filter_build(s, filters, token=None):
         if filters.get(f):
             q_filters[f] = filters[f]
 
+    s = filter_sort(s, q_filters)
+    
     s = filter_provider(s, q_filters)
 
     s = filter_confidence(s, q_filters)
@@ -271,7 +337,7 @@ def filter_build(s, filters, token=None):
     s = filter_rdata(s, q_filters)
 
     # treat indicator as special, transform into Search
-    s = filter_indicator(s, q_filters)
+    s = filter_indicator(s, q_filters, find_relatives)
 
     s = filter_reporttime(s, q_filters)
 

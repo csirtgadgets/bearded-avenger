@@ -1,10 +1,10 @@
-from elasticsearch_dsl import DocType, String, Date, Integer, Boolean, Float, Ip, GeoPoint, Keyword, Index
+from elasticsearch_dsl import DocType, Date, Boolean, Keyword
 import elasticsearch.exceptions
 from elasticsearch_dsl.connections import connections
 from elasticsearch import helpers
 import arrow
 import logging
-from .constants import LIMIT, TIMEOUT
+from .constants import LIMIT, TIMEOUT, ReIndexError
 from cif.constants import PYVERSION
 from cif.store.token_plugin import TokenManagerPlugin
 import os
@@ -14,14 +14,6 @@ logger = logging.getLogger('cif.store.zelasticsearch')
 INDEX_NAME = 'tokens'
 CONFLICT_RETRIES = os.getenv('CIF_STORE_ES_CONFLICT_RETRIES', 5)
 CONFLICT_RETRIES = int(CONFLICT_RETRIES)
-
-
-class ReIndexError(Exception):
-    def __init__(self, value):
-        self.value = value
-
-    def __str__(self):
-        return repr(self.value)
 
 
 class Token(DocType):

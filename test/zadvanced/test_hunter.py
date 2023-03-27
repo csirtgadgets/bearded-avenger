@@ -1,13 +1,12 @@
 import pytest
 
 from cif.hunter import Hunter
-from zmq.eventloop import ioloop
+from tornado.ioloop import IOLoop
 import threading
 import tempfile
 import os
-from pprint import pprint
 
-loop = ioloop.IOLoop.instance()
+loop = IOLoop()
 ADDR = 'ipc://{}'.format(tempfile.NamedTemporaryFile().name)
 
 

@@ -1,5 +1,4 @@
 from cif.store.plugin import Store
-from pprint import pprint
 
 
 class Dummy(Store):

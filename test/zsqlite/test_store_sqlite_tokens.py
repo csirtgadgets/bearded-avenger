@@ -2,13 +2,10 @@ import logging
 import os
 import tempfile
 from argparse import Namespace
-from sqlalchemy.sql.functions import now
 import pytest
 from cif.store import Store
 from cifsdk.utils import setup_logging
 import arrow
-from datetime import datetime
-from pprint import pprint
 from cifsdk.exceptions import AuthError
 
 args = Namespace(debug=True, verbose=None)

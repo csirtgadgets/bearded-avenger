@@ -5,12 +5,9 @@ from argparse import Namespace
 import pytest
 from cif.store import Store
 from cifsdk.utils import setup_logging
-from sqlalchemy.ext.declarative import declarative_base
 import arrow
-from datetime import datetime
-from pprint import pprint
-from cifsdk.exceptions import AuthError
 from csirtg_indicator.exceptions import InvalidIndicator
+from pprint import pprint
 
 args = Namespace(debug=True, verbose=None)
 setup_logging(args)
@@ -18,7 +15,7 @@ setup_logging(args)
 logger = logging.getLogger(__name__)
 
 
-@pytest.fixture
+@pytest.fixture(scope='module', autouse=True)
 def store():
     dbfile = tempfile.mktemp()
     with Store(store_type='sqlite', dbfile=dbfile) as s:
@@ -31,7 +28,7 @@ def store():
         os.unlink(dbfile)
 
 
-@pytest.fixture
+@pytest.fixture(scope='module', autouse=True)
 def token(store):
     t = store.store.tokens.create({
         'username': u'test_sqlite_admin',
@@ -192,3 +189,31 @@ def test_store_sqlite_indicators(store, indicator, token):
         'nolog': 1
     })
     assert len(x) == 1
+
+    indicator['lasttime'] = arrow.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+    indicator['confidence'] = 9
+    indicator['indicator'] = 'bad.tld'
+    indicator['itype'] = 'fqdn'
+
+    x = store.handle_indicators_create(token, indicator)
+
+    assert x == 1
+
+# test search sort param working
+def test_store_sqlite_indicators_sort(store, token):
+    x = store.handle_indicators_search(token, {
+        'sort': '-confidence,lasttime,confidence', # intentionally try to sort by conf 2x
+        'nolog': 1
+    })
+    assert len(x) > 1
+
+    for i in range(len(x)):
+        if i != len(x) - 1: # make sure we're not comparing the last el in list
+            # ensure confidence sorted DESC as specified in search sort param
+            assert x[i]['confidence'] >= x[i+1]['confidence']
+            # ensure lasttime secondary sorted ASC as specified in search sort param
+            # secondary sort will only apply if primary sort field value was the same
+            if x[i]['confidence'] == x[i+1]['confidence']:
+                pprint(x[i])
+                pprint(x[i+1])
+                assert x[i]['lasttime'] <= x[i+1]['lasttime']

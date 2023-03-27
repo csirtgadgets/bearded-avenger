@@ -11,13 +11,11 @@ from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 import traceback
 import yaml
-from pprint import pprint
 import arrow
 import multiprocessing
 from csirtg_indicator import Indicator
 import zmq
 import time
-from base64 import b64encode
 
 from cifsdk.msg import Msg
 import cif.store
@@ -28,7 +26,6 @@ from cifsdk.exceptions import AuthError, InvalidSearch
 from cif.exceptions import StoreLockError
 from csirtg_indicator import InvalidIndicator
 from cifsdk.utils import setup_logging, get_argument_parser, setup_signals
-from types import GeneratorType
 import traceback
 import binascii
 from base64 import b64decode

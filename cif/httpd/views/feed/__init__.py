@@ -1,18 +1,16 @@
-from ...common import pull_token, jsonify_success, jsonify_unauth, jsonify_unknown, compress, response_compress, \
+from ...common import pull_token, jsonify_success, jsonify_unauth, jsonify_unknown, \
     aggregate, VALID_FILTERS
-from pprint import pprint
 from flask.views import MethodView
-from flask import request, current_app, jsonify, g, make_response
+from flask import request, current_app, g, make_response
 from cifsdk.client.zeromq import ZMQ as Client
 from cifsdk.client.dummy import Dummy as DummyClient
-from cif.constants import ROUTER_ADDR, HUNTER_SINK_ADDR, FEEDS_DAYS, FEEDS_LIMIT, FEEDS_WHITELIST_LIMIT, HTTPD_FEED_WHITELIST_CONFIDENCE
+from cif.constants import ROUTER_ADDR, HUNTER_SINK_ADDR, FEEDS_LIMIT, FEEDS_WHITELIST_LIMIT, HTTPD_FEED_WHITELIST_CONFIDENCE
 from cif.utils import strtobool
 from cifsdk.exceptions import InvalidSearch, AuthError
 import logging
 import copy
 import os
 import time
-import uuid
 import ujson as json
 
 from .fqdn import Fqdn
@@ -126,6 +124,9 @@ class FeedAPI(MethodView):
         if not filters.get('limit'):
             filters['limit'] = FEEDS_LIMIT
 
+        # for feed pulls we want values sorted first by conf DESC and second by reporttime DESC
+        filters['sort'] = '-confidence,-reporttime'
+
         if current_app.config.get('dummy'):
             if current_app.config.get('feed'):
                 r = DummyClient(remote, pull_token()).indicators_search(filters,
@@ -155,7 +156,7 @@ class FeedAPI(MethodView):
                 logger.error(e)
                 return jsonify_unknown(msg='search failed')
 
-        r = aggregate(r)
+        r = aggregate(r, dedup_only=True)
 
         wl_filters = copy.deepcopy(filters)
 
@@ -174,6 +175,8 @@ class FeedAPI(MethodView):
         
         # remove provider from wl_filters if exists (we don't want to narrow wl scope by provider)
         wl_filters.pop('provider', None)
+        # in case anyone did something strange to get here, we couldn't want wl_filters to find IP relatives
+        wl_filters.pop('find_relatives', None)
 
         logger.debug('gathering whitelist..')
         if current_app.config.get('feed') and current_app.config.get('feed').get('wl'):
@@ -186,7 +189,7 @@ class FeedAPI(MethodView):
                 return jsonify_unknown('feed query failed', 503)
 
         logger.debug('%s aggregating' % id)
-        wl = aggregate(wl)
+        wl = aggregate(wl, dedup_only=True)
 
         f = feed_factory(filters['itype'])
 
