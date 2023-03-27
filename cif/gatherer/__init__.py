@@ -95,7 +95,7 @@ class Gatherer(multiprocessing.Process):
                         from pprint import pprint
                         pprint(i)
 
-                        logger.error('gatherer failed: %s'.format(g))
+                        logger.error('gatherer failed: {}'.format(g))
                         logger.error(e)
                         traceback.print_exc()
 
@@ -106,7 +106,7 @@ class Gatherer(multiprocessing.Process):
                             from pprint import pprint
                             pprint(i)
 
-                            logger.error('gatherer failed: %s'.format(g))
+                            logger.error('gatherer failed: {}'.format(g))
                             logger.error(e)
                             traceback.print_exc()
 
