@@ -34,11 +34,11 @@ class IndicatorsAPI(MethodView):
         # convert str values to bool if present, or default to True
         try:
             filters['find_relatives'] = strtobool(
-                request.args.get('find_relatives', default='true')
+                request.args.get('find_relatives', default='false')
             )
         # strtobool raises ValueError if a non-truthy value is supplied
         except ValueError:
-            filters['find_relatives'] = True
+            filters['find_relatives'] = False
 
         if current_app.config.get('dummy'):
             r = DummyClient(remote, pull_token()).indicators_search(filters)
