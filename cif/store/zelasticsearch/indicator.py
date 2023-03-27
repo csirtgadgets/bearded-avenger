@@ -13,7 +13,6 @@ from .filters import filter_build
 from .constants import LIMIT, WINDOW_LIMIT, TIMEOUT, UPSERT_MODE, PARTITION, DELETE_FILTERS, UPSERT_MATCH, REQUEST_TIMEOUT
 from .locks import LockManager
 from .schema import Indicator
-import arrow
 import time
 import os
 

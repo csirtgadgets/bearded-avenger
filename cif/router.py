@@ -76,6 +76,8 @@ class Router(object):
 
         self.context = zmq.Context()
 
+        self.token_cache = mp.Manager().dict()
+
         if test:
             return
 
@@ -149,13 +151,15 @@ class Router(object):
 
     def _init_store(self, context, store_address, store_type, nodes=False):
         self.logger.info('launching store...')
-        p = mp.Process(target=Store(store_address=store_address, store_type=store_type, nodes=nodes).start)
+        p = mp.Process(target=Store(store_address=store_address, store_type=store_type, nodes=nodes,
+          token_cache=self.token_cache).start)
         p.start()
         self.store_p = p
 
     def _init_auth(self, auth_address, auth_type):
         self.logger.info('launching auth...')
-        p = mp.Process(target=Auth(auth_address=auth_address, auth_type=auth_type).start)
+        p = mp.Process(target=Auth(auth_address=auth_address, auth_type=auth_type, 
+          token_cache=self.token_cache).start)
         p.start()
         self.auth_p = p
 

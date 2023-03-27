@@ -44,6 +44,7 @@ class _ElasticSearch(Store):
 
         self.indicators_prefix = kwargs.get('indicators_prefix', 'indicators')
         self.tokens_prefix = kwargs.get('tokens_prefix', 'tokens')
+        self.token_cache = kwargs.get('token_cache', {})
 
         logger.info('setting es nodes {}'.format(nodes))
 
@@ -61,7 +62,7 @@ class _ElasticSearch(Store):
 
         logger.info('ES connection successful')
         logger.info('CIF_STORE_ES_HTTP_TRACE set to {}'.format(TRACE_HTTP))
-        self.tokens = TokenManager()
+        self.tokens = TokenManager(token_cache=self.token_cache)
         self.indicators = IndicatorManager()
 
     def _health_check(self):

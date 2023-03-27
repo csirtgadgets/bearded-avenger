@@ -93,7 +93,7 @@ class Gatherer(multiprocessing.Process):
 
                     except InvalidIndicator as e:
                         from pprint import pprint
-                        pprint(i)
+                        pprint(d)
 
                         logger.error('gatherer failed: {}'.format(g))
                         logger.error(e)

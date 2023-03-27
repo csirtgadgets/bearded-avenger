@@ -89,7 +89,9 @@ class SQLite(Store):
 
         self.logger.debug('database path: {}'.format(self.path))
 
-        self.tokens = TokenManager(self.handle, self.engine)
+        self.token_cache = kwargs.get('token_cache', {})
+        
+        self.tokens = TokenManager(self.handle, self.engine, token_cache=self.token_cache)
         self.indicators = IndicatorManager(self.handle, self.engine)
 
     def ping(self):

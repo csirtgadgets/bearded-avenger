@@ -1,6 +1,7 @@
 import pytest
 from csirtg_indicator import Indicator
 from cif.store import Store
+from cif.constants import TOKEN_CACHE_DELAY
 from elasticsearch_dsl.connections import connections
 import os
 from datetime import datetime
@@ -39,6 +40,19 @@ def token(store):
         'read': u'1',
         'write': u'1',
         'admin': u'1'
+    })
+
+    assert t
+    yield t
+
+@pytest.fixture
+def user_token(store):
+    t = store.store.tokens.create({
+        'username': u'test_user',
+        'groups': [u'everyone'],
+        'read': u'1',
+        'write': False,
+        'admin': False
     })
 
     assert t
@@ -113,3 +127,46 @@ def test_store_elasticsearch_tokens_edit_rw_perms(store, token):
     assert x[0]['admin']
     assert x[0]['groups'] == ['everyone']
     assert x[0]['write'] == False
+
+@pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
+def test_store_elasticsearch_tokens_edit_time_fields_with_cache(store, token, user_token):
+
+    starttime = arrow.utcnow().datetime.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+    x = store.store.tokens.auth_search(user_token) 
+    x = list(x)
+
+    pprint(x)
+
+    assert x[0]['groups'] == ['everyone']
+
+    new_groups = ['staff', 'everyone']
+
+    u = {
+        'token': user_token['token'],
+        'groups': new_groups
+    }
+
+    x = store.handle_tokens_edit(token, u)
+
+    assert x
+
+    # provide enough time for cache to write-behind
+    sleep(TOKEN_CACHE_DELAY + 5)
+
+    x = store.store.tokens.auth_search(user_token) 
+    x = list(x)
+
+    pprint(x)
+
+    assert x[0]['read']
+    assert not x[0]['write']
+    assert not x[0]['admin']
+    assert x[0]['groups'] == new_groups
+    assert x[0]['last_activity_at']
+    assert x[0]['last_activity_at'] > starttime
+    assert x[0]['last_edited_by']
+    assert x[0]['last_edited_by'] == 'test_admin'
+    assert x[0]['last_edited_at']
+    assert x[0]['last_edited_at'] > starttime
+    assert x[0]['created_at']
+    assert x[0]['created_at'] < starttime

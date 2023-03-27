@@ -21,8 +21,10 @@ class CifStore(Auth):
     name = 'cif_store'
 
     def __init__(self, **kwargs):
+        self.token_cache = kwargs.get('token_cache', {})
         self.store = Store(store_type=STORE_DEFAULT, nodes=STORE_NODES)
-        self.store._load_plugin(store_type=STORE_DEFAULT, nodes=STORE_NODES)
+        self.store._load_plugin(store_type=STORE_DEFAULT, 
+            nodes=STORE_NODES, token_cache=self.token_cache)
 
     def handle_token_search(self, token, **kwargs):
         return self.store.store.tokens.auth_search({'token': token})    

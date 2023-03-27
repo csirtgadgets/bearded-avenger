@@ -215,7 +215,7 @@ class Store(multiprocessing.Process):
                         token = json.loads(token)
                     except ValueError as e:
                         # in the event we only have a token str, i.e., being run from a hunter
-                        token = list(self.handle_tokens_search('', {'token': token}))[0]
+                        token = self.handle_tokens_search('', {'token': token})[0]
                 else:
                     token = {'username': 'noauth',
                               'read': True, 'write': True, 'admin': True, 
@@ -242,15 +242,14 @@ class Store(multiprocessing.Process):
                 rv = {"status": "success", "data": rv}
 
         except AuthError as e:
-            logger.error(e)
+            logger.error('unauthorized error {}'.format(e))
             err = 'unauthorized'
 
         except InvalidSearch as e:
             err = 'invalid search {}'.format(e)
 
         except InvalidIndicator as e:
-            logger.error(data)
-            logger.error(e)
+            logger.error('Error: {} - Data: {}'.format(e, data))
             traceback.print_exc()
             err = 'invalid indicator {}'.format(e)
 
@@ -260,7 +259,7 @@ class Store(multiprocessing.Process):
             err = 'busy'
 
         except Exception as e:
-            logger.error(e)
+            logger.error('unknown failure {} from data {}'.format(e, data))
             traceback.print_exc()
             err = 'unknown failure'
 
@@ -530,17 +529,17 @@ class Store(multiprocessing.Process):
 
     def handle_tokens_search(self, token, data, **kwargs):
         logger.debug('tokens_search')
-        return self.store.tokens.search(data)
+        return list(self.store.tokens.search(data))
 
     def handle_tokens_create(self, token, data, **kwargs):
         logger.debug('tokens_create')
-        return self.store.tokens.create(data)
+        return self.store.tokens.create(data, token=token)
 
     def handle_tokens_delete(self, token, data, **kwargs):
         return self.store.tokens.delete(data)
 
     def handle_tokens_edit(self, token, data, **kwargs):
-        return self.store.tokens.edit(data)
+        return self.store.tokens.edit(data, token=token)
 
     def token_create_admin(self, token=None, groups=['everyone']):
         logger.info('testing for tokens...')
