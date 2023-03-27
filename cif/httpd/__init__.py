@@ -15,6 +15,7 @@ from flask_limiter.util import get_remote_address
 from flask_bootstrap import Bootstrap
 from os import path
 from cif.constants import ROUTER_ADDR, RUNTIME_PATH
+from cif.utils import strtobool
 from cifsdk.utils import get_argument_parser, setup_logging, setup_signals, setup_runtime_path
 import zlib
 import time
@@ -36,7 +37,7 @@ from pprint import pprint
 HTTP_LISTEN = '127.0.0.1'
 HTTP_LISTEN = os.environ.get('CIF_HTTPD_LISTEN', HTTP_LISTEN)
 
-TRACE = os.getenv('CIF_HTTPD_TRACE', 0)
+TRACE = strtobool(os.getenv('CIF_HTTPD_TRACE', False))
 
 HTTP_LISTEN_PORT = 5000
 HTTP_LISTEN_PORT = os.environ.get('CIF_HTTPD_LISTEN_PORT', HTTP_LISTEN_PORT)
@@ -81,12 +82,15 @@ remote = ROUTER_ADDR
 log_level = logging.WARN
 if TRACE == '1':
     log_level = logging.DEBUG
-    logging.getLogger('flask_cors').level = logging.DEBUG
+    logging.getLogger('flask_cors').level = log_level
 
 console = logging.StreamHandler()
+console.setLevel(log_level)
 logging.getLogger('gunicorn.error').setLevel(log_level)
 logging.getLogger('gunicorn.error').addHandler(console)
 logger = logging.getLogger('gunicorn.error')
+logger.setLevel(log_level)
+logger.addHandler(console)
 
 limiter = Limiter(
     app,

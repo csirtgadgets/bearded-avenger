@@ -9,6 +9,7 @@ import sqlite3
 
 from cifsdk.constants import RUNTIME_PATH
 from cif.store.plugin import Store
+from cif.utils import strtobool
 from cifsdk.constants import PYVERSION
 
 Base = declarative_base()
@@ -22,7 +23,7 @@ if DATA_PATH:
     DB_FILE = os.path.join(DATA_PATH, 'cif.db')
 
 logger = logging.getLogger(__name__)
-TRACE = os.environ.get('CIF_STORE_SQLITE_TRACE')
+TRACE = strtobool(os.environ.get('CIF_STORE_SQLITE_TRACE', False))
 
 # http://stackoverflow.com/q/9671490/7205341
 SYNC = os.environ.get('CIF_STORE_SQLITE_SYNC', 'NORMAL')

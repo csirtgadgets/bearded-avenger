@@ -6,6 +6,7 @@ from flask import request, current_app, jsonify, g, make_response
 from cifsdk.client.zeromq import ZMQ as Client
 from cifsdk.client.dummy import Dummy as DummyClient
 from cif.constants import ROUTER_ADDR, HUNTER_SINK_ADDR, FEEDS_DAYS, FEEDS_LIMIT, FEEDS_WHITELIST_LIMIT, HTTPD_FEED_WHITELIST_CONFIDENCE
+from cif.utils import strtobool
 from cifsdk.exceptions import InvalidSearch, AuthError
 import logging
 import copy
@@ -24,7 +25,7 @@ from .sha1 import Sha1
 from .sha256 import Sha256
 from .sha512 import Sha512
 
-TRACE = os.getenv('CIF_HTTPD_TRACE', False)
+TRACE = strtobool(os.getenv('CIF_HTTPD_TRACE', False))
 
 FEED_PLUGINS = {
     'ipv4': Ipv4,
@@ -71,13 +72,15 @@ def tag_contains_whitelist(data):
 
 
 log_level = logging.WARN
-if TRACE == '1':
+if TRACE:
     log_level = logging.DEBUG
 
 console = logging.StreamHandler()
 logging.getLogger('gunicorn.error').setLevel(log_level)
 logging.getLogger('gunicorn.error').addHandler(console)
 logger = logging.getLogger('gunicorn.error')
+logger.setLevel(log_level)
+logger.addHandler(console)
 
 remote = ROUTER_ADDR
 internal_remote = HUNTER_SINK_ADDR

@@ -11,6 +11,7 @@ from csirtg_indicator import Indicator
 from csirtg_indicator.exceptions import InvalidIndicator
 import multiprocessing
 import os
+from cif.utils import strtobool
 
 logger = logging.getLogger(__name__)
 
@@ -21,12 +22,11 @@ HUNTER_ADVANCED = os.getenv('CIF_HUNTER_ADVANCED', 0)
 HUNTER_MIN_CONFIDENCE = 4
 HUNTER_RECURSION = os.getenv('CIF_HUNTER_RECURSION', 0)
 
-TRACE = os.environ.get('CIF_HUNTER_TRACE', False)
-
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-if TRACE in [1, '1']:
+TRACE = strtobool(os.environ.get('CIF_HUNTER_TRACE', False))
+if TRACE:
    logger.setLevel(logging.DEBUG)
 
 

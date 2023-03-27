@@ -13,6 +13,7 @@ import pkgutil
 import arrow
 
 from cif.constants import AUTH_ADDR
+from cif.utils import strtobool
 
 SNDTIMEO = 2000
 
@@ -22,7 +23,7 @@ AUTH_ERR = json.dumps({'status': 'failed', 'message': 'unauthorized'})
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
 
-TRACE = os.environ.get('CIF_AUTH_TRACE', True)
+TRACE = strtobool(os.environ.get('CIF_AUTH_TRACE', True))
 if TRACE:
     logger.setLevel(logging.DEBUG)
 

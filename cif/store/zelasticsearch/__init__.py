@@ -5,14 +5,15 @@ from cifsdk.exceptions import CIFException
 from cif.store.plugin import Store
 from cif.store.zelasticsearch.token import TokenManager
 from cif.store.zelasticsearch.indicator import IndicatorManager
+from cif.utils import strtobool
 from elasticsearch_dsl.connections import connections
 from elasticsearch.exceptions import ConnectionError
 import traceback
 from time import sleep
 
 ES_NODES = os.getenv('CIF_ES_NODES', '127.0.0.1:9200')
-TRACE = os.environ.get('CIF_STORE_ES_TRACE')
-TRACE_HTTP = os.getenv('CIF_STORE_ES_HTTP_TRACE')
+TRACE = strtobool(os.environ.get('CIF_STORE_ES_TRACE', False))
+TRACE_HTTP = strtobool(os.environ.get('CIF_STORE_ES_HTTP_TRACE', False))
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
@@ -59,6 +60,7 @@ class _ElasticSearch(Store):
             self._alive = True
 
         logger.info('ES connection successful')
+        logger.info('CIF_STORE_ES_HTTP_TRACE set to {}'.format(TRACE_HTTP))
         self.tokens = TokenManager()
         self.indicators = IndicatorManager()
 

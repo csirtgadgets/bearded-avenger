@@ -1,10 +1,19 @@
 import arrow
 from cif.constants import TOKEN_CACHE_DELAY, TOKEN_LENGTH
+from cif.utils import strtobool
 from cifsdk.exceptions import AuthError
 import os
 import binascii
 import abc
+import logging
 
+TRACE = strtobool(os.environ.get('CIF_TOKEN_TRACE', False))
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.ERROR)
+
+if TRACE:
+    logger.setLevel(logging.DEBUG)
 
 class TokenManagerPlugin(object):
     __metaclass__ = abc.ABCMeta

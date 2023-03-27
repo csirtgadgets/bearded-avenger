@@ -20,6 +20,7 @@ import time
 import multiprocessing as mp
 from cifsdk.msg import Msg
 from cif.auth import Auth
+from cif.utils import strtobool
 
 AUTH_TYPE = 'cif_store'
 AUTH_PLUGINS = ['cif.auth.cif_store']
@@ -49,12 +50,12 @@ STORE_NODES = os.getenv('CIF_STORE_NODES')
 
 PIDFILE = os.getenv('CIF_ROUTER_PIDFILE', '{}/cif_router.pid'.format(RUNTIME_PATH))
 
-TRACE = os.environ.get('CIF_ROUTER_TRACE')
+TRACE = strtobool(os.environ.get('CIF_ROUTER_TRACE', False))
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
 
-if TRACE in [1, '1']:
+if TRACE:
     logger.setLevel(logging.DEBUG)
 
 

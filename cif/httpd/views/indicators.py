@@ -7,7 +7,7 @@ from cifsdk.client.dummy import Dummy as DummyClient
 from cif.constants import ROUTER_ADDR, PYVERSION
 from cifsdk.exceptions import AuthError, TimeoutError, InvalidSearch, SubmissionFailed, CIFBusy
 import logging
-import zlib
+from cif.utils import strtobool
 
 remote = ROUTER_ADDR
 

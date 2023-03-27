@@ -22,6 +22,7 @@ from base64 import b64encode
 from cifsdk.msg import Msg
 import cif.store
 from cif.constants import STORE_ADDR, PYVERSION, AUTH_ENABLED, CTRL_ADDR
+from cif.utils import strtobool
 from cifsdk.constants import REMOTE_ADDR, CONFIG_PATH
 from cifsdk.exceptions import AuthError, InvalidSearch
 from cif.exceptions import StoreLockError
@@ -63,12 +64,12 @@ else:
 
 MORE_DATA_NEEDED = -2
 
-TRACE = os.environ.get('CIF_STORE_TRACE')
+TRACE = strtobool(os.environ.get('CIF_STORE_TRACE', False))
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
 
-if TRACE in [1, '1']:
+if TRACE:
    logger.setLevel(logging.DEBUG)
 
 

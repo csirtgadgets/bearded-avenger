@@ -3,6 +3,7 @@ from elasticsearch import helpers
 import elasticsearch.exceptions
 from elasticsearch_dsl.connections import connections
 from cif.store.indicator_plugin import IndicatorManagerPlugin
+from cif.utils import strtobool
 from cifsdk.exceptions import AuthError, CIFException
 from datetime import datetime, timedelta
 from cifsdk.constants import PYVERSION
@@ -20,7 +21,7 @@ logger = logging.getLogger('cif.store.zelasticsearch')
 if PYVERSION > 2:
     basestring = (str, bytes)
 
-UPSERT_TRACE = os.environ.get('CIF_STORE_ES_UPSERT_TRACE')
+UPSERT_TRACE = strtobool(os.environ.get('CIF_STORE_ES_UPSERT_TRACE', False))
 
 class IndicatorManager(IndicatorManagerPlugin):
     class Deserializer(object):
@@ -120,7 +121,9 @@ class IndicatorManager(IndicatorManagerPlugin):
                     index=s._index,
                     doc_type=s._doc_type,
                     body=s.to_dict(),
-                    **s._params)
+                    **s._params,
+                    error_trace=UPSERT_TRACE
+                    )
 
             else:
                 es.transport.deserializer = self.Deserializer()
@@ -130,7 +133,8 @@ class IndicatorManager(IndicatorManagerPlugin):
                     doc_type=s._doc_type,
                     body=s.to_dict(),
                     filter_path=['hits.hits._source'],
-                    **s._params)
+                    **s._params,
+                    error_trace=UPSERT_TRACE)
                 # transport caches this, so the tokens mis-fire
                 es.transport.deserializer = old_serializer
 

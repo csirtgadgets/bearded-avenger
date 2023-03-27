@@ -9,6 +9,7 @@ from cifsdk.msg import Msg
 import os
 import cif.gatherer
 from cif.constants import GATHERER_ADDR, GATHERER_SINK_ADDR
+from cif.utils import strtobool
 from csirtg_indicator import Indicator, InvalidIndicator
 import time
 
@@ -18,7 +19,7 @@ LINGER = 0
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
 
-TRACE = os.environ.get('CIF_GATHERER_TRACE')
+TRACE = strtobool(os.environ.get('CIF_GATHERER_TRACE', False))
 if TRACE:
     logger.setLevel(logging.DEBUG)
 

@@ -3,12 +3,12 @@ import os
 
 from cif.auth.plugin import Auth
 from cif.store import Store
-import traceback
+from cif.utils import strtobool
 
 STORE_DEFAULT = os.environ.get('CIF_STORE_STORE', 'sqlite')
 STORE_NODES = os.getenv('CIF_STORE_NODES')
 
-TRACE = os.environ.get('CIF_AUTH_CIFSTORE_TRACE', True)
+TRACE = strtobool(os.environ.get('CIF_AUTH_CIFSTORE_TRACE', True))
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
