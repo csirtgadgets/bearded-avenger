@@ -37,11 +37,14 @@ class Ja3(object):
         if indicator.description:
             return indicator
 
-        i = str(indicator.indicator)
+        try:
+            i = str(indicator.indicator)
 
-        ua = self._resolve(i)
-        if len(ua) == 0:
-            return indicator
+            ua = self._resolve(i)
+            if not ua or len(ua) == 0:
+                return indicator
+        except Exception as e:
+            self.logger.error('Gatherer [ja3]: Error on indicator {} - {}'.format(indicator, e))
 
         for each in ua:
             self.logger.debug(each)
