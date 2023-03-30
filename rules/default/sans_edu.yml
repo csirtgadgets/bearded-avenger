@@ -1,7 +1,7 @@
 skip: '^Site$'
 defaults:
   tlp: green
-  reference_tlp: white
+  reference_tlp: clear
   provider: 'isc.sans.edu'
   pattern:  '^(.+)$'
   values: indicator

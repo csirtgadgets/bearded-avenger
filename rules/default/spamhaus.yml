@@ -2,7 +2,7 @@ defaults:
   provider: spamhaus.org
   confidence: 9 
   tlp: green
-  reference_tlp: white
+  reference_tlp: clear
   tags:
     - hijacked
   reference: http://www.spamhaus.org/sbl/sbl.lasso?query=<reference>

@@ -2,7 +2,7 @@ parser: csv
 defaults:
   provider: urlhaus.abuse.ch
   tlp: green
-  altid_tlp: white
+  altid_tlp: clear
   confidence: 9
   tags:
     - malware

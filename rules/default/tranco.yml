@@ -12,7 +12,7 @@ defaults:
   altid: 'eval("https://tranco-list.eu/api/ranks/domain/{indicator}".format(**obs))'
   provider: tranco-list.eu
   tlp: green
-  altid_tlp: white
+  altid_tlp: clear
   lasttime: 'month'
   confidence: |
     eval(max(0, min(

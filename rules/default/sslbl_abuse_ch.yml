@@ -2,7 +2,7 @@ parser: csv
 defaults:
   provider: sslbl.abuse.ch
   tlp: green
-  altid_tlp: white
+  altid_tlp: clear
   confidence: 10
   tags: botnet
   application: https

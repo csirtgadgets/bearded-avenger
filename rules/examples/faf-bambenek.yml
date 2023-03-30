@@ -5,8 +5,8 @@ username: 'username'
 password: 'password'
 defaults:
   provider: faf.bambenekconsulting.com
-  tlp: white
-  altid_tlp: white
+  tlp: clear
+  altid_tlp: clear
   tags: botnet
 
 feeds:

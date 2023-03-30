@@ -2,7 +2,7 @@ defaults:
   provider: emergingthreats.net
   confidence: 8
   tlp: green
-  altid_tlp: white
+  altid_tlp: clear
   tags:
     - malware
   description: 'compromised host'

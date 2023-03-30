@@ -13,7 +13,7 @@ defaults:
   altid: 'eval("https://majestic.com/reports/majestic-million?domain={indicator}".format(**obs))'
   provider: majestic.com
   tlp: green
-  altid_tlp: white
+  altid_tlp: clear
   lasttime: 'month'
   confidence: |
     eval(max(0, min(

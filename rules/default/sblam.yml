@@ -2,7 +2,7 @@ defaults:
   provider: sblam.com
   confidence: 7
   tlp: green
-  altid_tlp: white
+  altid_tlp: clear
   tags:
     - spam
     - spammers

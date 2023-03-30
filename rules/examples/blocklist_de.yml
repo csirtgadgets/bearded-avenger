@@ -2,7 +2,7 @@ defaults:
   provider: blocklist.de
   confidence: 7
   tlp: green
-  altid_tlp: white
+  altid_tlp: clear
   tags:
     - scanner
   altid: 'http://www.blocklist.de/en/view.html?ip={indicator}'

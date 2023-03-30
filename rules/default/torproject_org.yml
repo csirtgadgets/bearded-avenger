@@ -2,7 +2,7 @@ parser: pattern
 defaults:
   provider: torproject.org
   tlp: green
-  altid_tlp: white
+  altid_tlp: clear
   confidence: 8.5
 feeds:
   tor_exit_nodes:
