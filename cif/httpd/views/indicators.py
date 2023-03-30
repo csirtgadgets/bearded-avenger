@@ -25,10 +25,14 @@ class IndicatorsAPI(MethodView):
         filters = {}
         filtered_args = VALID_FILTERS.intersection(set(request.args))
         for f in filtered_args:
-            filters[f] = request.args.get(f)
+            # convert multiple keys of same name to single kv pair where v is comma-separated str
+            # e.g., /feed?tags=malware&tags=exploit to tags=malware,exploit
+            values = request.args.getlist(f)
+            filters[f] = ','.join(values)
 
         if request.args.get('q'):
             filters['indicator'] = request.args.get('q')
+        # b/c group (singular) is not in valid_filters
         if request.args.get('group'):
             filters['group'] = request.args.get('group')
 

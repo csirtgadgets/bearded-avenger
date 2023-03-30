@@ -128,7 +128,7 @@ class Hunter(multiprocessing.Process):
             for d in data:
                 try:
                     nolog = strtobool(d.get('nolog', False))
-                except Exception:
+                except ValueError:
                     nolog = False
                 try:
                     d = Indicator(**d)

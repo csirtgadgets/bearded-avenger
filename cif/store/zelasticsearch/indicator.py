@@ -12,7 +12,7 @@ import logging
 from .helpers import expand_indicator, i_to_id
 from .filters import filter_build
 from .constants import LIMIT, WINDOW_LIMIT, TIMEOUT, UPSERT_MODE, PARTITION, \
-    DELETE_FILTERS, UPSERT_MATCH, REQUEST_TIMEOUT, ReIndexError
+    DELETE_FILTERS, UPSERT_MATCH, REQUEST_TIMEOUT, ReIndexError, SHARDS_PER_INDEX
 from .locks import LockManager
 from .schema import Indicator
 import time
@@ -112,7 +112,7 @@ class IndicatorManager(IndicatorManagerPlugin):
             index = Index(idx)
             index.aliases(live={})
             index.doc_type(Indicator)
-            index.settings(max_result_window=WINDOW_LIMIT)
+            index.settings(max_result_window=WINDOW_LIMIT, number_of_shards=SHARDS_PER_INDEX)
             try:
                 index.create()
             # after implementing auth to use cif_store, there appears to sometimes be a race condition

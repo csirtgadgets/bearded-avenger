@@ -4,7 +4,8 @@ from flask.views import MethodView
 from flask import request, current_app, g, make_response
 from cifsdk.client.zeromq import ZMQ as Client
 from cifsdk.client.dummy import Dummy as DummyClient
-from cif.constants import ROUTER_ADDR, HUNTER_SINK_ADDR, FEEDS_LIMIT, FEEDS_WHITELIST_LIMIT, HTTPD_FEED_WHITELIST_CONFIDENCE
+from cif.constants import ROUTER_ADDR, HUNTER_SINK_ADDR, FEEDS_LIMIT, FEEDS_WHITELIST_LIMIT, \
+    HTTPD_FEED_WHITELIST_CONFIDENCE
 from cif.utils import strtobool
 from cifsdk.exceptions import InvalidSearch, AuthError
 import logging
@@ -77,8 +78,6 @@ if TRACE:
     log_level = logging.DEBUG
 
 console = logging.StreamHandler()
-logging.getLogger('gunicorn.error').setLevel(log_level)
-logging.getLogger('gunicorn.error').addHandler(console)
 logger = logging.getLogger('gunicorn.error')
 logger.setLevel(log_level)
 logger.addHandler(console)
@@ -93,7 +92,10 @@ class FeedAPI(MethodView):
         id = g.sid
         filtered_args = VALID_FILTERS.intersection(set(request.args))
         for f in filtered_args:
-            filters[f] = request.args.get(f)
+            # convert multiple keys of same name to single kv pair where v is comma-separated str
+            # e.g., /feed?tags=malware&tags=exploit to tags=malware,exploit
+            values = request.args.getlist(f)
+            filters[f] = ','.join(values) 
 
         if len(filters) == 0:
             return jsonify_unknown('invalid search, missing an itype filter (ipv4, fqdn, url, sha1...)', 400)

@@ -79,14 +79,12 @@ app.secret_key = SECRET_KEY
 remote = ROUTER_ADDR
 
 log_level = logging.WARN
-if TRACE == '1':
+if TRACE:
     log_level = logging.DEBUG
     logging.getLogger('flask_cors').level = log_level
 
 console = logging.StreamHandler()
 console.setLevel(log_level)
-logging.getLogger('gunicorn.error').setLevel(log_level)
-logging.getLogger('gunicorn.error').addHandler(console)
 logger = logging.getLogger('gunicorn.error')
 logger.setLevel(log_level)
 logger.addHandler(console)
@@ -211,9 +209,24 @@ def before_request():
             return '', 401
 
 @app.before_request
-def args_lowercase():
-    # lowercase any arg keys if they were passed in anything but lowercase
-    request.args = MultiDict({ k.lower(): v for k, v in request.args.items() })
+def normalize_params():
+    """
+    converts query params so instead of only containing one value, they can contain python lists.
+    this is specifically to handle all values passed in URLs like /feed?tags=malware&tags=exploit.
+    otherwise, Flask ignores anything after the first value.
+    additionally, lowercase all param names (so /feed?Tags=malware becomes /feed?tags=malware)
+    saves normalized params back to request.args
+    """
+    params_non_flat = request.args.to_dict(flat=False)
+    normalized_params = {}
+    for k, v in params_non_flat.items():
+        if len(v) > 1:
+            normalized_value = v
+        else:
+            normalized_value = v[0]
+        normalized_params[k.lower()] = normalized_value
+
+    request.args = MultiDict(normalized_params)
 
 @app.route('/u/login', methods=['GET', 'POST'])
 def login():
