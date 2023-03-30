@@ -196,6 +196,18 @@ def indicator_diff_rdata():
     )
 
 @pytest.fixture
+def indicator_diff_tags():
+    return Indicator(
+        indicator='example.com',
+        tags='botnet,malware',
+        provider='csirtg.io',
+        group='everyone',
+        lasttime=arrow.utcnow().datetime,
+        reporttime=arrow.utcnow().datetime,
+        confidence=7.0
+    )
+
+@pytest.fixture
 def new_indicator():
     return Indicator(
         indicator='example.com',
@@ -418,6 +430,60 @@ def test_store_elasticsearch_indicators_upsert6(store, token, indicator, indicat
     pprint(x)
 
     assert len(x) == 3
+
+## test duplicate indicator submission, different tags; 
+# ensure upserts are NOT matching on diff tags
+@pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
+def test_store_elasticsearch_indicators_upsert5(store, token, indicator, indicator_diff_tags):
+
+    pprint(indicator)
+
+    indicator_dict = indicator.__dict__()
+
+    x = store.handle_indicators_create(token, indicator_dict, flush=True)
+    assert x == 1
+
+    pprint(indicator_diff_tags)
+
+    y = store.handle_indicators_create(token, indicator_diff_tags.__dict__(), flush=True)
+    assert y == 1
+
+    x = store.handle_indicators_search(token, {
+        'indicator': 'example.com',
+        'nolog': 1
+    })
+
+    z = json.loads(x)
+    z = [i['_source'] for i in z['hits']['hits']]
+
+    pprint(z)
+
+    assert len(z) == 2
+
+    # refresh 1st indicator times and resubmit to upsert/increase count
+    # ensure it doesn't upsert into 2nd indicator (that has the same tag but one additional)
+    indicator_dict['lasttime'] = indicator_dict['reporttime'] = arrow.utcnow().datetime
+    new_observation = Indicator(**indicator_dict)
+
+    x = store.handle_indicators_create(token, new_observation.__dict__(), flush=True)
+    assert x == 1
+
+    y = store.handle_indicators_search(token, {
+        'indicator': 'example.com',
+        'nolog': 1
+    })
+
+    z = json.loads(y)
+    z = [i['_source'] for i in z['hits']['hits']]
+
+    assert len(z) == 2 # should still have 2 indicators, but should have upserted into 1st
+
+    for i in z:
+        # if the indicator in question has all the tags we're looking for..
+        if all(x in i['tags'] for x in ['botnet', 'malware']):
+            assert i['count'] == 1
+        else:
+            assert i['count'] == 2
 
 
 ## test similar indicator submissions, but different portlist and/or protocol; ensure upserts are NOT matching on differences and creating unique indicators

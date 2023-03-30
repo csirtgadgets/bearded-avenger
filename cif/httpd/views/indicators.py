@@ -8,6 +8,7 @@ from cif.constants import ROUTER_ADDR, PYVERSION
 from cifsdk.exceptions import AuthError, TimeoutError, InvalidSearch, SubmissionFailed, CIFBusy
 import logging
 from cif.utils import strtobool
+import ujson as json
 
 remote = ROUTER_ADDR
 
@@ -81,11 +82,36 @@ class IndicatorsAPI(MethodView):
                 logger.info('fireball mode')
                 fireball = True
         try:
+            data = json.loads(request.data.decode('utf-8'))
+            if isinstance(data, dict):
+                if not data.get('indicator'):
+                    raise SubmissionFailed('missing required "indicator" field')
+
+                data = [data]
+
+            errored_indicators = []
+            indicators_to_send = []
+
+            for indicator in data:
+                if not indicator.get('indicator'):
+                    errored_indicators.append(indicator)
+                    continue
+
+                indicators_to_send.append(indicator)
+
+            if not indicators_to_send:
+                raise SubmissionFailed('all indicators missing "indicator" field')
             with Client(remote, pull_token()) as cli:
                 r = cli.indicators_create(request.data, nowait=nowait,
                                           fireball=fireball)
             if nowait:
                 r = 'pending'
+            
+            if errored_indicators:
+                raise SubmissionFailed(
+                    'only inserted {} out of {} submitted indicators. some were missing required "indicator" field: {}'
+                    .format(len(indicators_to_send), len(data), errored_indicators)
+                )
 
         except SubmissionFailed as e:
             logger.error(e)

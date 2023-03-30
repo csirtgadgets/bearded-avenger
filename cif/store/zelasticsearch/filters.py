@@ -207,14 +207,14 @@ def filter_terms(s, q_filters):
     return s
 
 
-def filter_tags(s, q_filters):
+def filter_tags(s, q_filters, narrow_query=False):
     if not q_filters.get('tags'):
         return s
 
     tags = q_filters.pop('tags')
 
     if isinstance(tags, basestring):
-        tags = [x.strip() for x in tags.split(',')]
+        tags = {x.strip() for x in tags.split(',')}
 
     # each array element is implicitly ORed (aka, 'should') using a terms filter
     #s = s.filter('terms', tags=tags)
@@ -228,6 +228,18 @@ def filter_tags(s, q_filters):
         else:
             tt.append(t)
 
+    # if tags need to be explicitly AND'd together rather than the normal OR 
+    # (upsert searches)
+    if narrow_query:
+        if len(tt) > 0:
+            for tag in tt:
+                s = s.filter('term', tags=tag)
+
+            s = s.filter('script', 
+                script='doc["tags"].values.length == {}'.format(len(tt)))
+
+        return s
+    
     if len(not_tt) > 0:
         if len(not_tt) == 1:
             s = s.exclude('term', tags=not_tt[0])
@@ -307,7 +319,7 @@ def filter_sort(s, q_filters):
     sort = q_filters.pop('sort')
 
     if isinstance(sort, basestring):
-        sort = [x.strip() for x in sort.split(',')]
+        sort = [x.strip() for x in sort.split(',')] # can't make this a set b/c it doesn't preserve order
     else:
         return s.sort('-reporttime', '-lasttime')
 
@@ -341,7 +353,7 @@ def filter_sort(s, q_filters):
 
     return s
 
-def filter_build(s, filters, token=None, find_relatives=False):
+def filter_build(s, filters, token=None, find_relatives=False, narrow_query=False):
     limit = filters.get('limit')
     if limit and int(limit) > WINDOW_LIMIT:
         raise InvalidSearch('Request limit should be <= server threshold of {} but was set to {}'.format(WINDOW_LIMIT, limit))
@@ -373,7 +385,7 @@ def filter_build(s, filters, token=None, find_relatives=False):
             s = filter_groups(s, {}, token=token)
 
     if q_filters.get('tags'):
-        s = filter_tags(s, q_filters)
+        s = filter_tags(s, q_filters, narrow_query)
 
     # transform all other filters into term=
     s = filter_terms(s, q_filters)

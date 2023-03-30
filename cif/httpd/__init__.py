@@ -2,7 +2,6 @@
 
 import logging
 import os
-import gc
 import traceback
 import textwrap
 from argparse import ArgumentParser
@@ -13,6 +12,7 @@ from flask_limiter import Limiter
 from flask_cors import CORS
 from flask_limiter.util import get_remote_address
 from flask_bootstrap import Bootstrap
+from werkzeug.datastructures import MultiDict
 from os import path
 from cif.constants import ROUTER_ADDR, RUNTIME_PATH
 from cif.utils import strtobool
@@ -210,6 +210,10 @@ def before_request():
         if not t or t == 'None':
             return '', 401
 
+@app.before_request
+def args_lowercase():
+    # lowercase any arg keys if they were passed in anything but lowercase
+    request.args = MultiDict({ k.lower(): v for k, v in request.args.items() })
 
 @app.route('/u/login', methods=['GET', 'POST'])
 def login():

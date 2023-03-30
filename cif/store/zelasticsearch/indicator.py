@@ -5,7 +5,7 @@ from elasticsearch_dsl.connections import connections
 from elasticsearch_dsl.exceptions import IllegalOperation
 from cif.store.indicator_plugin import IndicatorManagerPlugin
 from cif.utils import strtobool
-from cifsdk.exceptions import AuthError, CIFException
+from cifsdk.exceptions import AuthError, CIFException, InvalidSearch
 from datetime import datetime, timedelta
 from cifsdk.constants import PYVERSION
 import logging
@@ -146,7 +146,8 @@ class IndicatorManager(IndicatorManagerPlugin):
         s = s.params(size=limit, timeout=timeout, request_timeout=REQUEST_TIMEOUT)
         s = s.sort('-reporttime', '-lasttime')
 
-        s = filter_build(s, filters, token=token, find_relatives=find_relatives)
+        s = filter_build(s, filters, token=token, find_relatives=find_relatives, 
+            narrow_query=sindex)
 
         #logger.debug(s.to_dict())
 
@@ -181,6 +182,15 @@ class IndicatorManager(IndicatorManagerPlugin):
             logger.error(e)
             es.transport.deserializer = old_serializer
             return
+        
+        except elasticsearch.exceptions.TransportError as e:
+            logger.error('Error {} on indicator search by user {} with query params {}'.format(
+                e, token.get('username'), s.to_dict()))
+            es.transport.deserializer = old_serializer
+            err = 'search criteria created an error condition for elasticsearch'
+            if e.status_code == 503 and 'sort' in s.to_dict().keys():
+                err += ', possibly related to sort params'
+            raise InvalidSearch(': {}'.format(err))
 
         # catch all other es errors
         except elasticsearch.ElasticsearchException as e:
