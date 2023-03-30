@@ -434,7 +434,7 @@ def test_store_elasticsearch_indicators_upsert6(store, token, indicator, indicat
 ## test duplicate indicator submission, different tags; 
 # ensure upserts are NOT matching on diff tags
 @pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
-def test_store_elasticsearch_indicators_upsert5(store, token, indicator, indicator_diff_tags):
+def test_store_elasticsearch_indicators_upsert7(store, token, indicator, indicator_diff_tags):
 
     pprint(indicator)
 
@@ -488,7 +488,7 @@ def test_store_elasticsearch_indicators_upsert5(store, token, indicator, indicat
 
 ## test similar indicator submissions, but different portlist and/or protocol; ensure upserts are NOT matching on differences and creating unique indicators
 @pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
-def test_store_elasticsearch_indicators_upsert7(store, token, indicator5, indicator5_diff_portlist, indicator5_diff_protocol):
+def test_store_elasticsearch_indicators_upsert8(store, token, indicator5, indicator5_diff_portlist, indicator5_diff_protocol):
 
     pprint(indicator5)
 
@@ -536,7 +536,7 @@ def test_store_elasticsearch_indicators_upsert7(store, token, indicator5, indica
 ## test duplicate indicator submission, different groups; 
 # ensure upserts are NOT matching on diff groups
 @pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
-def test_store_elasticsearch_indicators_upsert8(store, token, indicator, indicator_diff_group):
+def test_store_elasticsearch_indicators_upsert9(store, token, indicator, indicator_diff_group):
 
     pprint(indicator)
 
@@ -593,7 +593,7 @@ def test_store_elasticsearch_indicators_upsert8(store, token, indicator, indicat
 ## test duplicate indicator submission, different rdata; 
 # ensure upserts are NOT matching on diff rdata
 @pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
-def test_store_elasticsearch_indicators_upsert9(store, token, indicator, indicator_diff_rdata):
+def test_store_elasticsearch_indicators_upsert10(store, token, indicator, indicator_diff_rdata):
 
     pprint(indicator)
 
@@ -602,7 +602,7 @@ def test_store_elasticsearch_indicators_upsert9(store, token, indicator, indicat
     x = store.handle_indicators_create(token, indicator_dict, flush=True)
     assert x == 1
 
-    pprint(indicator_diff_group)
+    pprint(indicator_diff_rdata)
 
     indicator_rdata_dict = indicator_diff_rdata.__dict__()
 

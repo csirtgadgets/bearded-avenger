@@ -12,7 +12,20 @@ from collections import OrderedDict
 from cif.store.zelasticsearch.constants import WINDOW_LIMIT
 from cif.store.zelasticsearch.helpers import cidr_to_range
 from cif.httpd.common import VALID_FILTERS
+from cif.store.zelasticsearch.constants import UPSERT_MATCH
 
+OPTIONAL_AND_USER_SPECIFIABLE_FIELDS = {
+    'application', 'description', 'portlist', 'protocol', 'rdata', 'reference',
+}
+
+# compare user configured UPSERT_MATCH fields against optional indicator fields.
+# any commonalities should be checked in an upsert search b/c, if it's not specified in
+# the search, the field shouldn't exist in potential upsert targets to prevent returning 
+# a match against an indicator that has that field
+# set when the search was for an indicator without that field at all.
+# this is only a potential issue for optional indicator fields which is why we only compare
+# against those
+FIELDS_TO_CHECK_FOR_NARROW_QUERY = OPTIONAL_AND_USER_SPECIFIABLE_FIELDS.intersection(UPSERT_MATCH)
 
 if PYVERSION > 2:
     basestring = (str, bytes)
@@ -353,6 +366,11 @@ def filter_sort(s, q_filters):
 
     return s
 
+def filter_fields(s, fields_to_exclude):
+    for field in fields_to_exclude:
+        s = s.exclude('exists', field=field)
+    return s
+
 def filter_build(s, filters, token=None, find_relatives=False, narrow_query=False):
     limit = filters.get('limit')
     if limit and int(limit) > WINDOW_LIMIT:
@@ -362,6 +380,10 @@ def filter_build(s, filters, token=None, find_relatives=False, narrow_query=Fals
     for f in VALID_FILTERS:
         if filters.get(f):
             q_filters[f] = filters[f]
+
+    if narrow_query:
+        fields_must_not_exist = FIELDS_TO_CHECK_FOR_NARROW_QUERY.difference(q_filters.keys())
+        s = filter_fields(s, fields_must_not_exist)
 
     s = filter_sort(s, q_filters)
     
