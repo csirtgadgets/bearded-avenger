@@ -5,6 +5,7 @@ from elasticsearch_dsl.connections import connections
 import os
 import arrow
 import ujson as json
+import copy
 from pprint import pprint
 
 DISABLE_TESTS = True
@@ -134,6 +135,15 @@ def indicator_broken_multi_tag_el():
         lasttime=arrow.utcnow().datetime,
         reporttime=arrow.utcnow().datetime
     )
+
+@pytest.fixture
+def dict_broken_multi_tag_el():
+    return {
+        "indicator": "d52380918a07322c50f1bfa2b43af3bb54cb33db",
+        "provider": "csirtg.io",
+        "tags": ["malware,exploit"],
+        "confidence": 5.0
+    }
 
 @pytest.fixture
 def indicator_good_multi_tag():
@@ -473,13 +483,18 @@ def test_store_elasticsearch_indicators_search_portlist(store, token, indicator,
 
 ## test multi, comma-delimited tag in single str element getting split out
 @pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
-def test_store_elasticsearch_indicators_bad_multi_tag_el(store, token, indicator_broken_multi_tag_el):
-    x = store.handle_indicators_create(token, indicator_broken_multi_tag_el.__dict__(), flush=True)
+def test_store_elasticsearch_indicators_bad_multi_tag_el(store, token, dict_broken_multi_tag_el):
+    insert_dict = copy.deepcopy(dict_broken_multi_tag_el)
+    x = store.handle_indicators_create(token, insert_dict, flush=True)
     assert x == 1
-    
-    x = store.handle_indicators_search(token, {
-        'tags': '{}'.format(indicator_broken_multi_tag_el.tags[0].split(',')[1]) # should grab the item after the 1st comma, aka, "exploit"
-    })
+
+    pprint(dict_broken_multi_tag_el['tags'])
+    search_dict = {
+        'tags': '{}'.format(dict_broken_multi_tag_el['tags'][0].split(',')[1]) # should grab the item after the 1st comma, aka, "exploit"
+    }
+
+    pprint(search_dict)
+    x = store.handle_indicators_search(token, search_dict)
 
     x = json.loads(x)
     pprint(x)
@@ -488,7 +503,7 @@ def test_store_elasticsearch_indicators_bad_multi_tag_el(store, token, indicator
     
     assert len(x) == 1
     
-    assert x[0]['indicator'] == indicator_broken_multi_tag_el.indicator
+    assert x[0]['indicator'] == dict_broken_multi_tag_el['indicator']
     
     assert len(x[0]['tags']) == 2
     

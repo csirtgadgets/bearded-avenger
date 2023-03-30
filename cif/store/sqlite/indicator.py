@@ -23,7 +23,7 @@ logger = logging.getLogger('cif.store.sqlite')
 
 DB_FILE = os.path.join(RUNTIME_PATH, 'cif.sqlite')
 REQUIRED_FIELDS = ['provider', 'indicator', 'tags', 'group', 'itype']
-HASH_TYPES = ['sha1', 'sha256', 'sha512', 'md5']
+HASH_TYPES = ['sha1', 'sha256', 'sha512', 'md5', 'ssdeep']
 
 from cif.httpd.common import VALID_FILTERS
 

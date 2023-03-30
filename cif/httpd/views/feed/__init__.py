@@ -22,6 +22,7 @@ from .md5 import Md5
 from .sha1 import Sha1
 from .sha256 import Sha256
 from .sha512 import Sha512
+from .ssdeep import Ssdeep
 
 TRACE = strtobool(os.getenv('CIF_HTTPD_TRACE', False))
 
@@ -34,7 +35,8 @@ FEED_PLUGINS = {
     'md5': Md5,
     'sha1': Sha1,
     'sha256': Sha256,
-    'sha512': Sha512
+    'sha512': Sha512,
+    'ssdeep': Ssdeep,
 }
 
 DAYS_SHORT = 21
@@ -52,6 +54,7 @@ FEED_DAYS = {
     'sha1': DAYS_MEDIUM,
     'sha256': DAYS_MEDIUM,
     'sha512': DAYS_MEDIUM,
+    'ssdeep': DAYS_REALLY_LONG,
 }
 
 

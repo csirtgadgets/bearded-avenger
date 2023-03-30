@@ -146,6 +146,43 @@ def indicator_ipv6_cidr_80():
         reporttime=arrow.utcnow().datetime
     )
 
+@pytest.fixture
+def indicator_ssdeep_1():
+    return Indicator(
+        indicator='3:AXGBicFlgVNhBGcL6wCrFQEv:AXGHsNhxLsr2C',
+        tags='test',
+        confidence=6,
+        provider='jessek',
+        group='everyone',
+        lasttime=arrow.utcnow().datetime,
+        reporttime=arrow.utcnow().datetime
+    )
+
+# homology of ssdeep_1
+@pytest.fixture
+def indicator_ssdeep_2():
+    return Indicator(
+        indicator='3:AXGBicFlIHBGcL6wCrFQEv:AXGH6xLsr2C',
+        tags='test',
+        confidence=6,
+        provider='jessek',
+        group='everyone',
+        lasttime=arrow.utcnow().datetime,
+        reporttime=arrow.utcnow().datetime
+    )
+
+# totally different from ssdeep_1 and _2
+@pytest.fixture
+def indicator_ssdeep_3():
+    return Indicator(
+        indicator='3:hMCEOE8+DTfMSizNqcyEbYQJBFdoE7zXL:huOd+DQSizNqCb9Jzd5zb',
+        tags='test',
+        confidence=6,
+        provider='jessek',
+        group='everyone',
+        lasttime=arrow.utcnow().datetime,
+        reporttime=arrow.utcnow().datetime
+    )
 
 # store several indicators
 @pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
@@ -171,6 +208,21 @@ def test_store_ipv4_cidr_23(store, token, indicator_ipv4_cidr_23):
 @pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
 def test_store_ipv4_cidr_18(store, token, indicator_ipv4_cidr_18):
     x = store.handle_indicators_create(token, indicator_ipv4_cidr_18.__dict__(), flush=True)
+    assert x  == 1
+
+@pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
+def test_store_ssdeep_1(store, token, indicator_ssdeep_1):
+    x = store.handle_indicators_create(token, indicator_ssdeep_1.__dict__(), flush=True)
+    assert x  == 1
+
+@pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
+def test_store_ssdeep_2(store, token, indicator_ssdeep_2):
+    x = store.handle_indicators_create(token, indicator_ssdeep_2.__dict__(), flush=True)
+    assert x  == 1
+
+@pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
+def test_store_ssdeep_3(store, token, indicator_ssdeep_3):
+    x = store.handle_indicators_create(token, indicator_ssdeep_3.__dict__(), flush=True)
     assert x  == 1
 
 # now that we've stored a few indicators, let's try searching
@@ -271,3 +323,39 @@ def test_store_es_indicators_search_sort(store, token):
                 pprint(x[i])
                 pprint(x[i+1])
                 assert x[i]['lasttime'] <= x[i+1]['lasttime']
+
+# normal searches (allowlists for feed pulls, upsert searches) should NOT find ssdeep relatives
+@pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
+def test_search_ssdeep_1_backend(store, token, indicator_ssdeep_1):
+    search_filter = {
+        'indicator': indicator_ssdeep_1.__dict__()['indicator'],
+        'nolog': 1
+    }
+    x = store.handle_indicators_search(token, search_filter)
+    x = json.loads(x)
+    y = [i['_source'] for i in x['hits']['hits']]
+    assert isinstance(y, list)
+    assert len(y) == 1
+    # ensure none of the other indicator submissions after ssdeep_1 matched on upsert search
+    assert y[0]['count'] == 1
+
+# normal frontend searches (HTTP GET /indicators) SHOULD find ssdeep relatives
+@pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
+def test_search_ssdeep_1_frontend(store, token, indicator_ssdeep_1, indicator_ssdeep_3):
+    indicator = indicator_ssdeep_1.__dict__()['indicator']
+    search_filter = {
+        'indicator': indicator,
+        'nolog': 1,
+        'find_relatives': True
+    }
+    x = store.handle_indicators_search(token, search_filter)
+    x = json.loads(x)
+    y = [i['_source'] for i in x['hits']['hits']]
+    assert isinstance(y, list)
+    pprint(y)
+    # ensure there are 2 results: 1 identical match and 1 fuzzy match
+    assert len(y) == 2
+
+    # ensure it didn't fuzzy match ssdeep_3
+    for i in y:
+        assert i['indicator'] is not indicator_ssdeep_3.__dict__()['indicator']

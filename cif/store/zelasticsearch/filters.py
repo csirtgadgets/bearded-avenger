@@ -64,6 +64,28 @@ def _filter_ipv6(s, i, find_relatives=False):
     return s
 
 
+def _filter_ssdeep(s, i, find_relatives=False):
+    # https://www.intezer.com/blog/malware-analysis/intezer-community-tip-ssdeep-comparisons-with-elasticsearch/
+    # if doing a regular search, match only the exact hash
+    if not find_relatives:
+        return s.filter('term', indicator=i)
+
+    # extract chunks from indicator for fuzzy search
+    chunksize, chunk, double_chunk = i.split(':')
+    chunksize = int(chunksize)
+
+    s = s.filter('terms', 
+        indicator_ssdeep_chunksize=[chunksize, chunksize * 2, int(chunksize / 2)]
+        )
+
+    exact_hit = chunk_hit = Q('match', indicator=i)
+    chunk_hit = Q('match', indicator_ssdeep_chunk=chunk)
+    double_chunk_hit = Q('match', indicator_ssdeep_double_chunk=double_chunk)
+
+    s = s.filter(exact_hit | chunk_hit | double_chunk_hit)
+    return s
+
+
 def filter_confidence(s, filter):
     if not filter.get('confidence'):
         return s
@@ -142,14 +164,17 @@ def filter_indicator(s, q_filters, find_relatives=False):
         s = s.filter('term', indicator=i)
         return s
 
-    if itype is 'ipv4':
+    if itype == 'ipv4':
         return _filter_ipv4(s, i, find_relatives)
 
-    if itype is 'ipv6':
+    if itype == 'ipv6':
         return _filter_ipv6(s, i, find_relatives)
     
-    if itype is 'url':
+    if itype == 'url':
         return _filter_url(s, i)
+    
+    if itype == 'ssdeep':
+        return _filter_ssdeep(s, i, find_relatives)
 
     return s
 

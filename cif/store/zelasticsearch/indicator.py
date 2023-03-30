@@ -8,7 +8,7 @@ from cifsdk.exceptions import AuthError, CIFException
 from datetime import datetime, timedelta
 from cifsdk.constants import PYVERSION
 import logging
-from .helpers import expand_ip_idx, i_to_id
+from .helpers import expand_indicator, i_to_id
 from .filters import filter_build
 from .constants import LIMIT, WINDOW_LIMIT, TIMEOUT, UPSERT_MODE, PARTITION, \
     DELETE_FILTERS, UPSERT_MATCH, REQUEST_TIMEOUT, ReIndexError
@@ -47,7 +47,10 @@ class IndicatorManager(IndicatorManagerPlugin):
         # idx exists now no matter what (either just created or was already present), 
         # but if new mappings added to Indicator schema since last startup, this will add those types to idx
         try:
+            # some changes require closing an open index before making them (e.g., analyzer)
+            self.handle.indices.close(index=self.idx)
             Indicator.init(index=self.idx)
+            self.handle.indices.open(index=self.idx)
         except elasticsearch.exceptions.RequestError:
             raise ReIndexError('Your Indicators index {} is using an old mapping'.format(self.idx))
         except Exception as e:
@@ -168,7 +171,7 @@ class IndicatorManager(IndicatorManagerPlugin):
     def create(self, token, data, raw=False, bulk=False):
         index = self._create_index()
 
-        expand_ip_idx(data)
+        expand_indicator(data)
         id = i_to_id(data)
 
         if data.get('group') and type(data['group']) != list:
@@ -301,7 +304,7 @@ class IndicatorManager(IndicatorManagerPlugin):
                 if d.get('group') and type(d['group']) != list:
                     d['group'] = [d['group']]
 
-                expand_ip_idx(d)
+                expand_indicator(d)
 
                 # append create to create set
                 if UPSERT_TRACE:
