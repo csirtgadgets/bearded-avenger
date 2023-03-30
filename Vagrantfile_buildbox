@@ -20,7 +20,7 @@ apt-get update && apt-get install -y build-essential python-dev python2.7 python
     python-pip libffi-dev libssl-dev sqlite3 software-properties-common
 
 echo 'installing ansible'
-pip install 'setuptools>=18.3,<34.0' 'ansible>=2.4,<2.5'
+pip install 'setuptools' 'ansible<7'
 
 echo 'cleaning'
 apt-get clean

@@ -1,4 +1,4 @@
-setuptools>=36,<46
+setuptools
 cython>=0.2
 pyzmq>=23.2.1
 csirtg_indicator>=1.0.1,<2.0

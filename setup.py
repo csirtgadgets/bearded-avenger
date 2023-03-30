@@ -9,6 +9,10 @@ ENABLE_INSTALL = os.getenv('CIF_ENABLE_INSTALL')
 if os.environ.get('USER') == 'vagrant' or os.path.isdir('/vagrant'):
     del os.link
 
+MINIMUM_COVERAGE = 33
+if os.environ.get('CIF_ELASTICSEARCH_TEST') == '1':
+    MINIMUM_COVERAGE = 40
+
 # https://www.pydanny.com/python-dot-py-tricks.html
 if sys.argv[-1] == 'test':
     test_requirements = [
@@ -22,7 +26,7 @@ if sys.argv[-1] == 'test':
         err_msg = e.message.replace("No module named ", "")
         msg = "%s is not installed. Install your test requirements." % err_msg
         raise ImportError(msg)
-    r = os.system('pytest test -v --cov=cif --cov-fail-under=33')
+    r = os.system('pytest test -v --cov=cif --cov-fail-under={}'.format(MINIMUM_COVERAGE))
     if r == 0:
         sys.exit()
     else:
