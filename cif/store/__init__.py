@@ -125,8 +125,6 @@ class Store(multiprocessing.Process):
             if i['firsttime'] > i['lasttime']:
                 i['firsttime'] = i['lasttime']
 
-        logger.debug('Timestamps fix: Indicator {}/{} has odd timestamps. Fixing...'.format(i['provider'], i['indicator']))
-
         # format as str since this used at indicator creation whereupon values have been deserialized from json
         if not i.get('reporttime'):
             i['reporttime'] = now_str
@@ -348,6 +346,9 @@ class Store(multiprocessing.Process):
 
     def handle_indicators_create(self, token, data, id=None, client_id=None, flush=False):
         token_str = token['token']
+
+        if len(data) == 0:
+            raise InvalidIndicator
 
         if len(data) > 1 or token['username'] == 'admin':
             start_time = time.time()

@@ -22,9 +22,9 @@ else:
 class IndicatorsAPI(MethodView):
     def get(self):
         filters = {}
-        for f in VALID_FILTERS:
-            if request.args.get(f):
-                filters[f] = request.args.get(f)
+        filtered_args = VALID_FILTERS.intersection(set(request.args))
+        for f in filtered_args:
+            filters[f] = request.args.get(f)
 
         if request.args.get('q'):
             filters['indicator'] = request.args.get('q')

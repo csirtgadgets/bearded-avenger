@@ -8,16 +8,27 @@ class Ipv4ResolvePrefixWhitelist(object):
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         self.is_advanced = False
+        self.mtypes_supported = { 'indicators_create' }
+        self.itypes_supported = { 'ipv4' }
 
-    def process(self, i, router, **kwargs):
-        if i.itype != 'ipv4':
-            return
+    def _prereqs_met(self, i, **kwargs):
+        if kwargs.get('mtype') not in self.mtypes_supported:
+            return False
+            
+        if i.itype not in self.itypes_supported:
+            return False
 
         if 'whitelist' not in i.tags:
-            return
+            return False
         
         # only run this hunter if it's a single address (no CIDRs)
         if ipaddress.IPv4Network(i.indicator).prefixlen != 32:
+            return False
+
+        return True
+
+    def process(self, i, router, **kwargs):
+        if not self._prereqs_met(i, **kwargs):
             return
 
         prefix = i.indicator.split('.')

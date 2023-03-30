@@ -20,21 +20,32 @@ class Farsight(object):
         self.client = Client()
         self.token = kwargs.get('token', TOKEN)
         self.is_advanced = True
+        self.mtypes_supported = { 'indicators_search' }
+        self.itypes_supported = { 'ipv4' }
 
-    def process(self, i, router, **kwargs):
+    def _prereqs_met(self, i, **kwargs):
+        if kwargs.get('mtype') not in self.mtypes_supported:
+            return False
+
         if not self.token:
-            return
+            return False
 
-        if i.itype != 'ipv4':
-            return
+        if i.itype not in self.itypes_supported:
+            return False
 
         if 'search' not in i.tags:
-            return
+            return False
 
         if i.confidence and i.confidence < 9:
-            return
+            return False
 
-        if re.search('^(\S+)\/(\d+)$', i.indicator):
+        if re.search(r'^(\S+)\/(\d+)$', i.indicator):
+            return False
+
+        return True
+
+    def process(self, i, router, **kwargs):
+        if not self._prereqs_met(i, **kwargs):
             return
 
         max = MAX_QUERY_RESULTS

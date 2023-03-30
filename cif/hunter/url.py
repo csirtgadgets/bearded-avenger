@@ -15,16 +15,27 @@ class Url(object):
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         self.is_advanced = False
+        self.mtypes_supported = { 'indicators_create' }
+        self.itypes_supported = { 'url' }
 
-    def process(self, i, router, **kwargs):
-        if i.itype != 'url':
-            return
+    def _prereqs_met(self, i, **kwargs):
+        if kwargs.get('mtype') not in self.mtypes_supported:
+            return False
+
+        if i.itype not in self.itypes_supported:
+            return False
 
         if 'search' in i.tags:
-            return
+            return False
 
         # prevent recursion with fqdn_wl hunter
         if ('whitelist') in i.tags and (i.rdata is not None or i.rdata != ''):
+            return False
+
+        return True
+
+    def process(self, i, router, **kwargs):
+        if not self._prereqs_met(i, **kwargs):
             return
 
         u = urlparse(i.indicator)
@@ -43,9 +54,13 @@ class Url(object):
             new_indicator.itype = itype
             if 'hunter' not in new_indicator.tags:
                 new_indicator.tags.append('hunter')
-            new_indicator.confidence = (int(new_indicator.confidence) / 2)
-            new_indicator.rdata = i.indicator
 
+            if new_indicator.itype in [ 'ipv4', 'ipv6' ]:
+                new_indicator.confidence = (new_indicator.confidence - 2) if new_indicator.confidence >= 2 else 0
+            else:
+                new_indicator.confidence = (int(new_indicator.confidence) / 2)
+            new_indicator.rdata = i.indicator
+            
             self.logger.debug('[Hunter: Url] sending to router {}'.format(new_indicator))
             router.indicators_create(new_indicator)
 

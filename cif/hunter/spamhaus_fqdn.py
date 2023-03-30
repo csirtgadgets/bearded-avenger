@@ -1,4 +1,4 @@
-
+import os
 import logging
 from csirtg_indicator import Indicator
 from cif.utils import resolve_ns
@@ -6,6 +6,11 @@ import arrow
 
 CONFIDENCE = 9
 PROVIDER = 'spamhaus.org'
+SPAMHAUS_DQS_KEY = os.environ.get('SPAMHAUS_DQS_KEY', None)
+
+BASE_QUERY_URL = 'dbl.spamhaus.org'
+if SPAMHAUS_DQS_KEY and len(SPAMHAUS_DQS_KEY) == 26:
+    BASE_QUERY_URL = '{}.dbl.dq.spamhaus.net'.format(SPAMHAUS_DQS_KEY)
 
 CODES = {
     '127.0.1.2': {
@@ -59,50 +64,66 @@ class SpamhausFqdn(object):
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         self.is_advanced = True
+        self.mtypes_supported = { 'indicators_create' }
+        self.itypes_supported = { 'fqdn' }
+
+    def _prereqs_met(self, i, **kwargs):
+        if kwargs.get('mtype') not in self.mtypes_supported:
+            return False
+            
+        if i.itype not in self.itypes_supported:
+            return False
+
+        if kwargs.get('nolog'):
+            return False
+            
+        if i.provider == 'spamhaus.org':
+            return False
+
+        return True
 
     def _resolve(self, data):
-        data = '{}.dbl.spamhaus.org'.format(data)
+        data = '{}.{}'.format(data, BASE_QUERY_URL)
         data = resolve_ns(data)
         if data and data[0]:
             return data[0]
 
     def process(self, i, router, **kwargs):
-        if 'search' in i.tags:
+        if not self._prereqs_met(i, **kwargs):
             return
 
-        if i.itype == 'fqdn' and i.provider != 'spamhaus.org':
+        try:
+            r = self._resolve(i.indicator)
             try:
-                r = self._resolve(i.indicator)
-                try:
-                    r = CODES.get(str(r), None)
-                except Exception as e:
-                    # https://www.spamhaus.org/faq/section/DNSBL%20Usage
-                    self.logger.error(e)
-                    self.logger.info('check spamhaus return codes')
-                    r = None
-
-                if r:
-                    confidence = CONFIDENCE
-                    if ' legit ' in r['description']:
-                        confidence = 6
-
-                    f = Indicator(**i.__dict__())
-
-                    f.tags = [r['tags']]
-                    if 'hunter' not in f.tags:
-                        f.tags.append('hunter')
-                    f.description = r['description']
-                    f.confidence = confidence
-                    f.provider = PROVIDER
-                    f.reference_tlp = 'white'
-                    f.reference = 'http://www.spamhaus.org/query/dbl?domain={}'.format(f.indicator)
-                    f.lasttime = f.reporttime = arrow.utcnow()
-                    x = router.indicators_create(f)
-                    self.logger.debug('Spamhaus FQDN: {}'.format(x))
-            except KeyError as e:
-                self.logger.error(e)
+                r = CODES.get(str(r), None)
             except Exception as e:
-                self.logger.error('[Hunter: SpamhausFqdn] {}: giving up on indicator {}'.format(e, i))
+                # https://www.spamhaus.org/faq/section/DNSBL%20Usage
+                self.logger.error(e)
+                self.logger.info('check spamhaus return codes')
+                r = None
+
+            if r:
+                confidence = CONFIDENCE
+                if ' legit ' in r['description']:
+                    confidence = 6
+
+                f = Indicator(**i.__dict__())
+
+                f.tags = [r['tags']]
+                if 'hunter' not in f.tags:
+                    f.tags.append('hunter')
+                f.description = r['description']
+                f.confidence = confidence
+                f.provider = PROVIDER
+                f.reference_tlp = 'white'
+                f.reference = 'http://www.spamhaus.org/query/dbl?domain={}'.format(f.indicator)
+                f.lasttime = f.reporttime = arrow.utcnow()
+                x = router.indicators_create(f)
+                self.logger.debug("Spamhaus FQDN: {}".format(x))
+        except KeyError as e:
+            self.logger.error(e)
+        except Exception as e:
+            self.logger.error("[Hunter: SpamhausFqdn] {}: giving up on indicator {}".format(e, i))
 
 
 Plugin = SpamhausFqdn

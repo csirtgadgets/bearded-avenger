@@ -91,9 +91,9 @@ class FeedAPI(MethodView):
         filters = {}
         start = time.time()
         id = g.sid
-        for f in VALID_FILTERS:
-            if request.args.get(f):
-                filters[f] = request.args.get(f)
+        filtered_args = VALID_FILTERS.intersection(set(request.args))
+        for f in filtered_args:
+            filters[f] = request.args.get(f)
 
         if len(filters) == 0:
             return jsonify_unknown('invalid search, missing an itype filter (ipv4, fqdn, url, sha1...)', 400)
