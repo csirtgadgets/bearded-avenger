@@ -2,6 +2,7 @@ from elasticsearch_dsl import Index
 from elasticsearch import helpers
 import elasticsearch.exceptions
 from elasticsearch_dsl.connections import connections
+from elasticsearch_dsl.exceptions import IllegalOperation
 from cif.store.indicator_plugin import IndicatorManagerPlugin
 from cif.utils import strtobool
 from cifsdk.exceptions import AuthError, CIFException
@@ -16,6 +17,8 @@ from .locks import LockManager
 from .schema import Indicator
 import time
 import os
+import contextlib
+import random
 
 logger = logging.getLogger('cif.store.zelasticsearch')
 if PYVERSION > 2:
@@ -47,10 +50,20 @@ class IndicatorManager(IndicatorManagerPlugin):
         # idx exists now no matter what (either just created or was already present), 
         # but if new mappings added to Indicator schema since last startup, this will add those types to idx
         try:
-            # some changes require closing an open index before making them (e.g., analyzer)
-            self.handle.indices.close(index=self.idx)
             Indicator.init(index=self.idx)
-            self.handle.indices.open(index=self.idx)
+        except IllegalOperation:
+            # some changes require closing an open index before making them (e.g., analyzer)
+            for retry in range(3):
+                try:
+                    with self._close_and_reopen_index():
+                        Indicator.init(index=self.idx)
+                    break
+                except elasticsearch.exceptions.TransportError as e:
+                    # another process may be trying the same thing
+                    if e.status_code == 403:
+                        if retry == 2:
+                            raise
+                        time.sleep(random.uniform(0.5, 3))
         except elasticsearch.exceptions.RequestError:
             raise ReIndexError('Your Indicators index {} is using an old mapping'.format(self.idx))
         except Exception as e:
@@ -58,6 +71,16 @@ class IndicatorManager(IndicatorManagerPlugin):
 
     def flush(self):
         self.handle.indices.flush(index=self._current_index())
+
+    @contextlib.contextmanager
+    def _close_and_reopen_index(self):
+        self.handle.indices.refresh(index=self.idx)
+        self.handle.indices.close(index=self.idx)
+        try:
+            yield
+        finally:
+            self.handle.indices.open(index=self.idx)
+            self.handle.indices.refresh(index=self.idx)
 
     def _current_index(self):
         dt = datetime.utcnow()
@@ -107,7 +130,8 @@ class IndicatorManager(IndicatorManagerPlugin):
         self.last_index_value = idx
         return idx
 
-    def search(self, token, filters, sort='reporttime', raw=False, sindex=False, timeout=TIMEOUT, find_relatives=False):
+    def search(self, token, filters, sort='reporttime', raw=False, sindex=False, 
+            timeout=TIMEOUT, find_relatives=False):
         limit = filters.get('limit', LIMIT)
 
         # search a given index - used in upserts

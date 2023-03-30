@@ -8,9 +8,10 @@ class IpRange(Field):
     # if elasticsearch_dsl/ES updated past those versions, this class should be removed
     name = 'ip_range'
 
+ssdeep_tokenizer = tokenizer('ssdeep_tokenizer', type='ngram', min_gram=7, max_gram=7)
+ssdeep_analyzer = analyzer('ssdeep_analyzer', tokenizer=ssdeep_tokenizer)
+
 class Indicator(DocType):
-    ssdeep_tokenizer = tokenizer('ssdeep_tokenizer', type='ngram', min_gram=7, max_gram=7)
-    ssdeep_analyzer = analyzer('ssdeep_analyzer', tokenizer=ssdeep_tokenizer)
     indicator = Keyword()
     indicator_ipv4 = Ip()
     indicator_ipv4_mask = Integer()
