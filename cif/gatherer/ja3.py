@@ -1,5 +1,5 @@
 import requests
-import json
+import ujson as json
 import logging
 import os
 
