@@ -112,7 +112,8 @@ class IndicatorManager(IndicatorManagerPlugin):
             index = Index(idx)
             index.aliases(live={})
             index.doc_type(Indicator)
-            index.settings(max_result_window=WINDOW_LIMIT, number_of_shards=SHARDS_PER_INDEX)
+            index.settings(max_result_window=WINDOW_LIMIT, number_of_shards=SHARDS_PER_INDEX,
+                index={'refresh_interval': '5s'})
             try:
                 index.create()
             # after implementing auth to use cif_store, there appears to sometimes be a race condition
@@ -130,8 +131,8 @@ class IndicatorManager(IndicatorManagerPlugin):
         self.last_index_value = idx
         return idx
 
-    def search(self, token, filters, sort='reporttime', raw=False, sindex=False, 
-            timeout=TIMEOUT, find_relatives=False):
+    def search(self, token, filters, raw=False, sindex=False, timeout=TIMEOUT, 
+               find_relatives=False):
         limit = filters.get('limit', LIMIT)
 
         # search a given index - used in upserts
@@ -144,7 +145,6 @@ class IndicatorManager(IndicatorManagerPlugin):
             find_relatives = filters.get('find_relatives', False)
 
         s = s.params(size=limit, timeout=timeout, request_timeout=REQUEST_TIMEOUT)
-        s = s.sort('-reporttime', '-lasttime')
 
         s = filter_build(s, filters, token=token, find_relatives=find_relatives, 
             narrow_query=sindex)
