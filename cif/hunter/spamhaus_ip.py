@@ -112,7 +112,7 @@ class SpamhausIp(object):
                 f.description = r['description']
                 f.confidence = CONFIDENCE
                 f.provider = PROVIDER
-                f.reference_tlp = 'white'
+                f.reference_tlp = 'clear'
                 f.reference = 'http://www.spamhaus.org/query/bl?ip={}'.format(f.indicator)
                 f.lasttime = f.reporttime = arrow.utcnow()
                 x = router.indicators_create(f)
