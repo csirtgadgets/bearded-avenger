@@ -257,10 +257,6 @@ class IndicatorManager(IndicatorManagerPlugin):
 
     def _filter_indicator(self, filters, s):
 
-        for k, v in list(filters.items()):
-            if k not in VALID_FILTERS:
-                del filters[k]
-
         if not filters.get('indicator'):
             return s
 
@@ -339,15 +335,10 @@ class IndicatorManager(IndicatorManagerPlugin):
                 continue
 
             if k == 'reporttime':
-                if ',' in filters[k]:
-                    start, end = filters[k].split(',')
-                    s = s.filter(Indicator.reporttime >= arrow.get(start).datetime)
-                    s = s.filter(Indicator.reporttime <= arrow.get(end).datetime)
-                else:
-                    s = s.filter(Indicator.reporttime >= arrow.get(filters[k]).datetime)
+                s = s.filter(Indicator.reporttime >= arrow.get(filters[k]).datetime)
 
             elif k == 'reporttimeend':
-                s = s.filter(Indicator.reporttime <= filters[k])
+                s = s.filter(Indicator.reporttime <= arrow.get(filters[k]).datetime)
 
             elif k == 'tags':
                 t = filters[k].split(',')
