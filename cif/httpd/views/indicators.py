@@ -1,5 +1,5 @@
-from ..common import pull_token, jsonify_success, jsonify_unauth, jsonify_unknown, jsonify_busy, \
-    VALID_FILTERS
+from ..common import pull_token, jsonify_success, jsonify_unauth, jsonify_unknown, \
+    jsonify_busy, VALID_FILTERS
 from flask.views import MethodView
 from flask import request, current_app
 from cifsdk.client.zeromq import ZMQ as Client

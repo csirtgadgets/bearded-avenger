@@ -26,7 +26,6 @@ from cifsdk.exceptions import AuthError, InvalidSearch
 from cif.exceptions import StoreLockError
 from csirtg_indicator import InvalidIndicator
 from cifsdk.utils import setup_logging, get_argument_parser, setup_signals
-import traceback
 import binascii
 from base64 import b64decode
 
@@ -298,6 +297,9 @@ class Store(multiprocessing.Process):
                     if not i.get('provider') or i['provider'] == '':
                         i['provider'] = _t['username']
 
+                    if not i.get('tlp'):
+                        i['tlp'] = 'amber'
+                    
                     if not i.get('tags'):
                         i['tags'] = ['suspicious']
                     elif isinstance(i['tags'], list):
@@ -484,19 +486,24 @@ class Store(multiprocessing.Process):
             else:
                 data['groups'] = '{}'
 
-
+        now = arrow.utcnow()
         if not data.get('reporttime'):
             if data.get('days'):
-                now = arrow.utcnow()
                 data['reporttimeend'] = '{0}Z'.format(now.format('YYYY-MM-DDTHH:mm:ss'))
                 now = now.shift(days=-int(data['days']))
                 data['reporttime'] = '{0}Z'.format(now.format('YYYY-MM-DDTHH:mm:ss'))
 
             if data.get('hours'):
-                now = arrow.utcnow()
                 data['reporttimeend'] = '{0}Z'.format(now.format('YYYY-MM-DDTHH:mm:ss'))
                 now = now.shift(hours=-int(data['hours']))
                 data['reporttime'] = '{0}Z'.format(now.format('YYYY-MM-DDTHH:mm:ss'))
+        else:
+            if ',' in data.get('reporttime', ''):
+                low, high = data['reporttime'].split(',')
+                data['reporttime'] = low
+                data['reporttimeend'] = high
+            else:
+                data['reporttimeend'] = '{0}Z'.format(now.format('YYYY-MM-DDTHH:mm:ss'))
 
         s = time.time()
 

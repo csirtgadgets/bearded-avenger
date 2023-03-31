@@ -6,7 +6,7 @@ import gzip
 VALID_FILTERS = {
     'indicator', 'itype', 'confidence', 'provider', 'limit', 'application', 'nolog', 'tags', 'days',
     'hours', 'groups', 'reporttime', 'cc', 'asn', 'asn_desc', 'rdata', 'firsttime', 'lasttime', 'region', 'id',
-    'portlist', 'protocol', 'tlp', 'sort'
+    'portlist', 'protocol', 'tlp', 'sort',
 }
 TOKEN_FILTERS = ['username', 'token']
 

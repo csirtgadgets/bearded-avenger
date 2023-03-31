@@ -5,7 +5,6 @@ from csirtg_indicator.exceptions import InvalidIndicator
 import binascii
 from cifsdk.constants import PYVERSION
 from elasticsearch_dsl import Q
-import ipaddress
 import arrow
 from collections import OrderedDict
 
@@ -16,6 +15,11 @@ from cif.store.zelasticsearch.constants import UPSERT_MATCH
 
 OPTIONAL_AND_USER_SPECIFIABLE_FIELDS = {
     'application', 'description', 'portlist', 'protocol', 'rdata', 'reference',
+}
+
+FILTER_TERMS_EXCLUDE_FIELDS = {
+    'nolog', 'days', 'hours', 'groups', 'limit', 'provider', 'reporttime', 'reporttimeend', 'tags', 
+    'find_relatives',
 }
 
 # compare user configured UPSERT_MATCH fields against optional indicator fields.
@@ -139,27 +143,23 @@ def filter_reporttime(s, filter):
         low = 'now/m-{}{}'.format(lookback_amount, lookback_unit)
     # no relative 'days' or 'hours' params, so fallback to 'reporttime'
     else:
-        c = filter.pop('reporttime')
+        low = filter.pop('reporttime')
         if PYVERSION == 2:
-            if type(c) == unicode:
-                c = str(c)
+            if type(low) == unicode:
+                low = str(low)
 
-        if isinstance(c, basestring) and ',' in c:
-            low, high = c.split(',')
-        else:
-            low = c
-
-        low = arrow.get(low).datetime
+        if filter.get('reporttimeend'):
+            high = filter.pop('reporttimeend')
 
     s = s.filter('range', reporttime={'gte': low, 'lte': high})
     return s
 
 
-def filter_indicator(s, q_filters, find_relatives=False):
-    if not q_filters.get('indicator'):
+def filter_indicator(s, filters, find_relatives=False):
+    if not filters.get('indicator'):
         return s
 
-    i = q_filters.pop('indicator')
+    i = filters.pop('indicator')
 
     try:
         itype = resolve_itype(i)
@@ -173,7 +173,7 @@ def filter_indicator(s, q_filters, find_relatives=False):
         s = s.query("match", message=i)
         return s
 
-    if itype in ('email', 'url', 'fqdn', 'md5', 'sha1', 'sha256', 'sha512'):
+    if itype in ('email', 'fqdn', 'md5', 'sha1', 'sha256', 'sha512'):
         s = s.filter('term', indicator=i)
         return s
 
@@ -192,11 +192,11 @@ def filter_indicator(s, q_filters, find_relatives=False):
     return s
 
 
-def filter_rdata(s, q_filters):
-    if not q_filters.get('rdata'):
+def filter_rdata(s, filters):
+    if not filters.get('rdata'):
         return s
 
-    r = q_filters.pop('rdata')
+    r = filters.pop('rdata')
 
     # limit number of wildcards that can be used to mitigate ES query performance degradation
     if '*' in r and r.count('*') <= 2:
@@ -206,13 +206,13 @@ def filter_rdata(s, q_filters):
     return s
 
 
-def filter_terms(s, q_filters):
-    for f in q_filters:
-        if f in ['nolog', 'days', 'hours', 'groups', 'limit', 'provider', 'reporttime', 'tags']:
+def filter_terms(s, filters):
+    for f in filters:
+        if f in FILTER_TERMS_EXCLUDE_FIELDS:
             continue
 
-        kwargs = {f: q_filters[f]}
-        if isinstance(q_filters[f], list):
+        kwargs = {f: filters[f]}
+        if isinstance(filters[f], list):
             s = s.filter('terms', **kwargs)
         else:
             s = s.filter('term', **kwargs)
@@ -220,11 +220,11 @@ def filter_terms(s, q_filters):
     return s
 
 
-def filter_tags(s, q_filters, narrow_query=False):
-    if not q_filters.get('tags'):
+def filter_tags(s, filters, narrow_query=False):
+    if not filters.get('tags'):
         return s
 
-    tags = q_filters.pop('tags')
+    tags = filters.pop('tags')
 
     if isinstance(tags, basestring):
         tags = {x.strip() for x in tags.split(',')}
@@ -267,11 +267,11 @@ def filter_tags(s, q_filters, narrow_query=False):
 
     return s
 
-def filter_provider(s, q_filters):
-    if not q_filters.get('provider'):
+def filter_provider(s, filters):
+    if not filters.get('provider'):
         return s
 
-    provider = q_filters.pop('provider')
+    provider = filters.pop('provider')
 
     if isinstance(provider, basestring):
         provider = [x.strip() for x in provider.split(',')]
@@ -301,11 +301,11 @@ def filter_provider(s, q_filters):
     return s
 
 
-def filter_groups(s, q_filters, token=None):
+def filter_groups(s, filters, token=None):
     if token:
         groups = token.get('groups', 'everyone')
     else:
-        groups = q_filters.pop('groups')
+        groups = filters.pop('groups')
 
     if isinstance(groups, basestring):
         groups = [groups]
@@ -315,21 +315,21 @@ def filter_groups(s, q_filters, token=None):
 
     return s
 
-def filter_id(s, q_filters):
-    if not q_filters.get('id'):
+def filter_id(s, filters):
+    if not filters.get('id'):
         return s
 
-    id = q_filters.pop('id')
+    id = filters.pop('id').lower()
 
-    s.query = Q('match_phrase', uuid=id)
+    s = s.filter('term', **{'uuid.keyword': id})
 
     return s
 
-def filter_sort(s, q_filters):
-    if not q_filters.get('sort'):
+def filter_sort(s, filters):
+    if not filters.get('sort'):
         return s.sort('-reporttime', '-lasttime')
 
-    sort = q_filters.pop('sort')
+    sort = filters.pop('sort')
 
     if isinstance(sort, basestring):
         sort = [x.strip() for x in sort.split(',')] # can't make this a set b/c it doesn't preserve order
@@ -376,40 +376,35 @@ def filter_build(s, filters, token=None, find_relatives=False, narrow_query=Fals
     if limit and int(limit) > WINDOW_LIMIT:
         raise InvalidSearch('Request limit should be <= server threshold of {} but was set to {}'.format(WINDOW_LIMIT, limit))
 
-    q_filters = {}
-    for f in VALID_FILTERS:
-        if filters.get(f):
-            q_filters[f] = filters[f]
-
     if narrow_query:
-        fields_must_not_exist = FIELDS_TO_CHECK_FOR_NARROW_QUERY.difference(q_filters.keys())
+        fields_must_not_exist = FIELDS_TO_CHECK_FOR_NARROW_QUERY.difference(filters.keys())
         s = filter_fields(s, fields_must_not_exist)
 
-    s = filter_sort(s, q_filters)
+    s = filter_sort(s, filters)
     
-    s = filter_provider(s, q_filters)
+    s = filter_provider(s, filters)
 
-    s = filter_confidence(s, q_filters)
+    s = filter_confidence(s, filters)
 
-    s = filter_id(s, q_filters)
+    s = filter_id(s, filters)
 
-    s = filter_rdata(s, q_filters)
+    s = filter_rdata(s, filters)
 
     # treat indicator as special, transform into Search
-    s = filter_indicator(s, q_filters, find_relatives)
+    s = filter_indicator(s, filters, find_relatives)
 
-    s = filter_reporttime(s, q_filters)
+    s = filter_reporttime(s, filters)
 
-    if q_filters.get('groups'):
-        s = filter_groups(s, q_filters)
+    if filters.get('groups'):
+        s = filter_groups(s, filters)
     else:
         if token and (not token.get('admin') or token.get('admin') == ''):
             s = filter_groups(s, {}, token=token)
 
-    if q_filters.get('tags'):
-        s = filter_tags(s, q_filters, narrow_query)
+    if filters.get('tags'):
+        s = filter_tags(s, filters, narrow_query)
 
     # transform all other filters into term=
-    s = filter_terms(s, q_filters)
+    s = filter_terms(s, filters)
 
     return s
