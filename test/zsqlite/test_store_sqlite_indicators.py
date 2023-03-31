@@ -44,12 +44,13 @@ def token(store):
 
 @pytest.fixture
 def indicator():
+    now = arrow.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
     return {
         'indicator': 'example.com',
         'tags': 'botnet',
         'provider': 'csirtgadgets.org',
         'group': 'everyone',
-        'lasttime': arrow.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+        'lasttime': now,
         'itype': 'fqdn',
         'confidence': 6
     }

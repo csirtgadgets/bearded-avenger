@@ -11,6 +11,7 @@ DISABLE_TESTS = True
 if os.environ.get('CIF_ELASTICSEARCH_TEST') and os.environ.get('CIF_STORE_ES_UPSERT_MODE'):
     if os.environ['CIF_ELASTICSEARCH_TEST'] == '1' and os.environ['CIF_STORE_ES_UPSERT_MODE'] == '1':
         DISABLE_TESTS = False
+        os.environ['CIF_STORE_ES_UPSERT_TRACE'] = '1'
 
 @pytest.fixture
 def store():
@@ -171,6 +172,18 @@ def indicator_higher_conf():
     )
 
 @pytest.fixture
+def indicator_diff_tags():
+    return Indicator(
+        indicator='example.com',
+        tags='botnet,malware',
+        provider='csirtg.io',
+        group='everyone',
+        lasttime=arrow.utcnow().datetime,
+        reporttime=arrow.utcnow().datetime,
+        confidence=7.0
+    )
+
+@pytest.fixture
 def indicator_diff_group():
     return Indicator(
         indicator='example.com',
@@ -193,18 +206,6 @@ def indicator_diff_rdata():
         reporttime=arrow.utcnow().datetime,
         confidence=7.0,
         rdata='ns 10.1.1.1'
-    )
-
-@pytest.fixture
-def indicator_diff_tags():
-    return Indicator(
-        indicator='example.com',
-        tags='botnet,malware',
-        provider='csirtg.io',
-        group='everyone',
-        lasttime=arrow.utcnow().datetime,
-        reporttime=arrow.utcnow().datetime,
-        confidence=7.0
     )
 
 @pytest.fixture
@@ -431,10 +432,57 @@ def test_store_elasticsearch_indicators_upsert6(store, token, indicator, indicat
 
     assert len(x) == 3
 
+## test similar indicator submissions, but different portlist and/or protocol; ensure upserts are NOT matching on differences and creating unique indicators
+@pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
+def test_store_elasticsearch_indicators_upsert7(store, token, indicator5, indicator5_diff_portlist, indicator5_diff_protocol):
+
+    pprint(indicator5)
+
+    x = store.handle_indicators_create(token, indicator5.__dict__(), flush=True)
+    assert x == 1
+
+    pprint(indicator5_diff_portlist)
+
+    y = store.handle_indicators_create(token, indicator5_diff_portlist.__dict__(), flush=True)
+    assert y == 1
+    
+    pprint(indicator5_diff_protocol)
+
+    z = store.handle_indicators_create(token, indicator5_diff_protocol.__dict__(), flush=True)
+    assert z == 1
+
+    x = store.handle_indicators_search(token, {
+        'indicator': 'example.com',
+        'nolog': 1
+    })
+
+    x = json.loads(x)
+    x = [i['_source'] for i in x['hits']['hits']]
+
+    pprint(x)
+
+    assert len(x) == 3
+    
+    # store a duplicate and ensure overall search result counts don't change
+    z = store.handle_indicators_create(token, indicator5_diff_protocol.__dict__(), flush=True)
+    assert z == 0
+    
+    x = store.handle_indicators_search(token, {
+        'indicator': 'example.com',
+        'nolog': 1
+    })
+
+    x = json.loads(x)
+    x = [i['_source'] for i in x['hits']['hits']]
+
+    pprint(x)
+
+    assert len(x) == 3
+
 ## test duplicate indicator submission, different tags; 
 # ensure upserts are NOT matching on diff tags
 @pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
-def test_store_elasticsearch_indicators_upsert7(store, token, indicator, indicator_diff_tags):
+def test_store_elasticsearch_indicators_upsert8(store, token, indicator, indicator_diff_tags):
 
     pprint(indicator)
 
@@ -485,53 +533,6 @@ def test_store_elasticsearch_indicators_upsert7(store, token, indicator, indicat
         else:
             assert i['count'] == 2
 
-
-## test similar indicator submissions, but different portlist and/or protocol; ensure upserts are NOT matching on differences and creating unique indicators
-@pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
-def test_store_elasticsearch_indicators_upsert8(store, token, indicator5, indicator5_diff_portlist, indicator5_diff_protocol):
-
-    pprint(indicator5)
-
-    x = store.handle_indicators_create(token, indicator5.__dict__(), flush=True)
-    assert x == 1
-
-    pprint(indicator5_diff_portlist)
-
-    y = store.handle_indicators_create(token, indicator5_diff_portlist.__dict__(), flush=True)
-    assert y == 1
-
-    pprint(indicator5_diff_protocol)
-
-    z = store.handle_indicators_create(token, indicator5_diff_protocol.__dict__(), flush=True)
-    assert z == 1
-
-    x = store.handle_indicators_search(token, {
-        'indicator': 'example.com',
-        'nolog': 1
-    })
-
-    x = json.loads(x)
-    x = [i['_source'] for i in x['hits']['hits']]
-
-    pprint(x)
-
-    assert len(x) == 3
-
-    # store a duplicate and ensure overall search result counts don't change
-    z = store.handle_indicators_create(token, indicator5_diff_protocol.__dict__(), flush=True)
-    assert z == 0
-
-    x = store.handle_indicators_search(token, {
-        'indicator': 'example.com',
-        'nolog': 1
-    })
-
-    x = json.loads(x)
-    x = [i['_source'] for i in x['hits']['hits']]
-
-    pprint(x)
-
-    assert len(x) == 3
 
 ## test duplicate indicator submission, different groups; 
 # ensure upserts are NOT matching on diff groups
