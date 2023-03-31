@@ -7,7 +7,7 @@ import textwrap
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 
-from flask import Flask, request, session, redirect, url_for, render_template, _request_ctx_stack, send_from_directory, g, jsonify
+from flask import Flask, request, session, redirect, url_for, render_template, send_from_directory, g, jsonify
 from flask_limiter import Limiter
 from flask_cors import CORS
 from flask_limiter.util import get_remote_address
@@ -179,9 +179,7 @@ def before_request():
     method = request.form.get('_method', '').upper()
     if method:
         request.environ['REQUEST_METHOD'] = method
-        ctx = _request_ctx_stack.top
-        ctx.url_adapter.default_method = method
-        assert request.method == method
+        request.method = method
 
     if request.path == '/u/logout':
         return
