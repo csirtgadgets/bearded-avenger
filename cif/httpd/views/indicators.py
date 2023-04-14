@@ -1,5 +1,5 @@
-from ..common import pull_token, jsonify_success, jsonify_unauth, jsonify_unknown, compress, response_compress, \
-    VALID_FILTERS, jsonify_busy
+from ..common import pull_token, jsonify_success, jsonify_unauth, jsonify_unknown, \
+    jsonify_busy, VALID_FILTERS
 from flask.views import MethodView
 from flask import request, current_app
 from cifsdk.client.zeromq import ZMQ as Client
@@ -7,7 +7,8 @@ from cifsdk.client.dummy import Dummy as DummyClient
 from cif.constants import ROUTER_ADDR, PYVERSION
 from cifsdk.exceptions import AuthError, TimeoutError, InvalidSearch, SubmissionFailed, CIFBusy
 import logging
-import zlib
+from cif.utils import strtobool
+import ujson as json
 
 remote = ROUTER_ADDR
 
@@ -22,22 +23,27 @@ else:
 class IndicatorsAPI(MethodView):
     def get(self):
         filters = {}
-        for f in VALID_FILTERS:
-            if request.args.get(f):
-                filters[f] = request.args.get(f)
+        filtered_args = VALID_FILTERS.intersection(set(request.args))
+        for f in filtered_args:
+            # convert multiple keys of same name to single kv pair where v is comma-separated str
+            # e.g., /feed?tags=malware&tags=exploit to tags=malware,exploit
+            values = request.args.getlist(f)
+            filters[f] = ','.join(values)
 
         if request.args.get('q'):
             filters['indicator'] = request.args.get('q')
-        if request.args.get('confidence'):
-            filters['confidence'] = request.args.get('confidence')
-        if request.args.get('provider'):
-            filters['provider'] = request.args.get('provider')
+        # b/c group (singular) is not in valid_filters
         if request.args.get('group'):
             filters['group'] = request.args.get('group')
-        if request.args.get('tags'):
-            filters['tags'] = request.args.get('tags')
-        if request.args.get('lasttime'):
-            filters['lasttime'] = request.args.get('lasttime')
+
+        # convert str values to bool if present, or default to True
+        try:
+            filters['find_relatives'] = strtobool(
+                request.args.get('find_relatives', default='false')
+            )
+        # strtobool raises ValueError if a non-truthy value is supplied
+        except ValueError:
+            filters['find_relatives'] = False
 
         if current_app.config.get('dummy'):
             r = DummyClient(remote, pull_token()).indicators_search(filters)
@@ -80,11 +86,36 @@ class IndicatorsAPI(MethodView):
                 logger.info('fireball mode')
                 fireball = True
         try:
+            data = json.loads(request.data.decode('utf-8'))
+            if isinstance(data, dict):
+                if not data.get('indicator'):
+                    raise SubmissionFailed('missing required "indicator" field')
+
+                data = [data]
+
+            errored_indicators = []
+            indicators_to_send = []
+
+            for indicator in data:
+                if not indicator.get('indicator'):
+                    errored_indicators.append(indicator)
+                    continue
+
+                indicators_to_send.append(indicator)
+
+            if not indicators_to_send:
+                raise SubmissionFailed('all indicators missing "indicator" field')
             with Client(remote, pull_token()) as cli:
                 r = cli.indicators_create(request.data, nowait=nowait,
                                           fireball=fireball)
             if nowait:
                 r = 'pending'
+            
+            if errored_indicators:
+                raise SubmissionFailed(
+                    'only inserted {} out of {} submitted indicators. some were missing required "indicator" field: {}'
+                    .format(len(indicators_to_send), len(data), errored_indicators)
+                )
 
         except SubmissionFailed as e:
             logger.error(e)

@@ -3,10 +3,7 @@ from csirtg_indicator import Indicator
 from cif.store import Store
 from elasticsearch_dsl.connections import connections
 import os
-from datetime import datetime
 import arrow
-from time import sleep
-from cifsdk.exceptions import AuthError
 
 DISABLE_TESTS = True
 if os.environ.get('CIF_ELASTICSEARCH_TEST'):
@@ -60,14 +57,12 @@ def indicator():
 
 @pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
 def test_store_elasticsearch_tokens(store, token):
-    assert store.store.tokens.update_last_activity_at(token, datetime.now())
+    # the below funcs should cache the checked token
     assert store.store.tokens.check(token, 'read')
     assert store.store.tokens.read(token)
     assert store.store.tokens.write(token)
     assert store.store.tokens.admin(token)
-    assert store.store.tokens.last_activity_at(token) is not None
-    assert store.store.tokens._cache_check(token['token'])
-    assert store.store.tokens.update_last_activity_at(token, datetime.now())
+    assert store.store.tokens._cache_check(token['token']) is not False
 
 
 @pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
@@ -93,11 +88,8 @@ def test_store_elasticsearch_tokens_advanced(store, token):
     assert len(list(x)) == 2
 
     # test last_activity_at
-    x = store.handle_indicators_search(token, {
-        'indicator': 'example.com'
-    })
+    now_str = arrow.utcnow().datetime.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+    # the below func should update last_activity_at and cache that
+    assert store.store.tokens.auth_search({'token': t['token']})
 
-    x = store.store.tokens.update_last_activity_at(token, datetime.now())
-    assert x
-
-    assert store.store.tokens.last_activity_at(token)
+    assert store.store.tokens.last_activity_at(t) > now_str

@@ -4,7 +4,7 @@ defaults:
   confidence: 7
   tlp: green
   altid: https://data.netlab.360.com/dga/
-  altid_tlp: white
+  altid_tlp: clear
   protocol: tcp
   tags:
     - dga

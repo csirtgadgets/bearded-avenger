@@ -19,7 +19,12 @@ DB_SEARCH_PATHS = [
     '/usr/local/var/GeoIP'
 ]
 
+ITYPES_ENABLED = set(['ipv4', 'ipv6'])
+
 ENABLE_FQDN = os.getenv('CIF_GATHERER_GEO_FQDN')
+if ENABLE_FQDN not in ['0', 0, False, None]:
+    ITYPES_ENABLED.update(['fqdn', 'url'])
+
 DB_FILE = 'GeoLite2-City.mmdb'
 ASN_DB_PATH = os.getenv('CIF_GEO_ASN_PATH', 'GeoLite2-ASN.mmdb')
 DB_PATH = os.environ.get('CIF_GEO_PATH')
@@ -71,9 +76,13 @@ class Geo(object):
             return
 
         i = indicator.indicator
-        if indicator.itype in ['url', 'fqdn']:
-            if ENABLE_FQDN in ['0', 0, False, None]:
+        if indicator.itype == 'ipv4':
+            try:
+                i = self._ip_to_prefix(i)
+            except IndexError:
+                self.logger.error('unable to determine geo for %s' % indicator.indicator)
                 return
+        elif indicator.itype in ['url', 'fqdn']:
 
             if indicator.itype == 'url':
                 u = urlparse(i)
@@ -85,13 +94,6 @@ class Geo(object):
 
             if not indicator.rdata:
                 indicator.rdata = i
-
-        if indicator.itype == 'ipv4':
-            try:
-                i = self._ip_to_prefix(i)
-            except IndexError:
-                self.logger.error('unable to determine geo for %s' % indicator.indicator)
-                return
 
         g = self.db.city(i)
 
@@ -138,7 +140,7 @@ class Geo(object):
             indicator.asn_desc = g.autonomous_system_organization
 
     def process(self, indicator):
-        if indicator.itype not in ['ipv4', 'ipv6', 'fqdn', 'url']:
+        if indicator.itype not in ITYPES_ENABLED:
             return indicator
 
         if indicator.is_private():

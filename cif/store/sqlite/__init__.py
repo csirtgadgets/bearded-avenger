@@ -9,11 +9,12 @@ import sqlite3
 
 from cifsdk.constants import RUNTIME_PATH
 from cif.store.plugin import Store
+from cif.utils import strtobool
 from cifsdk.constants import PYVERSION
 
 Base = declarative_base()
-from .token import TokenManager, Token
-from .indicator import Indicator, IndicatorManager
+from .token import TokenManager
+from .indicator import IndicatorManager
 
 DATA_PATH = os.getenv('CIF_DATA_PATH')
 DB_FILE = os.path.join(RUNTIME_PATH, 'cif.sqlite')
@@ -22,7 +23,7 @@ if DATA_PATH:
     DB_FILE = os.path.join(DATA_PATH, 'cif.db')
 
 logger = logging.getLogger(__name__)
-TRACE = os.environ.get('CIF_STORE_SQLITE_TRACE')
+TRACE = strtobool(os.environ.get('CIF_STORE_SQLITE_TRACE', False))
 
 # http://stackoverflow.com/q/9671490/7205341
 SYNC = os.environ.get('CIF_STORE_SQLITE_SYNC', 'NORMAL')
@@ -44,8 +45,6 @@ logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 if not TRACE:
     logger.setLevel(logging.ERROR)
     logging.getLogger('sqlalchemy.engine').setLevel(logging.ERROR)
-
-VALID_FILTERS = ['indicator', 'confidence', 'provider', 'itype', 'group', 'tags']
 
 if PYVERSION > 2:
     basestring = (str, bytes)
@@ -88,7 +87,9 @@ class SQLite(Store):
 
         self.logger.debug('database path: {}'.format(self.path))
 
-        self.tokens = TokenManager(self.handle, self.engine)
+        self.token_cache = kwargs.get('token_cache', {})
+        
+        self.tokens = TokenManager(self.handle, self.engine, token_cache=self.token_cache)
         self.indicators = IndicatorManager(self.handle, self.engine)
 
     def ping(self):

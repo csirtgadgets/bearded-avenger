@@ -4,11 +4,12 @@ import binascii
 import socket
 import uuid
 from hashlib import sha256
+import ipaddress
 
 
-def expand_ip_idx(data):
+def expand_indicator(data):
     itype = resolve_itype(data['indicator'])
-    if itype not in ['ipv4', 'ipv6']:
+    if itype not in ['ipv4', 'ipv6', 'ssdeep']:
         return
 
     if itype == 'ipv4':
@@ -16,21 +17,47 @@ def expand_ip_idx(data):
         if match:
             data['indicator_ipv4'] = match.group(1)
             data['indicator_ipv4_mask'] = match.group(2)
+            start, end, _ = cidr_to_range(data['indicator'])
+            data['indicator_iprange'] = { 'gte': start, 'lte': end }
         else:
             data['indicator_ipv4'] = data['indicator']
 
         return
 
-    match = re.search(r'^(\S+)\/(\d+)$', data['indicator'])
-    if match:
+    if itype == 'ipv6':
+        match = re.search(r'^(\S+)\/(\d+)$', data['indicator'])
+        if match:
 
-        data['indicator_ipv6'] = binascii.b2a_hex(socket.inet_pton(socket.AF_INET6, match.group(1))).decode(
-            'utf-8')
-        data['indicator_ipv6_mask'] = match.group(2)
-    else:
-        data['indicator_ipv6'] = binascii.b2a_hex(socket.inet_pton(socket.AF_INET6, data['indicator'])).decode(
-            'utf-8')
+            data['indicator_ipv6'] = binascii.b2a_hex(socket.inet_pton(socket.AF_INET6, match.group(1))).decode(
+                'utf-8')
+            data['indicator_ipv6_mask'] = match.group(2)
+            start, end, _ = cidr_to_range(data['indicator'])
+            data['indicator_iprange'] = { 'gte': start, 'lte': end }
+        else:
+            data['indicator_ipv6'] = binascii.b2a_hex(socket.inet_pton(socket.AF_INET6, data['indicator'])).decode(
+                'utf-8')
 
+        return
+
+    if itype == 'ssdeep':
+        chunksize, chunk, double_chunk = data['indicator'].split(':')
+        chunksize = int(chunksize)
+        data['indicator_ssdeep_chunk'] = chunk
+        data['indicator_ssdeep_chunksize'] = chunksize
+        data['indicator_ssdeep_double_chunk'] = double_chunk
+
+
+def cidr_to_range(cidr):
+    try:
+        ip = ipaddress.IPv4Network(cidr)
+    except Exception as e:
+        ip = ipaddress.IPv6Network(cidr)
+
+    start = str(ip.network_address)
+    end = str(ip.broadcast_address)
+    mask = ip.prefixlen
+
+    return start, end, mask
 
 def _id_random(i):
     id = str(uuid.uuid4())

@@ -11,22 +11,22 @@ from csirtg_indicator import Indicator
 from csirtg_indicator.exceptions import InvalidIndicator
 import multiprocessing
 import os
+from cif.utils import strtobool
 
-logger = logging.getLogger(__name__)
 
 SNDTIMEO = 15000
 ZMQ_HWM = 1000000
 EXCLUDE = os.environ.get('CIF_HUNTER_EXCLUDE', None)
 HUNTER_ADVANCED = os.getenv('CIF_HUNTER_ADVANCED', 0)
 HUNTER_MIN_CONFIDENCE = 4
-HUNTER_RECURSION = os.getenv('CIF_HUNTER_RECURSION', 0)
 
-TRACE = os.environ.get('CIF_HUNTER_TRACE', False)
+HUNTER_RECURSION = strtobool(os.getenv('CIF_HUNTER_RECURSION', False))
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-if TRACE in [1, '1']:
+TRACE = strtobool(os.environ.get('CIF_HUNTER_TRACE', False))
+if TRACE:
    logger.setLevel(logging.DEBUG)
 
 
@@ -44,6 +44,8 @@ class Hunter(multiprocessing.Process):
         self.token = token
         self.exit = multiprocessing.Event()
         self.exclude = {}
+
+        logger.debug('setting hunter recursion to: {}'.format(HUNTER_RECURSION))
 
         if EXCLUDE:
             for e in EXCLUDE.split(','):
@@ -102,6 +104,7 @@ class Hunter(multiprocessing.Process):
                     continue
 
                 if not data.get('itype'):
+                    nolog = data.get('nolog', False)
                     try:
                         data = Indicator(
                             indicator=data['indicator'],
@@ -110,6 +113,7 @@ class Hunter(multiprocessing.Process):
                             group='everyone',
                             tlp='amber',
                         ).__dict__()
+                        data['nolog'] = nolog
                     except InvalidIndicator:
                         logger.debug('skipping invalid indicator: {}'.format(data['indicator']))
                         continue
@@ -122,7 +126,15 @@ class Hunter(multiprocessing.Process):
             token = json.loads(token)
 
             for d in data:
-                d = Indicator(**d)
+                try:
+                    nolog = strtobool(d.get('nolog', False))
+                except ValueError:
+                    nolog = False
+                try:
+                    d = Indicator(**d)
+                except Exception as e:
+                    logger.error('hunter pipeline received indicator "{}" that produced error: {}'.format(d, e))
+                    continue
 
                 if d.confidence < HUNTER_MIN_CONFIDENCE:
                     continue
@@ -141,11 +153,10 @@ class Hunter(multiprocessing.Process):
                             continue
 
                 for p in plugins:
-                    if p.is_advanced:
-                        if not HUNTER_ADVANCED:
-                            continue
+                    if not HUNTER_ADVANCED and p.is_advanced:
+                        continue
                     try:
-                        p.process(i=d, router=router, user_token=token)
+                        p.process(i=d, router=router, user_token=token, mtype=mtype, nolog=nolog)
                     except Exception as e:
                         logger.error(e)
                         logger.error('[{}] giving up on: {}'.format(p, d))

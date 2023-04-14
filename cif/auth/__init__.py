@@ -2,7 +2,6 @@
 
 import ujson as json
 import logging
-import traceback
 import zmq
 import multiprocessing
 import cif.auth
@@ -11,8 +10,10 @@ from cifsdk.exceptions import AuthError
 import os
 import time
 import pkgutil
+import arrow
 
 from cif.constants import AUTH_ADDR
+from cif.utils import strtobool
 
 SNDTIMEO = 2000
 
@@ -22,7 +23,7 @@ AUTH_ERR = json.dumps({'status': 'failed', 'message': 'unauthorized'})
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
 
-TRACE = os.environ.get('CIF_AUTH_TRACE', True)
+TRACE = strtobool(os.environ.get('CIF_AUTH_TRACE', True))
 if TRACE:
     logger.setLevel(logging.DEBUG)
 
@@ -113,8 +114,12 @@ class Auth(multiprocessing.Process):
         # if more than one token comes back, shenanigans
         elif len(token) > 1:
             raise AuthError('multiple token matches during auth. possible wildcard attempt?')
+        
+        token = token[0]
+
+        if token.get('revoked') or (token.get('expires') and token['expires'] < arrow.utcnow().datetime.strftime('%Y-%m-%dT%H:%M:%S.%fZ')):
+            raise AuthError('Auth: token revoked ({}) or expired ({})'.format(token.get('revoked'), token.get('expires')))
         else:
-            token = token[0]
             # check action (mtype) against token perms
             if mtype.startswith('tokens') or mtype.endswith('delete'):
                 if not token.get('admin'):

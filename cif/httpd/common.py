@@ -2,7 +2,6 @@ from flask import request, jsonify
 import re
 import zlib
 import gzip
-from base64 import b64encode
 
 VALID_FILTERS = {
     'indicator', 'itype', 'confidence', 'provider', 'limit', 'application', 'nolog', 'tags', 'days',
@@ -85,9 +84,16 @@ def compress(data, ctype='deflate'):
     return gzip.compress(data)
 
 
-def aggregate(data, field='indicator', sort='confidence', sort_secondary='reporttime'):
+def aggregate(data, field='indicator', sort='confidence', sort_secondary='reporttime', dedup_only=False):
     x = set()
     rv = []
+    if dedup_only:
+        for d in data:
+            if d[field] not in x:
+                x.add(d[field])
+                rv.append(d)
+        return rv
+
     for d in sorted(data, key=lambda x: x[sort], reverse=True):
         if d[field] not in x:
             x.add(d[field])

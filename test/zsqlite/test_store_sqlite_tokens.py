@@ -6,8 +6,6 @@ import pytest
 from cif.store import Store
 from cifsdk.utils import setup_logging
 import arrow
-from datetime import datetime
-from pprint import pprint
 from cifsdk.exceptions import AuthError
 
 args = Namespace(debug=True, verbose=None)
@@ -50,13 +48,13 @@ def test_store_sqlite_tokens(store):
 
     t = t[0]
 
-    assert store.store.tokens.update_last_activity_at(t, datetime.now())
+    now_str = arrow.utcnow().datetime.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+    # the below funcs should cache the checked token
     assert store.store.tokens.check(t, 'read')
     assert store.store.tokens.read(t)
     assert store.store.tokens.write(t)
     assert store.store.tokens.admin(t)
-    assert store.store.tokens.last_activity_at(t) is not None
-    assert store.store.tokens.update_last_activity_at(t, datetime.now())
+    assert store.store.tokens._cache_check(t['token']) is not False
 
 
 def test_store_sqlite_tokens_groups(store):
@@ -206,3 +204,18 @@ def test_store_sqlite_tokens_groups4(store, indicator):
 
     i = store.store.indicators.search(t, {'itype': 'fqdn', 'groups': 'staff'})
     assert len(list(i)) == 1
+
+def test_store_sqlite_tokens_auth(store):
+    t = store.store.tokens.create({
+        'username': 'testuser1',
+        'groups': ['everyone'],
+        'write': False,
+        'read': True
+    })
+
+    # test last_activity_at
+    now_str = arrow.utcnow().datetime.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+    # the below func should update last_activity_at and cache that
+    assert store.store.tokens.auth_search({'token': t['token']})
+
+    assert store.store.tokens.last_activity_at(t) > now_str

@@ -9,6 +9,7 @@ from cifsdk.msg import Msg
 import os
 import cif.gatherer
 from cif.constants import GATHERER_ADDR, GATHERER_SINK_ADDR
+from cif.utils import strtobool
 from csirtg_indicator import Indicator, InvalidIndicator
 import time
 
@@ -18,7 +19,7 @@ LINGER = 0
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
 
-TRACE = os.environ.get('CIF_GATHERER_TRACE')
+TRACE = strtobool(os.environ.get('CIF_GATHERER_TRACE', False))
 if TRACE:
     logger.setLevel(logging.DEBUG)
 
@@ -91,21 +92,17 @@ class Gatherer(multiprocessing.Process):
                         i = Indicator(**d)
 
                     except InvalidIndicator as e:
-                        from pprint import pprint
-                        pprint(i)
-
-                        logger.error('gatherer failed: %s'.format(g))
+                        logger.error('resolving failed for indicator: {}'.format(d))
                         logger.error(e)
                         traceback.print_exc()
+                        # skip failed indicator
+                        continue
 
                     for g in self.gatherers:
                         try:
                             g.process(i)
                         except Exception as e:
-                            from pprint import pprint
-                            pprint(i)
-
-                            logger.error('gatherer failed: %s'.format(g))
+                            logger.error('gatherer failed on indicator {}: {}'.format(i, g))
                             logger.error(e)
                             traceback.print_exc()
 

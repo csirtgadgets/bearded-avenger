@@ -29,8 +29,9 @@ class HealthAPI(MethodView):
             remote = current_app.config['CIF_ROUTER_ADDR']
 
         try:
+            r = None
             r = Client(remote, HTTPD_TOKEN).ping()
-            r = Client(remote, HTTPD_TOKEN).indicators_search({'indicator': 'example.com', 'nolog': '1'})
+            r = Client(remote, HTTPD_TOKEN).indicators_search({'indicator': 'example.com', 'nolog': '1', 'limit': '1'})
             r = True
 
         except TimeoutError:

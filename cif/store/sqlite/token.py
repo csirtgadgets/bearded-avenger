@@ -5,7 +5,6 @@ from sqlalchemy.orm import class_mapper, relationship, backref
 from cifsdk.constants import PYVERSION
 from sqlalchemy.ext.declarative import declarative_base
 from cif.store.token_plugin import TokenManagerPlugin
-from pprint import pprint
 
 logger = logging.getLogger('cif.store.sqlite')
 
@@ -80,21 +79,31 @@ class TokenManager(TokenManagerPlugin):
         # update the cache
         for x in s:
             if x.token not in self._cache:
-                self._cache[x.token] = self.to_dict(x)
-                self._cache[x.token]['groups'] = []
+                token_dict = self.to_dict(x)
+                token_dict['groups'] = []
                 for g in x.groups:
-                    self._cache[x.token]['groups'].append(g.group)
+                    token_dict['groups'].append(g.group)
+                self._cache[x.token] = token_dict
 
             yield self._cache[x.token]
 
     def auth_search(self, token):
+        # if token dict already cached, use that
+        token_str = token['token']
+        if self._cache_check(token_str):
+            self._update_last_activity_at(token_str, arrow.utcnow().datetime)
+            token_dict = self._cache[token_str]
+            # wrap in a list as expected from output of this func
+            return [token_dict]
+
+        # otherwise do a fresh lookup
         rv = list(self.search(token))
         if rv:
-            self.update_last_activity_at(rv[0], arrow.utcnow().datetime)
+            self._update_last_activity_at(token_str, arrow.utcnow().datetime)
 
         return rv
 
-    def create(self, data):
+    def create(self, data, token=None):
         s = self.handle()
 
         if data.get('token') is None:
@@ -149,74 +158,62 @@ class TokenManager(TokenManagerPlugin):
         s.commit()
         return c
 
-    def edit(self, data):
-        if not data.get('token'):
-            return 'token required for updating'
+    def edit(self, data, bulk=False, token=None):
+        dicts = []
+        if bulk:
+            for token_str in data:
+                token_dict = data[token_str]
+                try:
+                    token_dict.pop('id') # don't want to save dict id back to db
+                    token_dict.pop('version') # don't save dict version back to db
+                except KeyError as e:
+                    pass
 
-        if not data.get('groups'):
-            return 'groups required for updating'
+                dicts.append(token_dict)
 
-        s = self.handle()
-        rv = s.query(Token).filter_by(token=data['token'])
-        t = rv.first()
-        if not t:
-            return 'token not found'
+        else:
+            dicts.append(data)
 
-        groups = [g.group for g in t.groups]
+        for data in dicts:
 
-        for g in data['groups']:
-            if g in groups:
-                continue
+            if not data.get('token'):
+                return 'token required for updating'
 
-            gg = Group(
-                group=g,
-                token=t
-            )
-            s.add(gg)
+            if not data.get('groups'):
+                return 'groups required for updating'
 
-        s.commit()
+            s = self.handle()
+            rv = s.query(Token).filter_by(token=data['token'])
+            t = rv.first()
+            if not t:
+                return 'token not found'
 
-        # remove groups not in update
-        q = s.query(Group)
-        for g in groups:
-            if g in data['groups']:
-                continue
+            groups = [g.group for g in t.groups]
 
-            rv = q.filter_by(group=g, token=t)
-            if not rv.count():
-                continue
+            for g in data['groups']:
+                if g in groups:
+                    continue
 
-            rv.delete()
+                gg = Group(
+                    group=g,
+                    token=t
+                )
+                s.add(gg)
 
-        s.commit()
+            s.commit()
+
+            # remove groups not in update
+            q = s.query(Group)
+            for g in groups:
+                if g in data['groups']:
+                    continue
+
+                rv = q.filter_by(group=g, token=t)
+                if not rv.count():
+                    continue
+
+                rv.delete()
+
+            s.commit()
 
         return True
-
-    def update_last_activity_at(self, token, timestamp):
-        if isinstance(timestamp, str):
-            timestamp = arrow.get(timestamp).datetime
-
-        token_str = token['token']
-
-        if self._cache_check(token_str):
-            if self._cache[token_str].get('last_activity_at'):
-                return self._cache[token_str]['last_activity_at']
-
-            self._cache[token_str]['last_activity_at'] = timestamp
-            return timestamp
-
-        s = self.handle()
-        s.query(Token).filter_by(token=token_str).update({Token.last_activity_at: timestamp})
-
-        try:
-            s.commit()
-        except Exception as e:
-            logger.error(e)
-            logger.debug('rolling back transaction..')
-            s.rollback()
-
-        t = list(self.search({'token': token_str}))
-
-        self._cache[token_str] = t[0]
-        self._cache[token_str]['last_activity_at'] = timestamp
-        return timestamp

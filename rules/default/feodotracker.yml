@@ -1,7 +1,7 @@
 defaults:
   provider: feodotracker.abuse.ch
   tlp: green
-  altid_tlp: white
+  altid_tlp: clear
   altid: https://feodotracker.abuse.ch/host/<indicator>
   description: feodo
 

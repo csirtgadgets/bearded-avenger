@@ -1,6 +1,4 @@
 import pytricia
-import ipaddress
-import sys
 
 PERM_WHITELIST = [
     "0.0.0.0/8",
@@ -51,16 +49,8 @@ class Ipv4(object):
 
         for y in data:
             y['indicator'] = _normalize(y['indicator'])
-            try:
-                if sys.version_info.major < 3:
-                    ipaddress.ip_network(unicode(y['indicator']))
-                else:
-                    ipaddress.ip_network(y['indicator'])
-                if str(y['indicator']) not in wl:
-                    rv.append(y)
-            except ValueError as e:
-                print(e)
-                print('skipping invalid address: %s' % y['indicator'])
+            if str(y['indicator']) not in wl:
+                rv.append(y)
 
         return rv
 

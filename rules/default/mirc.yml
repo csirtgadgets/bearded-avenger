@@ -3,7 +3,7 @@ defaults:
   provider: mirc.com
   protocol: tcp
   tlp: green
-  altid_tlp: white
+  altid_tlp: clear
   confidence: 8
   application: irc
   remote: http://www.mirc.com/servers.ini

@@ -6,7 +6,7 @@ import os
 import arrow
 from cifsdk.exceptions import AuthError
 from pprint import pprint
-import json
+import ujson as json
 
 DISABLE_TESTS = True
 if os.environ.get('CIF_ELASTICSEARCH_TEST'):

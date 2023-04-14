@@ -3,7 +3,7 @@ defaults:
   protocol: tcp
   provider: openphish.com
   tlp: green
-  reference_tlp: white
+  reference_tlp: clear
   confidence: 9
   values: indicator
 

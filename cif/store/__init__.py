@@ -11,24 +11,21 @@ from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 import traceback
 import yaml
-from pprint import pprint
 import arrow
 import multiprocessing
 from csirtg_indicator import Indicator
 import zmq
 import time
-from base64 import b64encode
 
 from cifsdk.msg import Msg
 import cif.store
 from cif.constants import STORE_ADDR, PYVERSION, AUTH_ENABLED, CTRL_ADDR
+from cif.utils import strtobool
 from cifsdk.constants import REMOTE_ADDR, CONFIG_PATH
 from cifsdk.exceptions import AuthError, InvalidSearch
 from cif.exceptions import StoreLockError
 from csirtg_indicator import InvalidIndicator
 from cifsdk.utils import setup_logging, get_argument_parser, setup_signals
-from types import GeneratorType
-import traceback
 import binascii
 from base64 import b64decode
 
@@ -63,12 +60,12 @@ else:
 
 MORE_DATA_NEEDED = -2
 
-TRACE = os.environ.get('CIF_STORE_TRACE')
+TRACE = strtobool(os.environ.get('CIF_STORE_TRACE', False))
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
 
-if TRACE in [1, '1']:
+if TRACE:
    logger.setLevel(logging.DEBUG)
 
 
@@ -126,8 +123,6 @@ class Store(multiprocessing.Process):
                 i['lasttime'] = i['reporttime']
             if i['firsttime'] > i['lasttime']:
                 i['firsttime'] = i['lasttime']
-
-        logger.debug('Timestamps fix: Indicator {}/{} has odd timestamps. Fixing...'.format(i['provider'], i['indicator']))
 
         # format as str since this used at indicator creation whereupon values have been deserialized from json
         if not i.get('reporttime'):
@@ -214,7 +209,7 @@ class Store(multiprocessing.Process):
                         token = json.loads(token)
                     except ValueError as e:
                         # in the event we only have a token str, i.e., being run from a hunter
-                        token = list(self.handle_tokens_search('', {'token': token}))[0]
+                        token = self.handle_tokens_search('', {'token': token})[0]
                 else:
                     token = {'username': 'noauth',
                               'read': True, 'write': True, 'admin': True, 
@@ -241,15 +236,14 @@ class Store(multiprocessing.Process):
                 rv = {"status": "success", "data": rv}
 
         except AuthError as e:
-            logger.error(e)
+            logger.error('unauthorized error {}'.format(e))
             err = 'unauthorized'
 
         except InvalidSearch as e:
             err = 'invalid search {}'.format(e)
 
         except InvalidIndicator as e:
-            logger.error(data)
-            logger.error(e)
+            logger.error('Error: {} - Data: {}'.format(e, data))
             traceback.print_exc()
             err = 'invalid indicator {}'.format(e)
 
@@ -259,7 +253,7 @@ class Store(multiprocessing.Process):
             err = 'busy'
 
         except Exception as e:
-            logger.error(e)
+            logger.error('unknown failure {} from data {}'.format(e, data))
             traceback.print_exc()
             err = 'unknown failure'
 
@@ -303,6 +297,9 @@ class Store(multiprocessing.Process):
                     if not i.get('provider') or i['provider'] == '':
                         i['provider'] = _t['username']
 
+                    if not i.get('tlp'):
+                        i['tlp'] = 'amber'
+                    
                     if not i.get('tags'):
                         i['tags'] = ['suspicious']
                     elif isinstance(i['tags'], list):
@@ -351,6 +348,9 @@ class Store(multiprocessing.Process):
 
     def handle_indicators_create(self, token, data, id=None, client_id=None, flush=False):
         token_str = token['token']
+
+        if len(data) == 0:
+            raise InvalidIndicator
 
         if len(data) > 1 or token['username'] == 'admin':
             start_time = time.time()
@@ -486,19 +486,24 @@ class Store(multiprocessing.Process):
             else:
                 data['groups'] = '{}'
 
-
+        now = arrow.utcnow()
         if not data.get('reporttime'):
             if data.get('days'):
-                now = arrow.utcnow()
                 data['reporttimeend'] = '{0}Z'.format(now.format('YYYY-MM-DDTHH:mm:ss'))
                 now = now.shift(days=-int(data['days']))
                 data['reporttime'] = '{0}Z'.format(now.format('YYYY-MM-DDTHH:mm:ss'))
 
             if data.get('hours'):
-                now = arrow.utcnow()
                 data['reporttimeend'] = '{0}Z'.format(now.format('YYYY-MM-DDTHH:mm:ss'))
                 now = now.shift(hours=-int(data['hours']))
                 data['reporttime'] = '{0}Z'.format(now.format('YYYY-MM-DDTHH:mm:ss'))
+        else:
+            if ',' in data.get('reporttime', ''):
+                low, high = data['reporttime'].split(',')
+                data['reporttime'] = low
+                data['reporttimeend'] = high
+            else:
+                data['reporttimeend'] = '{0}Z'.format(now.format('YYYY-MM-DDTHH:mm:ss'))
 
         s = time.time()
 
@@ -529,17 +534,17 @@ class Store(multiprocessing.Process):
 
     def handle_tokens_search(self, token, data, **kwargs):
         logger.debug('tokens_search')
-        return self.store.tokens.search(data)
+        return list(self.store.tokens.search(data))
 
     def handle_tokens_create(self, token, data, **kwargs):
         logger.debug('tokens_create')
-        return self.store.tokens.create(data)
+        return self.store.tokens.create(data, token=token)
 
     def handle_tokens_delete(self, token, data, **kwargs):
         return self.store.tokens.delete(data)
 
     def handle_tokens_edit(self, token, data, **kwargs):
-        return self.store.tokens.edit(data)
+        return self.store.tokens.edit(data, token=token)
 
     def token_create_admin(self, token=None, groups=['everyone']):
         logger.info('testing for tokens...')

@@ -1,5 +1,6 @@
 import logging
 from cif.utils import resolve_ns
+from cif.hunter import HUNTER_MIN_CONFIDENCE
 from csirtg_indicator import Indicator
 from dns.resolver import Timeout
 from csirtg_indicator import resolve_itype
@@ -11,19 +12,30 @@ class FqdnCname(object):
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         self.is_advanced = True
+        self.mtypes_supported = { 'indicators_create' }
+        self.itypes_supported = { 'fqdn' }
 
-    def process(self, i, router, **kwargs):
-        if i.itype != 'fqdn':
-            return
+    def _prereqs_met(self, i, **kwargs):
+        if kwargs.get('mtype') not in self.mtypes_supported:
+            return False
+            
+        if i.itype not in self.itypes_supported:
+            return False
 
         if 'search' in i.tags:
+            return False
+
+        return True
+
+    def process(self, i, router, **kwargs):
+        if not self._prereqs_met(i, **kwargs):
             return
 
         try:
             r = resolve_ns(i.indicator, t='CNAME')
         except Timeout:
             self.logger.info('timeout trying to resolve: {}'.format(i.indicator))
-            r = []
+            return
 
         for rr in r:
             # http://serverfault.com/questions/44618/is-a-wildcard-cname-dns-record-valid
@@ -31,27 +43,25 @@ class FqdnCname(object):
             if rr in ['', 'localhost', '0.0.0.0']:
                 continue
 
-            fqdn = Indicator(**i.__dict__())
-            fqdn.indicator = rr
-            fqdn.lasttime = fqdn.reporttime = arrow.utcnow()
+            cname = Indicator(**i.__dict__())
+            cname.indicator = rr
+            cname.lasttime = cname.reporttime = arrow.utcnow()
 
             try:
-                resolve_itype(fqdn.indicator)
+                resolve_itype(cname.indicator)
             except InvalidIndicator as e:
-                self.logger.error(fqdn)
+                self.logger.error(cname)
                 self.logger.error(e)
                 return
 
-            fqdn.itype = 'fqdn'
-            fqdn.rdata = '{} cname'.format(i.indicator)
-            if 'hunter' not in fqdn.tags:
-                fqdn.tags.append('hunter')
-            if fqdn.confidence < 8:
-                fqdn.confidence -= 1
-            else:
-                fqdn.confidence = 7
-            router.indicators_create(fqdn)
-            self.logger.debug("FQDN CNAME Hunter: {}".format(fqdn))
+            cname.itype = 'fqdn'
+            cname.rdata = '{} cname'.format(i.indicator)
+            if 'hunter' not in cname.tags:
+                cname.tags.append('hunter')
+            # prevent hunters from running on insertion of this cname
+            cname.confidence = max(0, min(cname.confidence, HUNTER_MIN_CONFIDENCE - 1))
+            router.indicators_create(cname)
+            self.logger.debug("FQDN CNAME Hunter: {}".format(cname))
 
 
 Plugin = FqdnCname

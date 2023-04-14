@@ -4,7 +4,8 @@ from cif.store import Store
 from elasticsearch_dsl.connections import connections
 import os
 import arrow
-import json
+import ujson as json
+import copy
 from pprint import pprint
 
 DISABLE_TESTS = True
@@ -134,6 +135,15 @@ def indicator_broken_multi_tag_el():
         lasttime=arrow.utcnow().datetime,
         reporttime=arrow.utcnow().datetime
     )
+
+@pytest.fixture
+def dict_broken_multi_tag_el():
+    return {
+        "indicator": "d52380918a07322c50f1bfa2b43af3bb54cb33db",
+        "provider": "csirtg.io",
+        "tags": ["malware,exploit"],
+        "confidence": 5.0
+    }
 
 @pytest.fixture
 def indicator_good_multi_tag():
@@ -471,15 +481,77 @@ def test_store_elasticsearch_indicators_search_portlist(store, token, indicator,
     assert len(x) == 1
 
 
+@pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
+def test_store_elasticsearch_indicators_search_reporttime(store, token, indicator, indicator_url, indicator_alt_provider):
+    now = arrow.utcnow()
+    now_dt = now.datetime
+    days_ago_arrow = now.shift(days=-5)
+    days_ago_dt = days_ago_arrow.datetime
+    weeks_ago_arrow = now.shift(weeks=-3)
+    weeks_ago_dt = weeks_ago_arrow.datetime
+
+    indicator.reporttime = indicator.lasttime = weeks_ago_dt
+    indicator_url.reporttime = indicator_url.lasttime = days_ago_dt
+    indicator_alt_provider.reporttime = indicator_alt_provider.lasttime = now_dt
+
+    x = store.handle_indicators_create(token, indicator.__dict__(), flush=True)
+    assert x > 0
+
+    y = store.handle_indicators_create(token, indicator_url.__dict__(), flush=True)
+    assert y > 0
+
+    z = store.handle_indicators_create(token, indicator_alt_provider.__dict__(), flush=True)
+    assert z > 0
+
+    x = store.handle_indicators_search(token, {
+        'days': '6'
+    })
+
+    x = json.loads(x)
+    pprint(x)
+    
+    x = [i['_source'] for i in x['hits']['hits']]
+
+    assert len(x) == 2
+
+    for indicator in x:
+        assert arrow.get(indicator['reporttime']) >= days_ago_arrow
+
+    start_str = weeks_ago_dt.strftime('%Y-%m-%dT%H:%M:%SZ')
+    end_str = days_ago_dt.strftime('%Y-%m-%dT%H:%M:%SZ')
+    startend = '{},{}'.format(start_str, end_str)
+
+    pprint(startend)
+
+    y = store.handle_indicators_search(token, {
+        'reporttime': startend
+    })
+
+    y = json.loads(y)
+    pprint(y)
+    
+    y = [i['_source'] for i in y['hits']['hits']]
+
+    assert len(x) == 2
+
+    for indicator in y:
+        assert arrow.get(indicator['reporttime']) <= days_ago_arrow
+
+
 ## test multi, comma-delimited tag in single str element getting split out
 @pytest.mark.skipif(DISABLE_TESTS, reason='need to set CIF_ELASTICSEARCH_TEST=1 to run')
-def test_store_elasticsearch_indicators_bad_multi_tag_el(store, token, indicator_broken_multi_tag_el):
-    x = store.handle_indicators_create(token, indicator_broken_multi_tag_el.__dict__(), flush=True)
+def test_store_elasticsearch_indicators_bad_multi_tag_el(store, token, dict_broken_multi_tag_el):
+    insert_dict = copy.deepcopy(dict_broken_multi_tag_el)
+    x = store.handle_indicators_create(token, insert_dict, flush=True)
     assert x == 1
-    
-    x = store.handle_indicators_search(token, {
-        'tags': '{}'.format(indicator_broken_multi_tag_el.tags[0].split(',')[1]) # should grab the item after the 1st comma, aka, "exploit"
-    })
+
+    pprint(dict_broken_multi_tag_el['tags'])
+    search_dict = {
+        'tags': '{}'.format(dict_broken_multi_tag_el['tags'][0].split(',')[1]) # should grab the item after the 1st comma, aka, "exploit"
+    }
+
+    pprint(search_dict)
+    x = store.handle_indicators_search(token, search_dict)
 
     x = json.loads(x)
     pprint(x)
@@ -488,7 +560,7 @@ def test_store_elasticsearch_indicators_bad_multi_tag_el(store, token, indicator
     
     assert len(x) == 1
     
-    assert x[0]['indicator'] == indicator_broken_multi_tag_el.indicator
+    assert x[0]['indicator'] == dict_broken_multi_tag_el['indicator']
     
     assert len(x[0]['tags']) == 2
     

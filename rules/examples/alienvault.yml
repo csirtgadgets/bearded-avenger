@@ -1,7 +1,7 @@
 defaults:
   provider: reputation.alienvault.com
-  tlp: white
-  altid_tlp: white
+  tlp: clear
+  altid_tlp: clear
   values: indicator
 
 feeds:

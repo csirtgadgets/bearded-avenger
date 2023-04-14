@@ -5,7 +5,7 @@ defaults:
   altid: 'http://s3-us-west-1.amazonaws.com/umbrella-static/index.html'
   provider: umbrella.cisco.com
   tlp: green
-  altid_tlp: white
+  altid_tlp: clear
   lasttime: 'month'
   values:
     - rank

@@ -15,9 +15,9 @@ token: 'CSIRTG_TOKEN'  # ENV['CSIRTG_TOKEN'] <get one at https://csirtg.io >
 limit: 250
 defaults:
   provider: csirtg.io
-  altid_tlp: white
+  altid_tlp: clear
   altid: https://csirtg.io/search?q={indicator}
-  tlp: white
+  tlp: clear
   confidence: 9
   values:
     - null

@@ -2,25 +2,29 @@ from elasticsearch_dsl import Index
 from elasticsearch import helpers
 import elasticsearch.exceptions
 from elasticsearch_dsl.connections import connections
+from elasticsearch_dsl.exceptions import IllegalOperation
 from cif.store.indicator_plugin import IndicatorManagerPlugin
-from cifsdk.exceptions import AuthError, CIFException
+from cif.utils import strtobool
+from cifsdk.exceptions import AuthError, CIFException, InvalidSearch
 from datetime import datetime, timedelta
 from cifsdk.constants import PYVERSION
 import logging
-from .helpers import expand_ip_idx, i_to_id
+from .helpers import expand_indicator, i_to_id
 from .filters import filter_build
-from .constants import LIMIT, WINDOW_LIMIT, TIMEOUT, UPSERT_MODE, PARTITION, DELETE_FILTERS, UPSERT_MATCH, REQUEST_TIMEOUT
+from .constants import LIMIT, WINDOW_LIMIT, TIMEOUT, UPSERT_MODE, PARTITION, \
+    DELETE_FILTERS, UPSERT_MATCH, REQUEST_TIMEOUT, ReIndexError, SHARDS_PER_INDEX
 from .locks import LockManager
 from .schema import Indicator
-import arrow
 import time
 import os
+import contextlib
+import random
 
 logger = logging.getLogger('cif.store.zelasticsearch')
 if PYVERSION > 2:
     basestring = (str, bytes)
 
-UPSERT_TRACE = os.environ.get('CIF_STORE_ES_UPSERT_TRACE')
+UPSERT_TRACE = strtobool(os.environ.get('CIF_STORE_ES_UPSERT_TRACE', False))
 
 class IndicatorManager(IndicatorManagerPlugin):
     class Deserializer(object):
@@ -43,8 +47,40 @@ class IndicatorManager(IndicatorManagerPlugin):
 
         self._create_index()
 
+        # idx exists now no matter what (either just created or was already present), 
+        # but if new mappings added to Indicator schema since last startup, this will add those types to idx
+        try:
+            Indicator.init(index=self.idx)
+        except IllegalOperation:
+            # some changes require closing an open index before making them (e.g., analyzer)
+            for retry in range(3):
+                try:
+                    with self._close_and_reopen_index():
+                        Indicator.init(index=self.idx)
+                    break
+                except elasticsearch.exceptions.TransportError as e:
+                    # another process may be trying the same thing
+                    if e.status_code == 403:
+                        if retry == 2:
+                            raise
+                        time.sleep(random.uniform(0.5, 3))
+        except elasticsearch.exceptions.RequestError:
+            raise ReIndexError('Your Indicators index {} is using an old mapping'.format(self.idx))
+        except Exception as e:
+            raise ReIndexError('Unspecified error: {}'.format(e))
+
     def flush(self):
         self.handle.indices.flush(index=self._current_index())
+
+    @contextlib.contextmanager
+    def _close_and_reopen_index(self):
+        self.handle.indices.refresh(index=self.idx)
+        self.handle.indices.close(index=self.idx)
+        try:
+            yield
+        finally:
+            self.handle.indices.open(index=self.idx)
+            self.handle.indices.refresh(index=self.idx)
 
     def _current_index(self):
         dt = datetime.utcnow()
@@ -76,7 +112,8 @@ class IndicatorManager(IndicatorManagerPlugin):
             index = Index(idx)
             index.aliases(live={})
             index.doc_type(Indicator)
-            index.settings(max_result_window=WINDOW_LIMIT)
+            index.settings(max_result_window=WINDOW_LIMIT, number_of_shards=SHARDS_PER_INDEX,
+                index={'refresh_interval': '5s'})
             try:
                 index.create()
             # after implementing auth to use cif_store, there appears to sometimes be a race condition
@@ -94,19 +131,23 @@ class IndicatorManager(IndicatorManagerPlugin):
         self.last_index_value = idx
         return idx
 
-    def search(self, token, filters, sort='reporttime', raw=False, sindex=False, timeout=TIMEOUT):
+    def search(self, token, filters, raw=False, sindex=False, timeout=TIMEOUT, 
+               find_relatives=False):
         limit = filters.get('limit', LIMIT)
 
         # search a given index - used in upserts
         if sindex:
             s = Indicator.search(index=sindex)
+            find_relatives=False # don't find indicator relatives in upsert searches
         else:
             s = Indicator.search(index='{}-*'.format(self.indicators_prefix))
+            # in non-upsert searches, permit finding relatives
+            find_relatives = filters.get('find_relatives', False)
 
         s = s.params(size=limit, timeout=timeout, request_timeout=REQUEST_TIMEOUT)
-        s = s.sort('-reporttime', '-lasttime')
 
-        s = filter_build(s, filters, token=token)
+        s = filter_build(s, filters, token=token, find_relatives=find_relatives, 
+            narrow_query=sindex)
 
         #logger.debug(s.to_dict())
 
@@ -120,7 +161,9 @@ class IndicatorManager(IndicatorManagerPlugin):
                     index=s._index,
                     doc_type=s._doc_type,
                     body=s.to_dict(),
-                    **s._params)
+                    **s._params,
+                    error_trace=UPSERT_TRACE
+                    )
 
             else:
                 es.transport.deserializer = self.Deserializer()
@@ -130,7 +173,8 @@ class IndicatorManager(IndicatorManagerPlugin):
                     doc_type=s._doc_type,
                     body=s.to_dict(),
                     filter_path=['hits.hits._source'],
-                    **s._params)
+                    **s._params,
+                    error_trace=UPSERT_TRACE)
                 # transport caches this, so the tokens mis-fire
                 es.transport.deserializer = old_serializer
 
@@ -138,6 +182,15 @@ class IndicatorManager(IndicatorManagerPlugin):
             logger.error(e)
             es.transport.deserializer = old_serializer
             return
+        
+        except elasticsearch.exceptions.TransportError as e:
+            logger.error('Error {} on indicator search by user {} with query params {}'.format(
+                e, token.get('username'), s.to_dict()))
+            es.transport.deserializer = old_serializer
+            err = 'search criteria created an error condition for elasticsearch'
+            if e.status_code == 503 and 'sort' in s.to_dict().keys():
+                err += ', possibly related to sort params'
+            raise InvalidSearch(': {}'.format(err))
 
         # catch all other es errors
         except elasticsearch.ElasticsearchException as e:
@@ -152,7 +205,7 @@ class IndicatorManager(IndicatorManagerPlugin):
     def create(self, token, data, raw=False, bulk=False):
         index = self._create_index()
 
-        expand_ip_idx(data)
+        expand_indicator(data)
         id = i_to_id(data)
 
         if data.get('group') and type(data['group']) != list:
@@ -266,7 +319,8 @@ class IndicatorManager(IndicatorManagerPlugin):
             # search for existing, return latest record
             try:
                 # search the current index only
-                rv = self.search(token, filters, sort='reporttime', raw=True, sindex=index)
+                filters['sort'] = '-reporttime,-lasttime'
+                rv = self.search(token, filters, raw=True, sindex=index)
             except Exception as e:
                 logger.error(e)
                 raise e
@@ -284,7 +338,7 @@ class IndicatorManager(IndicatorManagerPlugin):
                 if d.get('group') and type(d['group']) != list:
                     d['group'] = [d['group']]
 
-                expand_ip_idx(d)
+                expand_indicator(d)
 
                 # append create to create set
                 if UPSERT_TRACE:
@@ -423,8 +477,9 @@ class IndicatorManager(IndicatorManagerPlugin):
             return '0, must specify valid filter. valid filters: {}'.format(DELETE_FILTERS)
 
         try:
-           rv = self.search(token, q_filters, sort='reporttime', raw=True)
-           rv = rv['hits']['hits']
+            q_filters['sort'] = '-reporttime,-lasttime'
+            rv = self.search(token, q_filters, raw=True)
+            rv = rv.get('hits').get('hits')
         except Exception as e:
             raise CIFException(e)
 

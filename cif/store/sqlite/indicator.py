@@ -1,11 +1,11 @@
 import os
 
 import arrow
-from sqlalchemy import Column, Integer, String, Float, DateTime, UnicodeText, desc, ForeignKey, or_, Index
-from sqlalchemy.orm import relationship, backref, class_mapper, lazyload, joinedload, subqueryload
+from sqlalchemy import Column, Integer, String, Float, DateTime, UnicodeText, asc, desc, ForeignKey, or_, Index
+from sqlalchemy.orm import relationship, backref, class_mapper, lazyload
 
 from cifsdk.constants import RUNTIME_PATH, PYVERSION
-import json
+import ujson as json
 from base64 import b64decode, b64encode
 from csirtg_indicator import resolve_itype
 from csirtg_indicator.exceptions import InvalidIndicator
@@ -13,17 +13,17 @@ from cif.store.indicator_plugin import IndicatorManagerPlugin
 from cifsdk.exceptions import InvalidSearch
 import ipaddress
 from .ip import Ip
-from pprint import pprint
 from sqlalchemy.ext.declarative import declarative_base
 import re
 import logging
 import time
+from collections import OrderedDict
 
 logger = logging.getLogger('cif.store.sqlite')
 
 DB_FILE = os.path.join(RUNTIME_PATH, 'cif.sqlite')
 REQUIRED_FIELDS = ['provider', 'indicator', 'tags', 'group', 'itype']
-HASH_TYPES = ['sha1', 'sha256', 'sha512', 'md5']
+HASH_TYPES = ['sha1', 'sha256', 'sha512', 'md5', 'ssdeep']
 
 from cif.httpd.common import VALID_FILTERS
 
@@ -257,10 +257,6 @@ class IndicatorManager(IndicatorManagerPlugin):
 
     def _filter_indicator(self, filters, s):
 
-        for k, v in list(filters.items()):
-            if k not in VALID_FILTERS:
-                del filters[k]
-
         if not filters.get('indicator'):
             return s
 
@@ -339,15 +335,10 @@ class IndicatorManager(IndicatorManagerPlugin):
                 continue
 
             if k == 'reporttime':
-                if ',' in filters[k]:
-                    start, end = filters[k].split(',')
-                    s = s.filter(Indicator.reporttime >= arrow.get(start).datetime)
-                    s = s.filter(Indicator.reporttime <= arrow.get(end).datetime)
-                else:
-                    s = s.filter(Indicator.reporttime >= arrow.get(filters[k]).datetime)
+                s = s.filter(Indicator.reporttime >= arrow.get(filters[k]).datetime)
 
             elif k == 'reporttimeend':
-                s = s.filter(Indicator.reporttime <= filters[k])
+                s = s.filter(Indicator.reporttime <= arrow.get(filters[k]).datetime)
 
             elif k == 'tags':
                 t = filters[k].split(',')
@@ -405,12 +396,57 @@ class IndicatorManager(IndicatorManagerPlugin):
         s = s.filter(or_(Indicator.group == g for g in groups))
         return s
 
+    def _filter_sort(self, filters, s):
+        if not filters.get('sort'):
+            return s.order_by(desc(Indicator.reporttime), desc(Indicator.lasttime))
+        else:
+            sort = filters.pop('sort')
+
+        if isinstance(sort, basestring):
+            sort = [x.strip() for x in sort.split(',')]
+        else:
+            return s.order_by(desc(Indicator.reporttime), desc(Indicator.lasttime))
+
+        # use dict for easy asc/desc lookup later
+        filtered_sort = OrderedDict()
+
+        # only ever iterate through max 2 elements, no matter how many csvs were given
+        for col_name in sort[:2]:
+            if col_name.startswith('-'):
+                direction = desc
+                col_name = col_name[1:]
+            else:
+                direction = asc
+
+            if col_name in VALID_FILTERS and col_name not in filtered_sort:
+                filtered_sort[col_name] = direction
+
+        if len(filtered_sort) == 0:
+            s = s.order_by(desc(Indicator.reporttime), desc(Indicator.lasttime))
+        elif len(filtered_sort) == 1:
+            column_name, direction = list(filtered_sort.items())[0]
+            s = s.order_by(direction(getattr(Indicator, column_name)))
+        elif len(filtered_sort) >=2:
+            col1, col2 = list(filtered_sort.items())[:2]
+            col1_name = col1[0]
+            col1_dir = col1[1]
+            col2_name = col2[0]
+            col2_dir = col2[1]
+            s = s.order_by(col1_dir(getattr(Indicator, col1_name)), col2_dir(getattr(Indicator, col2_name)))
+
+        return s
+
     def _search(self, filters, token):
         logger.debug('running search')
 
         myfilters = dict(filters.items())
 
         s = self.handle().query(Indicator)
+
+        if myfilters.get('sort'):
+            s = self._filter_sort(myfilters, s)
+        else:
+            s = s.order_by(desc(Indicator.reporttime), desc(Indicator.lasttime))
 
         # group support
 
@@ -428,7 +464,7 @@ class IndicatorManager(IndicatorManagerPlugin):
 
         limit = filters.pop('limit', limit)
 
-        rv = s.order_by(desc(Indicator.reporttime)).limit(limit)
+        rv = s.order_by(Indicator.reporttime.desc(), Indicator.lasttime.desc()).limit(limit)
 
         return [self.to_dict(i) for i in rv]
 
@@ -486,7 +522,7 @@ class IndicatorManager(IndicatorManagerPlugin):
                 provider=d['provider'],
                 itype=d['itype'],
                 indicator=d['indicator']
-            ).order_by(Indicator.lasttime.desc())
+            ).order_by(Indicator.reporttime.desc(), Indicator.lasttime.desc())
 
             if d.get('rdata'):
                 i = i.filter_by(rdata=d['rdata'])

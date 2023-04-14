@@ -6,7 +6,7 @@ remote: http://data.phishtank.com/data/{token}/online-valid.json.gz
 defaults:
   provider: phishtank.com
   tlp: green
-  altid_tlp: white
+  altid_tlp: clear
   application:
     - http
     - https

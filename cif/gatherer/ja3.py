@@ -1,5 +1,5 @@
 import requests
-import json
+import ujson as json
 import logging
 import os
 
@@ -29,19 +29,22 @@ class Ja3(object):
             self.logger.debug('self.enabled is set to {}'.format(self.enabled))
             return indicator
 
-        #if indicator isn't a md5 hash with ja3 tag exit
-        if (not indicator.itype == 'md5') or ('ja3' not in indicator.tags):
+        #if indicator isn't a md5 hash with ja3 tag, or it's already coming from the ja3er.com provider (bc ja3 smrt rule adds desc), exit
+        if (not indicator.itype == 'md5') or (indicator.provider == 'ja3er.com') or ('ja3' not in indicator.tags):
             return indicator
 
         #if indicator has a description do not attempt to enrich further
         if indicator.description:
             return indicator
 
-        i = str(indicator.indicator)
+        try:
+            i = str(indicator.indicator)
 
-        ua = self._resolve(i)
-        if len(ua) == 0:
-            return indicator
+            ua = self._resolve(i)
+            if not ua or len(ua) == 0:
+                return indicator
+        except Exception as e:
+            self.logger.error('Gatherer [ja3]: Error on indicator {} - {}'.format(indicator, e))
 
         for each in ua:
             self.logger.debug(each)

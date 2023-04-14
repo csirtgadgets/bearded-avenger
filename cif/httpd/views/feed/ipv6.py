@@ -17,7 +17,7 @@ class Ipv6(object):
         pass
 
     def process(self, data, whitelist=[]):
-        wl = pytricia.PyTricia()
+        wl = pytricia.PyTricia(128)
 
         [wl.insert(x, True) for x in PERM_WHITELIST]
 

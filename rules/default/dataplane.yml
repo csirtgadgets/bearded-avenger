@@ -2,7 +2,7 @@ parser: pipe
 defaults:
   provider: dataplane.org
   tlp: green
-  altid_tlp: white
+  altid_tlp: clear
   confidence: 7.5
   values:
     - null

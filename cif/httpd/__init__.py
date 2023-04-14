@@ -2,19 +2,20 @@
 
 import logging
 import os
-import gc
 import traceback
 import textwrap
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 
-from flask import Flask, request, session, redirect, url_for, render_template, _request_ctx_stack, send_from_directory, g, jsonify
+from flask import Flask, request, session, redirect, url_for, render_template, send_from_directory, g, jsonify
 from flask_limiter import Limiter
 from flask_cors import CORS
 from flask_limiter.util import get_remote_address
 from flask_bootstrap import Bootstrap
+from werkzeug.datastructures import MultiDict
 from os import path
 from cif.constants import ROUTER_ADDR, RUNTIME_PATH
+from cif.utils import strtobool
 from cifsdk.utils import get_argument_parser, setup_logging, setup_signals, setup_runtime_path
 import zlib
 import time
@@ -31,12 +32,11 @@ from .views.u.indicators import IndicatorsUI, DataTables
 from .views.u.submit import SubmitUI
 from .views.u.tokens import TokensUI
 
-from pprint import pprint
 
 HTTP_LISTEN = '127.0.0.1'
 HTTP_LISTEN = os.environ.get('CIF_HTTPD_LISTEN', HTTP_LISTEN)
 
-TRACE = os.getenv('CIF_HTTPD_TRACE', 0)
+TRACE = strtobool(os.getenv('CIF_HTTPD_TRACE', False))
 
 HTTP_LISTEN_PORT = 5000
 HTTP_LISTEN_PORT = os.environ.get('CIF_HTTPD_LISTEN_PORT', HTTP_LISTEN_PORT)
@@ -79,14 +79,15 @@ app.secret_key = SECRET_KEY
 remote = ROUTER_ADDR
 
 log_level = logging.WARN
-if TRACE == '1':
+if TRACE:
     log_level = logging.DEBUG
-    logging.getLogger('flask_cors').level = logging.DEBUG
+    logging.getLogger('flask_cors').level = log_level
 
 console = logging.StreamHandler()
-logging.getLogger('gunicorn.error').setLevel(log_level)
-logging.getLogger('gunicorn.error').addHandler(console)
+console.setLevel(log_level)
 logger = logging.getLogger('gunicorn.error')
+logger.setLevel(log_level)
+logger.addHandler(console)
 
 limiter = Limiter(
     app,
@@ -126,11 +127,6 @@ app.add_url_rule('/indicators', view_func=IndicatorsAPI.as_view('indicators'))
 app.add_url_rule('/search', view_func=IndicatorsAPI.as_view('search'))
 app.add_url_rule('/feed', view_func=FeedAPI.as_view('feed'))
 app.add_url_rule('/help/confidence', view_func=ConfidenceAPI.as_view('confidence'))
-
-
-@app.teardown_request
-def teardown_request(exception):
-    gc.collect()
 
 
 @app.before_request
@@ -183,9 +179,7 @@ def before_request():
     method = request.form.get('_method', '').upper()
     if method:
         request.environ['REQUEST_METHOD'] = method
-        ctx = _request_ctx_stack.top
-        ctx.url_adapter.default_method = method
-        assert request.method == method
+        request.method = method
 
     if request.path == '/u/logout':
         return
@@ -212,6 +206,25 @@ def before_request():
         if not t or t == 'None':
             return '', 401
 
+@app.before_request
+def normalize_params():
+    """
+    converts query params so instead of only containing one value, they can contain python lists.
+    this is specifically to handle all values passed in URLs like /feed?tags=malware&tags=exploit.
+    otherwise, Flask ignores anything after the first value.
+    additionally, lowercase all param names (so /feed?Tags=malware becomes /feed?tags=malware)
+    saves normalized params back to request.args
+    """
+    params_non_flat = request.args.to_dict(flat=False)
+    normalized_params = {}
+    for k, v in params_non_flat.items():
+        if len(v) > 1:
+            normalized_value = v
+        else:
+            normalized_value = v[0]
+        normalized_params[k.lower()] = normalized_value
+
+    request.args = MultiDict(normalized_params)
 
 @app.route('/u/login', methods=['GET', 'POST'])
 def login():
