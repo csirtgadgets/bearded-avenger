@@ -119,14 +119,14 @@ class TokenManager(TokenManagerPlugin):
         if data.get('token') is None:
             data['token'] = self._generate()
 
-        data['created_at'] = arrow.utcnow().datetime.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        data['created_at'] = arrow.utcnow().datetime.strftime('%Y-%m-%dT%H:%M:%SZ')
         data['created_by'] = token.get('username', token.get('token', 'unknown'))
         
         t = Token(**data)
 
         if t.save():
             connections.get_connection().indices.flush(index=INDEX_NAME)
-            res = t.to_dict()
+            res = data
             res['id'] = t.to_dict(include_meta=True)['_id']
             return res
 
